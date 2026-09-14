@@ -13,7 +13,12 @@ export default async function DashboardLayout({
     <div className="flex flex-1 flex-col">
       <header className="border-b border-border">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-          <span className="text-lg font-semibold">後台</span>
+          <span className="flex items-baseline gap-2">
+            <span className="font-display text-lg font-semibold tracking-wide">
+              Heldendicht
+            </span>
+            <span className="text-xs text-muted-foreground">後台</span>
+          </span>
           <div className="flex items-center gap-4 text-sm">
             <span className="text-muted-foreground">
               {profile?.display_name ?? profile?.email}

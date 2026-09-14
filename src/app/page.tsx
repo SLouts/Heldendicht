@@ -14,7 +14,9 @@ export default async function Home() {
     <div className="flex flex-1 flex-col bg-background">
       <header className="border-b border-border">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-          <span className="text-lg font-semibold">世界觀企劃站</span>
+          <span className="font-display text-xl font-semibold tracking-wide">
+            Heldendicht
+          </span>
           <nav className="flex gap-4 text-sm">
             <Link href="/worlds" className="hover:underline">
               探索世界觀

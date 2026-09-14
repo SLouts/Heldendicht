@@ -57,9 +57,10 @@ export default async function WorldDashboardPage({
 
   if (!world) notFound();
 
-  const [{ data: isStaff }, { data: nodes }, { data: relationships }] =
+  const [{ data: isStaff }, { data: isAdmin }, { data: nodes }, { data: relationships }] =
     await Promise.all([
       supabase.rpc("is_world_staff", { p_world_id: world.id }),
+      supabase.rpc("is_world_admin", { p_world_id: world.id }),
       supabase
         .from("nodes")
         .select(
@@ -123,6 +124,14 @@ export default async function WorldDashboardPage({
               className="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm"
             >
               檢舉列表
+            </Link>
+          )}
+          {isAdmin && (
+            <Link
+              href={`/dashboard/worlds/${world.slug}/members`}
+              className="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm"
+            >
+              成員
             </Link>
           )}
           {isStaff && (

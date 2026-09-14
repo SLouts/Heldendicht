@@ -1,11 +1,14 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import Link from "next/link";
 import { login } from "@/lib/actions/auth";
 
 export default function LoginPage() {
   const [state, formAction, pending] = useActionState(login, undefined);
+  // Email 做成 controlled:React 在 form action 送出後會重置
+  // uncontrolled 欄位,密碼打錯一次使用者就要重打一次 email,體驗很差。
+  const [email, setEmail] = useState("");
 
   return (
     <div className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center px-6 py-12">
@@ -21,6 +24,8 @@ export default function LoginPage() {
             name="email"
             type="email"
             required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             className="rounded-lg border border-border bg-surface px-3 py-2"
           />
           {state && "fieldErrors" in state && state.fieldErrors.email && (

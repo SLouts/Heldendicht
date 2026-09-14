@@ -1,11 +1,17 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import Link from "next/link";
 import { signup } from "@/lib/actions/auth";
 
 export default function SignupPage() {
   const [state, formAction, pending] = useActionState(signup, undefined);
+  // Email/邀請碼刻意做成 controlled input:React 在 form action 送出後
+  // 會重置 uncontrolled 欄位(即使送出失敗也一樣),沒特別處理的話,
+  // 邀請碼打錯一次使用者就要重打一次 email,體驗很差。密碼欄位維持
+  // uncontrolled、送出後清空——這是多數網站的常見/預期行為。
+  const [email, setEmail] = useState("");
+  const [inviteCode, setInviteCode] = useState("");
 
   return (
     <div className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center px-6 py-12">
@@ -24,6 +30,8 @@ export default function SignupPage() {
             name="email"
             type="email"
             required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             className="rounded-lg border border-border bg-surface px-3 py-2"
           />
           {state && "fieldErrors" in state && state.fieldErrors.email && (
@@ -59,6 +67,8 @@ export default function SignupPage() {
             name="inviteCode"
             type="text"
             required
+            value={inviteCode}
+            onChange={(e) => setInviteCode(e.target.value)}
             className="rounded-lg border border-border bg-surface px-3 py-2"
           />
           {state && "fieldErrors" in state && state.fieldErrors.inviteCode && (

@@ -8,10 +8,13 @@ export default async function DashboardPage() {
 
   // RLS 的 memberships_select policy 已經保證這裡只會拿到自己的成員資格,
   // 不需要再手動加一次 .eq("user_id", user.id)。
-  const { data: memberships } = await supabase
-    .from("world_memberships")
-    .select("role, worlds(id, slug, name)")
-    .eq("user_id", user.id);
+  const [{ data: memberships }, { data: isSiteAdmin }] = await Promise.all([
+    supabase
+      .from("world_memberships")
+      .select("role, worlds(id, slug, name)")
+      .eq("user_id", user.id),
+    supabase.rpc("is_site_admin"),
+  ]);
 
   return (
     <div>
@@ -53,6 +56,15 @@ export default async function DashboardPage() {
           看看互動示範
         </Link>
       </p>
+
+      {isSiteAdmin && (
+        <p className="mt-2 text-sm text-muted-foreground">
+          站務工具:
+          <Link href="/dashboard/admin/invite-codes" className="ml-1 underline">
+            邀請碼管理
+          </Link>
+        </p>
+      )}
     </div>
   );
 }

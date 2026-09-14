@@ -1,0 +1,254 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { requireUser } from "@/lib/dal";
+import { createClient } from "@/lib/supabase/server";
+import { getAttachmentSignedUrl } from "@/lib/attachments";
+import { deleteNode, reviewNode } from "@/lib/actions/nodes";
+import { EditNodeForm } from "./EditNodeForm";
+import { WikiLinkContent } from "./WikiLinkContent";
+import { AttachmentsSection, type AttachmentItem } from "./AttachmentsSection";
+import { ReportForm } from "@/components/ReportForm";
+
+const STATUS_LABEL: Record<string, string> = {
+  pending: "未正式過審",
+  approved: "已過審",
+  rejected: "已駁回",
+};
+
+const NODE_TYPE_LABEL: Record<string, string> = {
+  location: "地點",
+  item: "物產",
+  character: "角色",
+  unspecified: "尚未分類(待撰寫)",
+};
+
+export default async function NodeDetailPage({
+  params,
+}: PageProps<"/dashboard/worlds/[slug]/nodes/[nodeSlug]">) {
+  const { slug, nodeSlug } = await params;
+  const user = await requireUser();
+  const supabase = await createClient();
+
+  const { data: world } = await supabase
+    .from("worlds")
+    .select("id, slug, name")
+    .eq("slug", slug)
+    .maybeSingle();
+  if (!world) notFound();
+
+  const { data: node } = await supabase
+    .from("nodes")
+    .select(
+      "id, title, slug, node_type, content, status, edit_mode, is_placeholder, creator_id, characters(character_type, owner_id, profiles(display_name, username, email))",
+    )
+    .eq("world_id", world.id)
+    .eq("slug", nodeSlug)
+    .maybeSingle();
+  if (!node) notFound();
+
+  const character = Array.isArray(node.characters)
+    ? node.characters[0]
+    : node.characters;
+  const characterOwner = character?.owner_id
+    ? Array.isArray(character.profiles)
+      ? character.profiles[0]
+      : character.profiles
+    : null;
+
+  const [{ data: isStaff }, { data: isMember }, { data: revisions }, { data: outboundLinks }, { data: attachments }] =
+    await Promise.all([
+      supabase.rpc("is_world_staff", { p_world_id: world.id }),
+      supabase.rpc("is_world_member", { p_world_id: world.id }),
+      supabase
+        .from("node_revisions")
+        .select("id, title, editor_id, created_at")
+        .eq("node_id", node.id)
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("wikilinks")
+        .select(
+          "raw_text, target:nodes!wikilinks_target_node_id_fkey(slug, is_placeholder)",
+        )
+        .eq("source_node_id", node.id),
+      supabase
+        .from("node_attachments")
+        .select(
+          "id, file_name, file_size, kind, storage_path, created_at, profiles(display_name, username, email)",
+        )
+        .eq("node_id", node.id)
+        .order("created_at", { ascending: false }),
+    ]);
+
+  const wikiLinkMap = new Map(
+    (outboundLinks ?? []).map((link) => {
+      const target = Array.isArray(link.target) ? link.target[0] : link.target;
+      return [
+        link.raw_text,
+        { slug: target?.slug ?? "", isPlaceholder: target?.is_placeholder ?? false },
+      ] as const;
+    }),
+  );
+
+  const isCreator = node.creator_id === user.id;
+  const canEdit =
+    Boolean(isStaff) ||
+    isCreator ||
+    (node.edit_mode === "collaborative" && Boolean(isMember));
+  const canDelete = Boolean(isStaff) || (isCreator && node.status === "pending");
+
+  const attachmentItems: AttachmentItem[] = await Promise.all(
+    (attachments ?? []).map(async (a) => {
+      const uploader = Array.isArray(a.profiles) ? a.profiles[0] : a.profiles;
+      const url =
+        (await getAttachmentSignedUrl(
+          a.storage_path,
+          a.kind === "file" ? a.file_name : undefined,
+        )) ?? "";
+      return {
+        id: a.id,
+        fileName: a.file_name,
+        fileSize: a.file_size,
+        kind: a.kind,
+        url,
+        uploaderLabel:
+          uploader?.display_name || uploader?.username || uploader?.email || "未知玩家",
+        createdAt: a.created_at,
+      };
+    }),
+  );
+  const imageMap = new Map(
+    attachmentItems
+      .filter((a) => a.kind === "image")
+      .map((a) => [a.id, { url: a.url, fileName: a.fileName }]),
+  );
+
+  return (
+    <div className="max-w-2xl">
+      <Link
+        href={`/dashboard/worlds/${world.slug}`}
+        className="text-sm text-muted-foreground hover:underline"
+      >
+        ← 返回世界觀
+      </Link>
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        <h1 className="text-2xl font-semibold">{node.title}</h1>
+        {character && (
+          <span
+            className={
+              character.character_type === "pc"
+                ? "rounded-full bg-badge-info-bg px-2 py-0.5 text-xs text-badge-info-fg"
+                : "rounded-full bg-badge-neutral-bg px-2 py-0.5 text-xs text-badge-neutral-fg"
+            }
+          >
+            {character.character_type === "pc" ? "PC" : "NPC"}
+          </span>
+        )}
+        {node.status !== "approved" && (
+          <span
+            className={
+              node.status === "rejected"
+                ? "rounded-full bg-badge-danger-bg px-2 py-0.5 text-xs text-badge-danger-fg"
+                : "rounded-full bg-badge-pending-bg px-2 py-0.5 text-xs text-badge-pending-fg"
+            }
+          >
+            {STATUS_LABEL[node.status]}
+          </span>
+        )}
+        {node.is_placeholder && (
+          <span className="rounded-full bg-badge-neutral-bg px-2 py-0.5 text-xs text-badge-neutral-fg">
+            WikiLink 自動建立的待撰寫節點
+          </span>
+        )}
+      </div>
+      <p className="mt-1 text-sm text-muted-foreground">
+        {NODE_TYPE_LABEL[node.node_type]} ·{" "}
+        {node.edit_mode === "collaborative" ? "開放共筆" : "僅自己可改"}
+        {character?.character_type === "pc" && (
+          <>
+            {" "}
+            ·擁有者:
+            {characterOwner?.display_name ||
+              characterOwner?.username ||
+              characterOwner?.email ||
+              "未知玩家"}
+          </>
+        )}
+      </p>
+
+      {isStaff && node.status === "pending" && (
+        <div className="mt-4 flex gap-2">
+          <form action={reviewNode.bind(null, node.id, world.slug, node.slug, "approved")}>
+            <button className="rounded-lg bg-success px-3 py-1.5 text-sm text-success-foreground transition hover:bg-success-hover">
+              核准
+            </button>
+          </form>
+          <form action={reviewNode.bind(null, node.id, world.slug, node.slug, "rejected")}>
+            <button className="rounded-lg bg-danger px-3 py-1.5 text-sm text-danger-foreground transition hover:bg-danger-hover">
+              駁回
+            </button>
+          </form>
+        </div>
+      )}
+
+      <div className="mt-6">
+        {canEdit ? (
+          <EditNodeForm
+            nodeId={node.id}
+            worldSlug={world.slug}
+            nodeSlug={node.slug}
+            title={node.title}
+            content={node.content}
+            isPlaceholder={node.is_placeholder}
+            nodeType={node.node_type}
+          />
+        ) : (
+          <WikiLinkContent
+            content={node.content}
+            worldSlug={world.slug}
+            links={wikiLinkMap}
+            images={imageMap}
+          />
+        )}
+      </div>
+
+      <AttachmentsSection
+        nodeId={node.id}
+        worldSlug={world.slug}
+        nodeSlug={node.slug}
+        canEdit={canEdit}
+        attachments={attachmentItems}
+      />
+
+      {canDelete && (
+        <form
+          action={deleteNode.bind(null, node.id, world.slug)}
+          className="mt-6"
+        >
+          <button className="text-sm text-danger underline">
+            刪除這個節點
+          </button>
+        </form>
+      )}
+
+      <ReportForm
+        targetType="node"
+        targetId={node.id}
+        redirectPath={`/dashboard/worlds/${world.slug}/nodes/${node.slug}`}
+      />
+
+      <section className="mt-10">
+        <h2 className="text-lg font-semibold">版本歷史</h2>
+        <ul className="mt-3 divide-y divide-zinc-200 text-sm dark:divide-zinc-800">
+          {revisions?.map((rev) => (
+            <li key={rev.id} className="py-2 text-muted-foreground">
+              {new Date(rev.created_at).toLocaleString("zh-TW")} · {rev.title}
+            </li>
+          ))}
+          {revisions?.length === 0 && (
+            <li className="py-2 text-muted-foreground">目前還沒有修改紀錄。</li>
+          )}
+        </ul>
+      </section>
+    </div>
+  );
+}

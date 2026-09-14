@@ -1,26 +1,107 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #faf8f5;
+  --foreground: #332f29;
+  --surface: #ffffff;
+  --border: #e6ded2;
+  --muted: #f0e9dd;
+  --muted-foreground: #8a8072;
+
+  --primary: #a8623f;
+  --primary-hover: #8f5136;
+  --primary-foreground: #fffaf6;
+
+  --danger: #ab5347;
+  --danger-hover: #954539;
+  --danger-foreground: #fffaf6;
+
+  --success: #5c7a4a;
+  --success-hover: #4d6a3d;
+  --success-foreground: #fffaf6;
+
+  --badge-pending-bg: #f5e7d0;
+  --badge-pending-fg: #8a5a25;
+  --badge-danger-bg: #f3ddd4;
+  --badge-danger-fg: #9b4a38;
+  --badge-success-bg: #e2ebd8;
+  --badge-success-fg: #4c6b3a;
+  --badge-info-bg: #dfe7ef;
+  --badge-info-fg: #3e5c7a;
+  --badge-neutral-bg: #ece4d6;
+  --badge-neutral-fg: #7a715f;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-border: var(--border);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-foreground: var(--primary-foreground);
+
+  --color-danger: var(--danger);
+  --color-danger-hover: var(--danger-hover);
+  --color-danger-foreground: var(--danger-foreground);
+
+  --color-success: var(--success);
+  --color-success-hover: var(--success-hover);
+  --color-success-foreground: var(--success-foreground);
+
+  --color-badge-pending-bg: var(--badge-pending-bg);
+  --color-badge-pending-fg: var(--badge-pending-fg);
+  --color-badge-danger-bg: var(--badge-danger-bg);
+  --color-badge-danger-fg: var(--badge-danger-fg);
+  --color-badge-success-bg: var(--badge-success-bg);
+  --color-badge-success-fg: var(--badge-success-fg);
+  --color-badge-info-bg: var(--badge-info-bg);
+  --color-badge-info-fg: var(--badge-info-fg);
+  --color-badge-neutral-bg: var(--badge-neutral-bg);
+  --color-badge-neutral-fg: var(--badge-neutral-fg);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #211e1a;
+    --foreground: #ece5d8;
+    --surface: #29251f;
+    --border: #3c352b;
+    --muted: #2e2820;
+    --muted-foreground: #a89d8a;
+
+    --primary: #dd9470;
+    --primary-hover: #e5a684;
+    --primary-foreground: #211e1a;
+
+    --danger: #dd9186;
+    --danger-hover: #e4a297;
+    --danger-foreground: #211e1a;
+
+    --success: #9bbd82;
+    --success-hover: #abc895;
+    --success-foreground: #1a2416;
+
+    --badge-pending-bg: #493419;
+    --badge-pending-fg: #f0c087;
+    --badge-danger-bg: #482620;
+    --badge-danger-fg: #e8998a;
+    --badge-success-bg: #293a1f;
+    --badge-success-fg: #aacd91;
+    --badge-info-bg: #22323f;
+    --badge-info-fg: #9dbeda;
+    --badge-neutral-bg: #362f26;
+    --badge-neutral-fg: #a89d8a;
   }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
 }

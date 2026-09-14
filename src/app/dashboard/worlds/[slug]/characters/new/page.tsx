@@ -1,0 +1,38 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { requireUser } from "@/lib/dal";
+import { createClient } from "@/lib/supabase/server";
+import { NewCharacterForm } from "./NewCharacterForm";
+
+export default async function NewCharacterPage({
+  params,
+}: PageProps<"/dashboard/worlds/[slug]/characters/new">) {
+  const { slug } = await params;
+  await requireUser();
+  const supabase = await createClient();
+
+  const { data: world } = await supabase
+    .from("worlds")
+    .select("id, slug, name, default_pc_quota")
+    .eq("slug", slug)
+    .maybeSingle();
+
+  if (!world) notFound();
+
+  return (
+    <div>
+      <Link
+        href={`/dashboard/worlds/${world.slug}`}
+        className="text-sm text-muted-foreground hover:underline"
+      >
+        ← 返回世界觀
+      </Link>
+      <h1 className="mt-2 text-2xl font-semibold">在「{world.name}」新增角色</h1>
+      <p className="mt-1 text-sm text-muted-foreground">
+        每人 PC 角色配額為 {world.default_pc_quota}
+        隻(主辦不受限);NPC 不受配額限制。超過配額會由資料庫擋下並顯示錯誤訊息。
+      </p>
+      <NewCharacterForm worldId={world.id} worldSlug={world.slug} />
+    </div>
+  );
+}

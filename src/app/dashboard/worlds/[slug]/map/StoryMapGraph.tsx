@@ -51,14 +51,15 @@ export default function StoryMapGraph({
   wikiEdges,
   width,
   height,
-  worldSlug,
+  basePath,
 }: {
   nodes: GraphNodeData[];
   relEdges: RelEdge[];
   wikiEdges: WikiEdge[];
   width: number;
   height: number;
-  worldSlug: string;
+  /** 節點點擊後要連去哪裡,例如 `/dashboard/worlds/xxx/nodes` 或公開版 `/worlds/xxx/nodes`。 */
+  basePath: string;
 }) {
   const svgRef = useRef<SVGSVGElement>(null);
   const [transform, setTransform] = useState<Transform>({ x: 0, y: 0, k: 1 });
@@ -296,7 +297,7 @@ export default function StoryMapGraph({
           {nodes.map((n) => (
             <a
               key={n.id}
-              href={`/dashboard/worlds/${worldSlug}/nodes/${n.slug}`}
+              href={`${basePath}/${n.slug}`}
               onClick={handleNodeClick}
             >
               <circle

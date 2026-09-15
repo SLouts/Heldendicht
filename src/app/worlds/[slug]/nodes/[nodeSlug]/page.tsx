@@ -12,12 +12,15 @@ const NODE_TYPE_LABEL: Record<string, string> = {
   unspecified: "尚未分類(待撰寫)",
 };
 
+const STATUS_LABEL: Record<string, string> = {
+  pending: "未正式過審",
+};
+
 /**
- * 公開版節點頁面——只有 status = 'approved' 的條目才能被點開檢視,
- * pending/rejected 一律 404(RLS 本身還是會讓 anon 讀到 pending 節點的
- * metadata,例如 /worlds/[slug] 的列表會顯示「未正式過審」,但這裡故意
- * 用 .eq("status", "approved") 額外收斂一次,讓「還沒過審的內容不能被
- * 直接點開看全文」變成這個頁面自己保證的規則,不只是靠 UI 上不給連結)。
+ * 公開版節點頁面——可見度完全交給 nodes_select_visible RLS
+ * (status <> 'rejected' + can_view_world_content),跟登入後的一般成員
+ * 看到的範圍一致,不另外用 status='approved' 收斂一次:未登入訪客跟
+ * 登入後唯一的差異只有「不能建立/編輯」,不是能看到多少內容。
  * 純唯讀,不含審核/編輯/上傳/檢舉這些後台操作。
  */
 export default async function PublicNodeDetailPage({
@@ -36,11 +39,10 @@ export default async function PublicNodeDetailPage({
   const { data: node } = await supabase
     .from("nodes")
     .select(
-      "id, title, slug, node_type, content, is_placeholder, characters(character_type, owner_id, profiles(display_name, username))",
+      "id, title, slug, node_type, content, status, is_placeholder, characters(character_type, owner_id, profiles(display_name, username))",
     )
     .eq("world_id", world.id)
     .eq("slug", nodeSlug)
-    .eq("status", "approved")
     .maybeSingle();
   if (!node) notFound();
 
@@ -58,7 +60,7 @@ export default async function PublicNodeDetailPage({
       supabase
         .from("wikilinks")
         .select(
-          "raw_text, target:nodes!wikilinks_target_node_id_fkey(slug, is_placeholder, status)",
+          "raw_text, target:nodes!wikilinks_target_node_id_fkey(slug, is_placeholder)",
         )
         .eq("source_node_id", node.id),
       supabase
@@ -73,9 +75,9 @@ export default async function PublicNodeDetailPage({
         .order("order_index", { ascending: true }),
     ]);
 
-  // 只把「目標本身也是過審狀態」的 WikiLink 收進地圖裡——指向 pending/
-  // rejected 節點的連結不給點,呈現方式跟「找不到節點」一樣退回純文字,
-  // 避免公開頁面出現點了會 404 的死連結。
+  // wikilinks_select RLS 已經確保這裡拿到的 target 都是訪客看得到的節點
+  // (rejected 的節點對非 creator/staff 一律不可見,不會出現在這裡)——
+  // 不需要再額外用 status 收斂一次。
   const wikiLinkMap = new Map(
     (outboundLinks ?? [])
       .map((link) => {
@@ -83,13 +85,13 @@ export default async function PublicNodeDetailPage({
         return [link.raw_text, target] as const;
       })
       .filter(
-        (entry): entry is [string, { slug: string; is_placeholder: boolean; status: string }] =>
-          entry[1]?.status === "approved",
+        (entry): entry is [string, { slug: string; is_placeholder: boolean }] =>
+          entry[1] != null,
       )
       .map(([rawText, target]) => [
         rawText,
         { slug: target.slug, isPlaceholder: target.is_placeholder },
-      ]),
+      ] as const),
   );
 
   const attachmentUrls = await Promise.all(
@@ -128,6 +130,11 @@ export default async function PublicNodeDetailPage({
             }
           >
             {character.character_type === "pc" ? "PC" : "NPC"}
+          </span>
+        )}
+        {STATUS_LABEL[node.status] && (
+          <span className="rounded-full bg-badge-pending-bg px-2 py-0.5 text-xs text-badge-pending-fg">
+            {STATUS_LABEL[node.status]}
           </span>
         )}
       </div>

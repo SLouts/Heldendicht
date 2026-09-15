@@ -171,18 +171,13 @@ export default async function PublicProfilePage({
                     <ul className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
                       {p.links.map((link, i) => (
                         <li key={i}>
-                          {link.status === "approved" ? (
-                            <Link
-                              href={`/worlds/${link.worldSlug}/nodes/${link.nodeSlug}`}
-                              className="hover:underline"
-                            >
-                              {link.worldName} ·{link.title}
-                            </Link>
-                          ) : (
-                            <span>
-                              {link.worldName} ·{link.title}(未正式過審)
-                            </span>
-                          )}
+                          <Link
+                            href={`/worlds/${link.worldSlug}/nodes/${link.nodeSlug}`}
+                            className="hover:underline"
+                          >
+                            {link.worldName} ·{link.title}
+                            {link.status === "pending" && "(未正式過審)"}
+                          </Link>
                         </li>
                       ))}
                     </ul>

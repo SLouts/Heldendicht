@@ -1,12 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { requireUser } from "@/lib/dal";
 import { createClient } from "@/lib/supabase/server";
 import { computeGraphLayout } from "@/lib/storymap-layout";
 import StoryMapGraph, {
   type RelEdge,
   type WikiEdge,
-} from "./StoryMapGraph";
+} from "@/app/dashboard/worlds/[slug]/map/StoryMapGraph";
 
 type GraphNodeData = {
   id: string;
@@ -20,11 +19,14 @@ type GraphNodeData = {
 
 const WIDTH = 900;
 
-export default async function StoryMapPage({
+/**
+ * 公開版關係圖,唯讀——邏輯完全比照後台版(dashboard/worlds/[slug]/map),
+ * 只是不需要登入,可見度交給 nodes/relationships/wikilinks 各自的 RLS。
+ */
+export default async function PublicStoryMapPage({
   params,
-}: PageProps<"/dashboard/worlds/[slug]/map">) {
+}: PageProps<"/worlds/[slug]/map">) {
   const { slug } = await params;
-  await requireUser();
   const supabase = await createClient();
 
   const { data: world } = await supabase
@@ -117,9 +119,9 @@ export default async function StoryMapPage({
   }));
 
   return (
-    <div>
+    <div className="mx-auto w-full max-w-5xl flex-1 px-6 py-12">
       <Link
-        href={`/dashboard/worlds/${world.slug}`}
+        href={`/worlds/${world.slug}`}
         className="text-sm text-muted-foreground hover:underline"
       >
         ← 返回世界觀
@@ -139,7 +141,7 @@ export default async function StoryMapPage({
             wikiEdges={wikiEdges}
             width={WIDTH}
             height={height}
-            basePath={`/dashboard/worlds/${world.slug}/nodes`}
+            basePath={`/worlds/${world.slug}/nodes`}
           />
 
           <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-xs text-muted-foreground">

@@ -280,6 +280,7 @@ export type Database = {
           node_id: string;
           character_type: CharacterType;
           owner_id: string | null;
+          persona_id: string | null;
         };
         Insert: Database["public"]["Tables"]["characters"]["Row"];
         Update: Partial<Database["public"]["Tables"]["characters"]["Row"]>;
@@ -293,6 +294,37 @@ export type Database = {
           },
           {
             foreignKeyName: "characters_owner_id_fkey";
+            columns: ["owner_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "characters_persona_id_fkey";
+            columns: ["persona_id"];
+            isOneToOne: false;
+            referencedRelation: "character_personas";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      character_personas: {
+        Row: {
+          id: string;
+          owner_id: string;
+          name: string;
+          bio: string | null;
+          avatar_path: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<
+          Database["public"]["Tables"]["character_personas"]["Row"]
+        > & { owner_id: string; name: string };
+        Update: Partial<Database["public"]["Tables"]["character_personas"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "character_personas_owner_id_fkey";
             columns: ["owner_id"];
             isOneToOne: false;
             referencedRelation: "profiles";

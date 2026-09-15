@@ -5,25 +5,66 @@ import { getProfileMediaPublicUrl } from "@/lib/profileMedia";
 import { uploadAvatar, uploadBanner } from "@/lib/actions/profile";
 import { ProfileDetailsForm } from "./ProfileDetailsForm";
 import { ProfileImageForm } from "./ProfileImageForm";
+import { CreatePersonaForm } from "./CreatePersonaForm";
+import { PersonaCard, type PersonaLink } from "./PersonaCard";
 
 export default async function ProfilePage() {
   const user = await requireUser();
   const supabase = await createClient();
 
-  const [{ data: profile }, { data: memberships }] = await Promise.all([
-    supabase
-      .from("profiles")
-      .select("display_name, username, bio, avatar_path, banner_path")
-      .eq("id", user.id)
-      .single(),
-    supabase
-      .from("world_memberships")
-      .select("role, worlds(slug, name, is_public)")
-      .eq("user_id", user.id),
-  ]);
+  const [{ data: profile }, { data: memberships }, { data: personas }] =
+    await Promise.all([
+      supabase
+        .from("profiles")
+        .select("display_name, username, bio, avatar_path, banner_path")
+        .eq("id", user.id)
+        .single(),
+      supabase
+        .from("world_memberships")
+        .select("role, worlds(slug, name, is_public)")
+        .eq("user_id", user.id),
+      supabase
+        .from("character_personas")
+        .select(
+          "id, name, bio, avatar_path, characters(node_id, nodes(slug, title, status, worlds(slug, name)))",
+        )
+        .eq("owner_id", user.id)
+        .order("created_at", { ascending: true }),
+    ]);
 
   const avatarUrl = getProfileMediaPublicUrl(profile?.avatar_path ?? null);
   const bannerUrl = getProfileMediaPublicUrl(profile?.banner_path ?? null);
+
+  const personaCards = (personas ?? []).map((p) => {
+    const characterRows = Array.isArray(p.characters)
+      ? p.characters
+      : p.characters
+        ? [p.characters]
+        : [];
+    const links: PersonaLink[] = characterRows.flatMap((c) => {
+      const node = Array.isArray(c.nodes) ? c.nodes[0] : c.nodes;
+      if (!node) return [];
+      const world = Array.isArray(node.worlds) ? node.worlds[0] : node.worlds;
+      if (!world) return [];
+      return [
+        {
+          nodeId: c.node_id,
+          nodeSlug: node.slug,
+          title: node.title,
+          worldSlug: world.slug,
+          worldName: world.name,
+          status: node.status,
+        },
+      ];
+    });
+    return {
+      id: p.id,
+      name: p.name,
+      bio: p.bio,
+      avatarUrl: getProfileMediaPublicUrl(p.avatar_path),
+      links,
+    };
+  });
 
   return (
     <div>
@@ -98,6 +139,31 @@ export default async function ProfilePage() {
             </p>
           )}
         </ul>
+      </section>
+
+      <section className="mt-10">
+        <h2 className="text-lg font-semibold">你的跨世界觀角色(PC)</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          同一隻角色如果在好幾個世界觀都有正式的角色節點,可以在這裡把它們連結成同一個身分,公開頁面上會合併展示。要連結某個世界觀的角色節點,到那個節點的頁面操作。
+        </p>
+        <CreatePersonaForm />
+        <div className="mt-4 flex flex-col gap-3">
+          {personaCards.map((p) => (
+            <PersonaCard
+              key={p.id}
+              id={p.id}
+              name={p.name}
+              bio={p.bio}
+              avatarUrl={p.avatarUrl}
+              links={p.links}
+            />
+          ))}
+          {personaCards.length === 0 && (
+            <p className="text-sm text-muted-foreground">
+              你還沒有建立任何跨世界觀角色身分。
+            </p>
+          )}
+        </div>
       </section>
     </div>
   );

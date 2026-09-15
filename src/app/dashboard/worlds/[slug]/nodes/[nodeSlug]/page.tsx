@@ -7,6 +7,7 @@ import { deleteNode, reviewNode } from "@/lib/actions/nodes";
 import { EditNodeForm } from "./EditNodeForm";
 import { WikiLinkContent } from "./WikiLinkContent";
 import { AttachmentsSection, type AttachmentItem } from "./AttachmentsSection";
+import { CharacterPersonaForm } from "./CharacterPersonaForm";
 import { ReportForm } from "@/components/ReportForm";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -39,7 +40,7 @@ export default async function NodeDetailPage({
   const { data: node } = await supabase
     .from("nodes")
     .select(
-      "id, title, slug, node_type, content, status, edit_mode, is_placeholder, creator_id, characters(character_type, owner_id, profiles(display_name, username, email))",
+      "id, title, slug, node_type, content, status, edit_mode, is_placeholder, creator_id, characters(character_type, owner_id, persona_id, profiles(display_name, username, email))",
     )
     .eq("world_id", world.id)
     .eq("slug", nodeSlug)
@@ -54,30 +55,45 @@ export default async function NodeDetailPage({
       ? character.profiles[0]
       : character.profiles
     : null;
+  const isPersonaOwner =
+    character?.character_type === "pc" && character.owner_id === user.id;
 
-  const [{ data: isStaff }, { data: isMember }, { data: revisions }, { data: outboundLinks }, { data: attachments }] =
-    await Promise.all([
-      supabase.rpc("is_world_staff", { p_world_id: world.id }),
-      supabase.rpc("is_world_member", { p_world_id: world.id }),
-      supabase
-        .from("node_revisions")
-        .select("id, title, editor_id, created_at")
-        .eq("node_id", node.id)
-        .order("created_at", { ascending: false }),
-      supabase
-        .from("wikilinks")
-        .select(
-          "raw_text, target:nodes!wikilinks_target_node_id_fkey(slug, is_placeholder)",
-        )
-        .eq("source_node_id", node.id),
-      supabase
-        .from("node_attachments")
-        .select(
-          "id, file_name, file_size, kind, storage_path, created_at, profiles(display_name, username, email)",
-        )
-        .eq("node_id", node.id)
-        .order("created_at", { ascending: false }),
-    ]);
+  const [
+    { data: isStaff },
+    { data: isMember },
+    { data: revisions },
+    { data: outboundLinks },
+    { data: attachments },
+    { data: personas },
+  ] = await Promise.all([
+    supabase.rpc("is_world_staff", { p_world_id: world.id }),
+    supabase.rpc("is_world_member", { p_world_id: world.id }),
+    supabase
+      .from("node_revisions")
+      .select("id, title, editor_id, created_at")
+      .eq("node_id", node.id)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("wikilinks")
+      .select(
+        "raw_text, target:nodes!wikilinks_target_node_id_fkey(slug, is_placeholder)",
+      )
+      .eq("source_node_id", node.id),
+    supabase
+      .from("node_attachments")
+      .select(
+        "id, file_name, file_size, kind, storage_path, created_at, profiles(display_name, username, email)",
+      )
+      .eq("node_id", node.id)
+      .order("created_at", { ascending: false }),
+    isPersonaOwner
+      ? supabase
+          .from("character_personas")
+          .select("id, name")
+          .eq("owner_id", user.id)
+          .order("created_at", { ascending: true })
+      : Promise.resolve({ data: null }),
+  ]);
 
   const wikiLinkMap = new Map(
     (outboundLinks ?? []).map((link) => {
@@ -174,6 +190,15 @@ export default async function NodeDetailPage({
           </>
         )}
       </p>
+
+      {isPersonaOwner && (
+        <CharacterPersonaForm
+          nodeId={node.id}
+          worldSlug={world.slug}
+          currentPersonaId={character?.persona_id ?? null}
+          personas={personas ?? []}
+        />
+      )}
 
       {isStaff && node.status === "pending" && (
         <div className="mt-4 flex gap-2">

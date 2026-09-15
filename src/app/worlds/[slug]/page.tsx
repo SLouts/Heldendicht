@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getWorldMapSignedUrl } from "@/lib/worldmap";
 import WorldMapView, { type MapNode } from "@/app/dashboard/worlds/[slug]/worldmap/WorldMapView";
+import { NavMenu } from "@/components/NavMenu";
 import type { Database } from "@/lib/supabase/database.types";
 
 type ProfileSummary = Pick<
@@ -117,20 +118,20 @@ export default async function WorldPage({
             <p className="mt-2 text-muted-foreground">{world.tagline}</p>
           )}
         </div>
-        <div className="flex flex-wrap gap-2">
+        <NavMenu>
           <Link
             href={`/worlds/${slug}/story`}
-            className="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm"
+            className="rounded-md px-2 py-1.5 text-sm hover:bg-muted"
           >
             故事時間軸
           </Link>
           <Link
             href={`/worlds/${slug}/map`}
-            className="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm"
+            className="rounded-md px-2 py-1.5 text-sm hover:bg-muted"
           >
             關係圖
           </Link>
-        </div>
+        </NavMenu>
       </div>
 
       {world.description && (

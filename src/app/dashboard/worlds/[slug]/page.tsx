@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/dal";
 import { createClient } from "@/lib/supabase/server";
+import { NavMenu } from "@/components/NavMenu";
 import type { Database } from "@/lib/supabase/database.types";
 
 type ProfileSummary = Pick<
@@ -93,35 +94,35 @@ export default async function WorldDashboardPage({
             <p className="mt-1 text-sm text-muted-foreground">{world.tagline}</p>
           )}
         </div>
-        <div className="flex flex-wrap gap-2">
+        <NavMenu>
           <Link
             href={`/worlds/${world.slug}`}
-            className="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm"
+            className="rounded-md px-2 py-1.5 text-sm hover:bg-muted"
           >
             公開頁面
           </Link>
           <Link
             href={`/dashboard/worlds/${world.slug}/story`}
-            className="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm"
+            className="rounded-md px-2 py-1.5 text-sm hover:bg-muted"
           >
             故事時間軸
           </Link>
           <Link
             href={`/dashboard/worlds/${world.slug}/map`}
-            className="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm"
+            className="rounded-md px-2 py-1.5 text-sm hover:bg-muted"
           >
             關係圖
           </Link>
           <Link
             href={`/dashboard/worlds/${world.slug}/worldmap`}
-            className="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm"
+            className="rounded-md px-2 py-1.5 text-sm hover:bg-muted"
           >
             世界地圖
           </Link>
           {isStaff && (
             <Link
               href={`/dashboard/worlds/${world.slug}/reports`}
-              className="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm"
+              className="rounded-md px-2 py-1.5 text-sm hover:bg-muted"
             >
               檢舉列表
             </Link>
@@ -129,7 +130,7 @@ export default async function WorldDashboardPage({
           {isAdmin && (
             <Link
               href={`/dashboard/worlds/${world.slug}/members`}
-              className="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm"
+              className="rounded-md px-2 py-1.5 text-sm hover:bg-muted"
             >
               成員
             </Link>
@@ -137,12 +138,12 @@ export default async function WorldDashboardPage({
           {isStaff && (
             <Link
               href={`/dashboard/worlds/${world.slug}/settings`}
-              className="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm"
+              className="rounded-md px-2 py-1.5 text-sm hover:bg-muted"
             >
               世界觀設定
             </Link>
           )}
-        </div>
+        </NavMenu>
       </div>
 
       <section className="mt-8">

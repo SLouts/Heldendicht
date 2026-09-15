@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
@@ -40,27 +41,44 @@ export default async function WorldPage({
       )}
 
       <h2 className="mt-10 text-xl font-semibold">節點</h2>
+      <p className="mt-1 text-sm text-muted-foreground">
+        只有已經過審的條目可以點開檢視;未正式過審的內容還在編修中,先不開放閱讀全文。
+      </p>
       <ul className="mt-4 divide-y divide-border">
-        {nodes?.map((node) => (
-          <li key={node.id} className="flex items-center gap-2 py-3">
-            <span className="text-xs text-muted-foreground">{node.node_type}</span>
+        {nodes?.map((node) => {
+          const titleSpan = (
             <span
               className={node.is_placeholder ? "text-muted-foreground italic" : ""}
             >
               {node.title}
             </span>
-            {node.status === "pending" && (
-              <span className="rounded-full bg-badge-pending-bg px-2 py-0.5 text-xs text-badge-pending-fg">
-                未正式過審
-              </span>
-            )}
-            {node.is_placeholder && (
-              <span className="rounded-full bg-badge-neutral-bg px-2 py-0.5 text-xs text-badge-neutral-fg">
-                待撰寫
-              </span>
-            )}
-          </li>
-        ))}
+          );
+          return (
+            <li key={node.id} className="flex items-center gap-2 py-3">
+              <span className="text-xs text-muted-foreground">{node.node_type}</span>
+              {node.status === "approved" ? (
+                <Link
+                  href={`/worlds/${slug}/nodes/${node.slug}`}
+                  className="hover:underline"
+                >
+                  {titleSpan}
+                </Link>
+              ) : (
+                titleSpan
+              )}
+              {node.status === "pending" && (
+                <span className="rounded-full bg-badge-pending-bg px-2 py-0.5 text-xs text-badge-pending-fg">
+                  未正式過審
+                </span>
+              )}
+              {node.is_placeholder && (
+                <span className="rounded-full bg-badge-neutral-bg px-2 py-0.5 text-xs text-badge-neutral-fg">
+                  待撰寫
+                </span>
+              )}
+            </li>
+          );
+        })}
         {nodes?.length === 0 && (
           <li className="py-3 text-sm text-muted-foreground">目前還沒有節點。</li>
         )}

@@ -3,12 +3,12 @@ import { Fragment } from "react";
 
 export function WikiLinkContent({
   content,
-  worldSlug,
+  basePath,
   links,
   images,
 }: {
   content: string;
-  worldSlug: string;
+  basePath: string;
   links: Map<string, { slug: string; isPlaceholder: boolean }>;
   images: Map<string, { url: string; fileName: string }>;
 }) {
@@ -35,7 +35,7 @@ export function WikiLinkContent({
         parts.push(
           <Link
             key={key++}
-            href={`/dashboard/worlds/${worldSlug}/nodes/${target.slug}`}
+            href={`${basePath}/${target.slug}`}
             className={
               target.isPlaceholder
                 ? "text-muted-foreground italic underline decoration-dotted"

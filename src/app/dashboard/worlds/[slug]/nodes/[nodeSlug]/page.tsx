@@ -237,7 +237,7 @@ export default async function NodeDetailPage({
         ) : (
           <WikiLinkContent
             content={node.content}
-            worldSlug={world.slug}
+            basePath={`/dashboard/worlds/${world.slug}/nodes`}
             links={wikiLinkMap}
             images={imageMap}
           />

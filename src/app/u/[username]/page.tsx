@@ -45,7 +45,15 @@ export default async function PublicProfilePage({
         if (!node) return [];
         const world = Array.isArray(node.worlds) ? node.worlds[0] : node.worlds;
         if (!world) return [];
-        return [{ title: node.title, worldSlug: world.slug, worldName: world.name }];
+        return [
+          {
+            title: node.title,
+            nodeSlug: node.slug,
+            status: node.status,
+            worldSlug: world.slug,
+            worldName: world.name,
+          },
+        ];
       });
       return {
         id: p.id,
@@ -163,12 +171,18 @@ export default async function PublicProfilePage({
                     <ul className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
                       {p.links.map((link, i) => (
                         <li key={i}>
-                          <Link
-                            href={`/worlds/${link.worldSlug}`}
-                            className="hover:underline"
-                          >
-                            {link.worldName} ·{link.title}
-                          </Link>
+                          {link.status === "approved" ? (
+                            <Link
+                              href={`/worlds/${link.worldSlug}/nodes/${link.nodeSlug}`}
+                              className="hover:underline"
+                            >
+                              {link.worldName} ·{link.title}
+                            </Link>
+                          ) : (
+                            <span>
+                              {link.worldName} ·{link.title}(未正式過審)
+                            </span>
+                          )}
                         </li>
                       ))}
                     </ul>

@@ -313,7 +313,9 @@ export type Database = {
           id: string;
           owner_id: string;
           name: string;
+          tagline: string | null;
           bio: string | null;
+          fields: Json;
           avatar_path: string | null;
           created_at: string;
           updated_at: string;
@@ -328,6 +330,31 @@ export type Database = {
             columns: ["owner_id"];
             isOneToOne: false;
             referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      node_sections: {
+        Row: {
+          id: string;
+          node_id: string;
+          title: string;
+          content: string;
+          order_index: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["node_sections"]["Row"]> & {
+          node_id: string;
+          title: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["node_sections"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "node_sections_node_id_fkey";
+            columns: ["node_id"];
+            isOneToOne: false;
+            referencedRelation: "nodes";
             referencedColumns: ["id"];
           },
         ];

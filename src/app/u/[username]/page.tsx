@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getProfileMediaPublicUrl } from "@/lib/profileMedia";
+import type { PersonaField } from "@/lib/actions/personas";
 
 export default async function PublicProfilePage({
   params,
@@ -22,7 +23,7 @@ export default async function PublicProfilePage({
     supabase
       .from("character_personas")
       .select(
-        "id, name, bio, avatar_path, characters(node_id, nodes(slug, title, status, worlds(slug, name)))",
+        "id, name, tagline, bio, fields, avatar_path, characters(node_id, nodes(slug, title, status, worlds(slug, name)))",
       )
       .eq("owner_id", profile.id)
       .order("created_at", { ascending: true }),
@@ -49,7 +50,9 @@ export default async function PublicProfilePage({
       return {
         id: p.id,
         name: p.name,
+        tagline: p.tagline,
         bio: p.bio,
+        fields: (Array.isArray(p.fields) ? p.fields : []) as PersonaField[],
         avatarUrl: getProfileMediaPublicUrl(p.avatar_path),
         links,
       };
@@ -137,6 +140,21 @@ export default async function PublicProfilePage({
                   )}
                   <div>
                     <p className="font-medium">{p.name}</p>
+                    {p.tagline && (
+                      <p className="mt-0.5 text-sm italic text-muted-foreground">
+                        「{p.tagline}」
+                      </p>
+                    )}
+                    {p.fields.length > 0 && (
+                      <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-0.5 text-xs">
+                        {p.fields.map((f, i) => (
+                          <div key={i} className="flex gap-1">
+                            <dt className="text-muted-foreground">{f.label}</dt>
+                            <dd>{f.value}</dd>
+                          </div>
+                        ))}
+                      </dl>
+                    )}
                     {p.bio && (
                       <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">
                         {p.bio}

@@ -8,6 +8,7 @@ import { EditNodeForm } from "./EditNodeForm";
 import { WikiLinkContent } from "./WikiLinkContent";
 import { AttachmentsSection, type AttachmentItem } from "./AttachmentsSection";
 import { CharacterPersonaForm } from "./CharacterPersonaForm";
+import { NodeSectionsEditor } from "./NodeSectionsEditor";
 import { ReportForm } from "@/components/ReportForm";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -65,6 +66,7 @@ export default async function NodeDetailPage({
     { data: outboundLinks },
     { data: attachments },
     { data: personas },
+    { data: sections },
   ] = await Promise.all([
     supabase.rpc("is_world_staff", { p_world_id: world.id }),
     supabase.rpc("is_world_member", { p_world_id: world.id }),
@@ -93,6 +95,11 @@ export default async function NodeDetailPage({
           .eq("owner_id", user.id)
           .order("created_at", { ascending: true })
       : Promise.resolve({ data: null }),
+    supabase
+      .from("node_sections")
+      .select("id, title, content")
+      .eq("node_id", node.id)
+      .order("order_index", { ascending: true }),
   ]);
 
   const wikiLinkMap = new Map(
@@ -242,6 +249,14 @@ export default async function NodeDetailPage({
         nodeSlug={node.slug}
         canEdit={canEdit}
         attachments={attachmentItems}
+      />
+
+      <NodeSectionsEditor
+        nodeId={node.id}
+        worldSlug={world.slug}
+        nodeSlug={node.slug}
+        canEdit={canEdit}
+        sections={sections ?? []}
       />
 
       {canDelete && (

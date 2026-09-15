@@ -7,7 +7,9 @@ import {
   unlinkCharacterPersona,
   updatePersona,
   uploadPersonaAvatar,
+  type PersonaField,
 } from "@/lib/actions/personas";
+import { PersonaFieldsEditor } from "./PersonaFieldsEditor";
 
 const STATUS_LABEL: Record<string, string> = {
   pending: "未正式過審",
@@ -26,13 +28,17 @@ export type PersonaLink = {
 export function PersonaCard({
   id,
   name,
+  tagline,
   bio,
+  fields,
   avatarUrl,
   links,
 }: {
   id: string;
   name: string;
+  tagline: string | null;
   bio: string | null;
+  fields: PersonaField[];
   avatarUrl: string | null;
   links: PersonaLink[];
 }) {
@@ -96,6 +102,13 @@ export function PersonaCard({
             required
             className="rounded-lg border border-border bg-background px-3 py-1.5 text-sm font-medium"
           />
+          <input
+            name="tagline"
+            defaultValue={tagline ?? ""}
+            placeholder="一句話介紹(選填)"
+            className="rounded-lg border border-border bg-background px-3 py-1.5 text-sm italic"
+          />
+          <PersonaFieldsEditor initialFields={fields} />
           <textarea
             name="bio"
             defaultValue={bio ?? ""}

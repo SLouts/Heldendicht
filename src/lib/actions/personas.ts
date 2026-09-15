@@ -5,6 +5,7 @@ import * as z from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireUser } from "@/lib/dal";
+import type { Json } from "@/lib/supabase/database.types";
 import {
   PROFILE_MEDIA_BUCKET,
   PROFILE_MEDIA_MAX_BYTES,
@@ -16,12 +17,34 @@ export type PersonaFormState =
   | { fieldErrors: Record<string, string[]> }
   | undefined;
 
+export type PersonaField = { label: string; value: string };
+
+const PersonaFieldSchema = z.object({
+  label: z.string().trim().min(1).max(30),
+  value: z.string().trim().min(1).max(200),
+});
+const PersonaFieldsSchema = z.array(PersonaFieldSchema).max(20);
+
+/** 表單裡的自訂欄位是用一個隱藏 input 存 JSON 字串送過來的,這裡解析+驗證。 */
+function parsePersonaFields(raw: FormDataEntryValue | null): PersonaField[] | null {
+  if (typeof raw !== "string" || raw.trim() === "") return [];
+  let json: unknown;
+  try {
+    json = JSON.parse(raw);
+  } catch {
+    return null;
+  }
+  const result = PersonaFieldsSchema.safeParse(json);
+  return result.success ? result.data : null;
+}
+
 const PersonaSchema = z.object({
   name: z
     .string()
     .trim()
     .min(1, { error: "請輸入名字" })
     .max(50, { error: "名字最多 50 字" }),
+  tagline: z.string().trim().max(200, { error: "一句話介紹最多 200 字" }),
   bio: z.string().trim().max(1000, { error: "介紹最多 1000 字" }),
 });
 
@@ -34,17 +57,24 @@ export async function createPersona(
 
   const parsed = PersonaSchema.safeParse({
     name: formData.get("name") ?? "",
+    tagline: formData.get("tagline") ?? "",
     bio: formData.get("bio") ?? "",
   });
   if (!parsed.success) {
     return { fieldErrors: parsed.error.flatten().fieldErrors };
+  }
+  const fields = parsePersonaFields(formData.get("fields"));
+  if (fields === null) {
+    return { error: "基本資料欄位格式不正確" };
   }
 
   const supabase = await createClient();
   const { error } = await supabase.from("character_personas").insert({
     owner_id: user.id,
     name: parsed.data.name,
+    tagline: parsed.data.tagline || null,
     bio: parsed.data.bio || null,
+    fields: fields as unknown as Json,
   });
   if (error) {
     return { error: "建立失敗,請稍後再試" };
@@ -67,17 +97,27 @@ export async function updatePersona(
 
   const parsed = PersonaSchema.safeParse({
     name: formData.get("name") ?? "",
+    tagline: formData.get("tagline") ?? "",
     bio: formData.get("bio") ?? "",
   });
   if (!parsed.success) {
     return { fieldErrors: parsed.error.flatten().fieldErrors };
+  }
+  const fields = parsePersonaFields(formData.get("fields"));
+  if (fields === null) {
+    return { error: "基本資料欄位格式不正確" };
   }
 
   const supabase = await createClient();
   const { error, count } = await supabase
     .from("character_personas")
     .update(
-      { name: parsed.data.name, bio: parsed.data.bio || null },
+      {
+        name: parsed.data.name,
+        tagline: parsed.data.tagline || null,
+        bio: parsed.data.bio || null,
+        fields: fields as unknown as Json,
+      },
       { count: "exact" },
     )
     .eq("id", personaId)

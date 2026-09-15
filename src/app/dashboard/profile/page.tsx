@@ -7,6 +7,7 @@ import { ProfileDetailsForm } from "./ProfileDetailsForm";
 import { ProfileImageForm } from "./ProfileImageForm";
 import { CreatePersonaForm } from "./CreatePersonaForm";
 import { PersonaCard, type PersonaLink } from "./PersonaCard";
+import type { PersonaField } from "@/lib/actions/personas";
 
 export default async function ProfilePage() {
   const user = await requireUser();
@@ -26,7 +27,7 @@ export default async function ProfilePage() {
       supabase
         .from("character_personas")
         .select(
-          "id, name, bio, avatar_path, characters(node_id, nodes(slug, title, status, worlds(slug, name)))",
+          "id, name, tagline, bio, fields, avatar_path, characters(node_id, nodes(slug, title, status, worlds(slug, name)))",
         )
         .eq("owner_id", user.id)
         .order("created_at", { ascending: true }),
@@ -60,7 +61,9 @@ export default async function ProfilePage() {
     return {
       id: p.id,
       name: p.name,
+      tagline: p.tagline,
       bio: p.bio,
+      fields: (Array.isArray(p.fields) ? p.fields : []) as PersonaField[],
       avatarUrl: getProfileMediaPublicUrl(p.avatar_path),
       links,
     };
@@ -153,7 +156,9 @@ export default async function ProfilePage() {
               key={p.id}
               id={p.id}
               name={p.name}
+              tagline={p.tagline}
               bio={p.bio}
+              fields={p.fields}
               avatarUrl={p.avatarUrl}
               links={p.links}
             />

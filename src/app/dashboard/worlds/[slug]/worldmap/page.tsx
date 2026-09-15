@@ -95,6 +95,7 @@ export default async function WorldMapPage({
           nodes={placedNodes}
           unplacedNodes={unplacedNodes}
           isStaff={Boolean(isStaff)}
+          worldId={world.id}
           worldSlug={world.slug}
         />
       )}

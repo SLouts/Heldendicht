@@ -6,6 +6,7 @@ import type {
   WheelEvent as ReactWheelEvent,
 } from "react";
 import { setNodeMapPosition, clearNodeMapPosition } from "@/lib/actions/worldmap";
+import { ImportMapForm } from "./ImportMapForm";
 
 export type UnplacedNode = {
   id: string;
@@ -57,12 +58,14 @@ export default function WorldMapView({
   nodes,
   unplacedNodes,
   isStaff,
+  worldId,
   worldSlug,
 }: {
   imageUrl: string;
   nodes: MapNode[];
   unplacedNodes: UnplacedNode[];
   isStaff: boolean;
+  worldId: string;
   worldSlug: string;
 }) {
   const outerRef = useRef<HTMLDivElement>(null);
@@ -456,6 +459,7 @@ export default function WorldMapView({
               ))}
             </ul>
           )}
+          <ImportMapForm worldId={worldId} worldSlug={worldSlug} />
         </div>
       )}
     </div>

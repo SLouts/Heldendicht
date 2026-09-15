@@ -34,7 +34,9 @@ export type Database = {
           email: string | null;
           username: string | null;
           display_name: string | null;
-          avatar_url: string | null;
+          bio: string | null;
+          avatar_path: string | null;
+          banner_path: string | null;
           site_role: SiteRole;
           created_at: string;
           updated_at: string;
@@ -539,6 +541,16 @@ export type Database = {
           p_owner_id?: string | null;
         };
         Returns: string;
+      };
+      public_world_memberships: {
+        Args: { p_user_id: string };
+        Returns: {
+          world_id: string;
+          slug: string;
+          name: string;
+          tagline: string | null;
+          role: WorldRole;
+        }[];
       };
     };
     Enums: {

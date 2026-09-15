@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { requireUser, getCurrentProfile } from "@/lib/dal";
 import { logout } from "@/lib/actions/auth";
 
@@ -20,9 +21,9 @@ export default async function DashboardLayout({
             <span className="text-xs text-muted-foreground">後台</span>
           </span>
           <div className="flex items-center gap-4 text-sm">
-            <span className="text-muted-foreground">
+            <Link href="/dashboard/profile" className="hover:underline">
               {profile?.display_name ?? profile?.email}
-            </span>
+            </Link>
             <form action={logout}>
               <button type="submit" className="underline">
                 登出

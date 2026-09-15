@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { downscaleImageIfNeeded } from "@/lib/imageResize";
 import {
   createWorldMapUploadTicket,
   finalizeWorldMapUpload,
@@ -34,8 +35,8 @@ export function WorldMapSettingsForm({
     const fileInput = e.currentTarget.elements.namedItem(
       "file",
     ) as HTMLInputElement;
-    const file = fileInput.files?.[0];
-    if (!file) {
+    const originalFile = fileInput.files?.[0];
+    if (!originalFile) {
       setError("請選擇一張圖片");
       return;
     }
@@ -43,6 +44,10 @@ export function WorldMapSettingsForm({
     setError(null);
     setPending(true);
     try {
+      // 尺寸過大的圖片先在瀏覽器端縮小,避免存進去的底圖解析度高到讓部分
+      // 裝置在拖曳/縮放地圖時嚴重卡頓(細節見 lib/imageResize.ts)。
+      const file = await downscaleImageIfNeeded(originalFile);
+
       const ticket = await createWorldMapUploadTicket(
         worldId,
         file.type,

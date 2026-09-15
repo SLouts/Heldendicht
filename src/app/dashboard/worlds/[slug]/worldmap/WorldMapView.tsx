@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type {
   PointerEvent as ReactPointerEvent,
   WheelEvent as ReactWheelEvent,
@@ -86,6 +86,35 @@ export default function WorldMapView({
   const suppressClickRef = useRef(false);
   const dragPinRef = useRef<{ nodeId: string; pointerId: number; moved: boolean } | null>(null);
 
+  // 拖曳/縮放時的原始事件(pointermove、wheel)可能比畫面更新頻率密集很多,
+  // 尤其是高更新率的觸控螢幕或精密觸控板——如果每個事件都直接 setTransform,
+  // 效能弱的裝置會因為過度重新渲染而卡頓。這裡把「計算」跟「畫面更新」拆開:
+  // 每個事件還是立刻算出最新的 transform(不會漏掉任何一次滾動/拖曳的量,
+  // 同一個畫面更新週期內來了好幾次也會正確疊加),但實際觸發 React
+  // 重新渲染最多每個 animation frame 一次,跟畫面更新頻率對齊。
+  const transformRef = useRef<Transform>(transform);
+  const rafIdRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    transformRef.current = transform;
+  }, [transform]);
+
+  function scheduleTransform(update: Transform | ((t: Transform) => Transform)) {
+    transformRef.current =
+      typeof update === "function" ? update(transformRef.current) : update;
+    if (rafIdRef.current !== null) return;
+    rafIdRef.current = requestAnimationFrame(() => {
+      rafIdRef.current = null;
+      setTransform(transformRef.current);
+    });
+  }
+
+  useEffect(() => {
+    return () => {
+      if (rafIdRef.current !== null) cancelAnimationFrame(rafIdRef.current);
+    };
+  }, []);
+
   function fractionFromClient(clientX: number, clientY: number) {
     const rect = imgRef.current?.getBoundingClientRect();
     if (!rect) return { x: 0.5, y: 0.5 };
@@ -96,11 +125,16 @@ export default function WorldMapView({
   }
 
   function startBackgroundGesture() {
+    // 用 transformRef(最新算出來的值)而不是 transform state——一個手勢
+    // 剛結束、下一個手勢緊接著開始時,前一個手勢排進 rAF 的畫面更新可能
+    // 還沒 flush,這時 transform state 會是舊的,用它當起點會讓地圖瞬間
+    // 跳一下。
+    const currentTransform = transformRef.current;
     const pts = Array.from(pointersRef.current.values());
     if (pts.length === 1) {
       gestureRef.current = {
         mode: "pan",
-        startTransform: transform,
+        startTransform: currentTransform,
         startClient: pts[0],
         moved: false,
       };
@@ -115,11 +149,11 @@ export default function WorldMapView({
       };
       gestureRef.current = {
         mode: "pinch",
-        startTransform: transform,
+        startTransform: currentTransform,
         startDist: dist,
         anchor: {
-          x: (midLocal.x - transform.x) / transform.k,
-          y: (midLocal.y - transform.y) / transform.k,
+          x: (midLocal.x - currentTransform.x) / currentTransform.k,
+          y: (midLocal.y - currentTransform.y) / currentTransform.k,
         },
       };
     } else {
@@ -152,7 +186,7 @@ export default function WorldMapView({
         outerRef.current?.setPointerCapture(e.pointerId);
       }
       if (gesture.moved) {
-        setTransform({
+        scheduleTransform({
           x: gesture.startTransform.x + dx,
           y: gesture.startTransform.y + dy,
           k: gesture.startTransform.k,
@@ -170,7 +204,7 @@ export default function WorldMapView({
         y: midClient.y - (outerRect?.top ?? 0),
       };
       const k = clampScale(gesture.startTransform.k * (dist / gesture.startDist));
-      setTransform({
+      scheduleTransform({
         x: midLocal.x - gesture.anchor.x * k,
         y: midLocal.y - gesture.anchor.y * k,
         k,
@@ -210,7 +244,7 @@ export default function WorldMapView({
     const outerRect = outerRef.current?.getBoundingClientRect();
     const cx = e.clientX - (outerRect?.left ?? 0);
     const cy = e.clientY - (outerRect?.top ?? 0);
-    setTransform((t) => {
+    scheduleTransform((t) => {
       const factor = Math.exp(-e.deltaY * 0.0015);
       const k = clampScale(t.k * factor);
       const origX = (cx - t.x) / t.k;
@@ -375,6 +409,7 @@ export default function WorldMapView({
                 src={imageUrl}
                 alt="世界地圖"
                 draggable={false}
+                decoding="async"
                 className="block max-w-none select-none"
                 style={{ width: 1000, height: "auto" }}
               />

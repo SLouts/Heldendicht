@@ -202,6 +202,7 @@ export default async function NodeDetailPage({
         <CharacterPersonaForm
           nodeId={node.id}
           worldSlug={world.slug}
+          nodeSlug={node.slug}
           currentPersonaId={character?.persona_id ?? null}
           personas={personas ?? []}
         />

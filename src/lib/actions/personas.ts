@@ -222,6 +222,7 @@ export async function uploadPersonaAvatar(
 const SetCharacterPersonaSchema = z.object({
   nodeId: z.uuid(),
   worldSlug: z.string().min(1),
+  nodeSlug: z.string().min(1),
   personaId: z.union([z.uuid(), z.literal("")]),
 });
 
@@ -240,6 +241,7 @@ export async function setCharacterPersona(
   const parsed = SetCharacterPersonaSchema.safeParse({
     nodeId: formData.get("nodeId"),
     worldSlug: formData.get("worldSlug"),
+    nodeSlug: formData.get("nodeSlug"),
     personaId: formData.get("personaId") ?? "",
   });
   if (!parsed.success) {
@@ -267,6 +269,9 @@ export async function setCharacterPersona(
   }
 
   revalidatePath(`/dashboard/worlds/${parsed.data.worldSlug}`);
+  revalidatePath(
+    `/dashboard/worlds/${parsed.data.worldSlug}/nodes/${parsed.data.nodeSlug}`,
+  );
   return undefined;
 }
 
@@ -274,6 +279,7 @@ export async function setCharacterPersona(
 export async function unlinkCharacterPersona(
   nodeId: string,
   worldSlug: string,
+  nodeSlug: string,
 ): Promise<void> {
   await requireUser();
   const supabase = await createClient();
@@ -288,4 +294,5 @@ export async function unlinkCharacterPersona(
 
   revalidatePath("/dashboard/profile");
   revalidatePath(`/dashboard/worlds/${worldSlug}`);
+  revalidatePath(`/dashboard/worlds/${worldSlug}/nodes/${nodeSlug}`);
 }

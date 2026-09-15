@@ -6,11 +6,13 @@ import { setCharacterPersona } from "@/lib/actions/personas";
 export function CharacterPersonaForm({
   nodeId,
   worldSlug,
+  nodeSlug,
   currentPersonaId,
   personas,
 }: {
   nodeId: string;
   worldSlug: string;
+  nodeSlug: string;
   currentPersonaId: string | null;
   personas: { id: string; name: string }[];
 }) {
@@ -26,6 +28,7 @@ export function CharacterPersonaForm({
     >
       <input type="hidden" name="nodeId" value={nodeId} />
       <input type="hidden" name="worldSlug" value={worldSlug} />
+      <input type="hidden" name="nodeSlug" value={nodeSlug} />
       <label htmlFor="personaId" className="text-muted-foreground">
         跨世界觀角色身分:
       </label>

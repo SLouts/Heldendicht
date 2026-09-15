@@ -177,6 +177,7 @@ export function PersonaCard({
                       null,
                       link.nodeId,
                       link.worldSlug,
+                      link.nodeSlug,
                     )}
                   >
                     <button type="submit" className="text-xs text-danger underline">

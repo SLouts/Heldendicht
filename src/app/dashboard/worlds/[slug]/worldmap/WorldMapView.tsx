@@ -60,6 +60,7 @@ export default function WorldMapView({
   isStaff,
   worldId,
   worldSlug,
+  basePath,
 }: {
   imageUrl: string;
   nodes: MapNode[];
@@ -67,6 +68,8 @@ export default function WorldMapView({
   isStaff: boolean;
   worldId: string;
   worldSlug: string;
+  /** 節點標點點擊後要連去哪裡,例如 `/dashboard/worlds/xxx/nodes` 或公開版 `/worlds/xxx/nodes`。 */
+  basePath: string;
 }) {
   const outerRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
@@ -386,7 +389,7 @@ export default function WorldMapView({
                   return (
                     <a
                       key={n.id}
-                      href={`/dashboard/worlds/${worldSlug}/nodes/${n.slug}`}
+                      href={`${basePath}/${n.slug}`}
                       onClick={handleNodeClick}
                       className="absolute -translate-x-1/2 -translate-y-1/2"
                       style={style}
@@ -419,7 +422,7 @@ export default function WorldMapView({
         <div className="mt-3 flex flex-wrap items-center gap-3 rounded-lg border border-border bg-surface px-3 py-2 text-sm">
           <span className="font-medium">{selectedNode.title}</span>
           <a
-            href={`/dashboard/worlds/${worldSlug}/nodes/${selectedNode.slug}`}
+            href={`${basePath}/${selectedNode.slug}`}
             className="underline"
           >
             前往節點

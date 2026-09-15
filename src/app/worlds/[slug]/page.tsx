@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getWorldMapSignedUrl } from "@/lib/worldmap";
+import WorldMapView, { type MapNode } from "@/app/dashboard/worlds/[slug]/worldmap/WorldMapView";
 
 export default async function WorldPage({
   params,
@@ -10,7 +12,7 @@ export default async function WorldPage({
 
   const { data: world } = await supabase
     .from("worlds")
-    .select("id, name, tagline, description")
+    .select("id, name, tagline, description, map_image_path")
     .eq("slug", slug)
     .maybeSingle();
 
@@ -22,11 +24,39 @@ export default async function WorldPage({
 
   // status <> 'rejected' 由 RLS 自動過濾,這裡不用重複判斷可見度,
   // 只需要在畫面上把 pending 的節點標成「未正式過審」。
-  const { data: nodes } = await supabase
-    .from("nodes")
-    .select("id, title, slug, node_type, status, is_placeholder")
-    .eq("world_id", world.id)
-    .order("node_type");
+  const [{ data: nodes }, { data: mapNodes }] = await Promise.all([
+    supabase
+      .from("nodes")
+      .select("id, title, slug, node_type, status, is_placeholder")
+      .eq("world_id", world.id)
+      .order("node_type"),
+    // 公開首頁的地圖只給訪客看已經過審的標點,不像後台編輯畫面那樣連
+    // pending 的也顯示——避免還沒審核完的內容位置提前曝光。
+    supabase
+      .from("nodes")
+      .select(
+        "id, title, slug, node_type, status, is_placeholder, map_x, map_y, characters(character_type)",
+      )
+      .eq("world_id", world.id)
+      .eq("status", "approved")
+      .not("map_x", "is", null),
+  ]);
+
+  const mapImageUrl = await getWorldMapSignedUrl(world.map_image_path);
+  const placedNodes: MapNode[] = (mapNodes ?? []).map((n) => {
+    const char = Array.isArray(n.characters) ? n.characters[0] : n.characters;
+    return {
+      id: n.id,
+      title: n.title,
+      slug: n.slug,
+      nodeType: n.node_type,
+      status: n.status,
+      isPlaceholder: n.is_placeholder,
+      characterType: char?.character_type ?? null,
+      x: n.map_x!,
+      y: n.map_y!,
+    };
+  });
 
   return (
     <div className="mx-auto w-full max-w-5xl flex-1 px-6 py-12">
@@ -38,6 +68,21 @@ export default async function WorldPage({
         <p className="mt-4 max-w-2xl whitespace-pre-wrap text-sm text-muted-foreground">
           {world.description}
         </p>
+      )}
+
+      {mapImageUrl && (
+        <section className="mt-8">
+          <h2 className="text-xl font-semibold">世界地圖</h2>
+          <WorldMapView
+            imageUrl={mapImageUrl}
+            nodes={placedNodes}
+            unplacedNodes={[]}
+            isStaff={false}
+            worldId={world.id}
+            worldSlug={slug}
+            basePath={`/worlds/${slug}/nodes`}
+          />
+        </section>
       )}
 
       <h2 className="mt-10 text-xl font-semibold">節點</h2>

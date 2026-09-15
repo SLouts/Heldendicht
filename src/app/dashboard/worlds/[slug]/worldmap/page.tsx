@@ -97,6 +97,7 @@ export default async function WorldMapPage({
           isStaff={Boolean(isStaff)}
           worldId={world.id}
           worldSlug={world.slug}
+          basePath={`/dashboard/worlds/${world.slug}/nodes`}
         />
       )}
     </div>

@@ -1,7 +1,14 @@
 "use client";
 
-import { useActionState, useState } from "react";
-import { uploadNodeAttachment, deleteNodeAttachment } from "@/lib/actions/attachments";
+import { useRef, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
+import {
+  createNodeAttachmentUploadTicket,
+  finalizeNodeAttachmentUpload,
+  deleteNodeAttachment,
+} from "@/lib/actions/attachments";
+
+const NODE_ATTACHMENTS_BUCKET = "node-attachments";
 
 export type AttachmentItem = {
   id: string;
@@ -32,10 +39,9 @@ export function AttachmentsSection({
   canEdit: boolean;
   attachments: AttachmentItem[];
 }) {
-  const [state, formAction, pending] = useActionState(
-    uploadNodeAttachment,
-    undefined,
-  );
+  const [error, setError] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   async function handleCopy(id: string) {
@@ -48,6 +54,66 @@ export function AttachmentsSection({
     }
   }
 
+  // 兩段式上傳(見 lib/actions/attachments.ts 的說明):先要簽名上傳票券,
+  // 瀏覽器直接把檔案傳到 Supabase Storage,不經過我們自己的 server,不受
+  // Vercel serverless function 的 request body 大小限制影響。
+  async function handleUpload(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const fileInput = e.currentTarget.elements.namedItem(
+      "file",
+    ) as HTMLInputElement;
+    const file = fileInput.files?.[0];
+    if (!file) {
+      setError("請選擇一個檔案");
+      return;
+    }
+
+    setError(null);
+    setPending(true);
+    try {
+      const ticket = await createNodeAttachmentUploadTicket(
+        nodeId,
+        file.type,
+        file.size,
+      );
+      if ("error" in ticket) {
+        setError(ticket.error);
+        return;
+      }
+
+      const supabase = createClient();
+      const { error: uploadError } = await supabase.storage
+        .from(NODE_ATTACHMENTS_BUCKET)
+        .uploadToSignedUrl(ticket.path, ticket.token, file, {
+          contentType: file.type,
+        });
+      if (uploadError) {
+        setError("上傳失敗,請稍後再試");
+        return;
+      }
+
+      const result = await finalizeNodeAttachmentUpload(
+        nodeId,
+        worldSlug,
+        nodeSlug,
+        ticket.path,
+        file.name,
+        file.type,
+        file.size,
+      );
+      if (result && "error" in result) {
+        setError(result.error);
+        return;
+      }
+
+      formRef.current?.reset();
+    } catch {
+      setError("上傳失敗,請稍後再試");
+    } finally {
+      setPending(false);
+    }
+  }
+
   return (
     <section className="mt-10">
       <h2 className="text-lg font-semibold">附件</h2>
@@ -56,10 +122,11 @@ export function AttachmentsSection({
       </p>
 
       {canEdit && (
-        <form action={formAction} className="mt-3 flex flex-wrap items-center gap-2">
-          <input type="hidden" name="nodeId" value={nodeId} />
-          <input type="hidden" name="worldSlug" value={worldSlug} />
-          <input type="hidden" name="nodeSlug" value={nodeSlug} />
+        <form
+          ref={formRef}
+          onSubmit={handleUpload}
+          className="mt-3 flex flex-wrap items-center gap-2"
+        >
           <input
             type="file"
             name="file"
@@ -74,9 +141,7 @@ export function AttachmentsSection({
           >
             {pending ? "上傳中…" : "上傳附件"}
           </button>
-          {state && "error" in state && (
-            <span className="text-sm text-danger">{state.error}</span>
-          )}
+          {error && <span className="text-sm text-danger">{error}</span>}
         </form>
       )}
 

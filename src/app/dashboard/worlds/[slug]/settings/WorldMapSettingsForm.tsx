@@ -1,7 +1,14 @@
 "use client";
 
-import { useActionState } from "react";
-import { uploadWorldMap, removeWorldMap } from "@/lib/actions/worldmap";
+import { useRef, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
+import {
+  createWorldMapUploadTicket,
+  finalizeWorldMapUpload,
+  removeWorldMap,
+} from "@/lib/actions/worldmap";
+
+const WORLD_MAP_BUCKET = "world-maps";
 
 export function WorldMapSettingsForm({
   worldId,
@@ -14,7 +21,66 @@ export function WorldMapSettingsForm({
   currentImageUrl: string | null;
   hasMap: boolean;
 }) {
-  const [state, formAction, pending] = useActionState(uploadWorldMap, undefined);
+  const [error, setError] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  // 兩段式上傳(見 lib/actions/worldmap.ts 的說明):先跟我們的
+  // Server Action 要一張簽名上傳票券,瀏覽器再直接把檔案傳到
+  // Supabase Storage,完全不經過我們自己的 server,不會受 Vercel
+  // serverless function 的 request body 大小限制影響。
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const fileInput = e.currentTarget.elements.namedItem(
+      "file",
+    ) as HTMLInputElement;
+    const file = fileInput.files?.[0];
+    if (!file) {
+      setError("請選擇一張圖片");
+      return;
+    }
+
+    setError(null);
+    setPending(true);
+    try {
+      const ticket = await createWorldMapUploadTicket(
+        worldId,
+        file.type,
+        file.size,
+      );
+      if ("error" in ticket) {
+        setError(ticket.error);
+        return;
+      }
+
+      const supabase = createClient();
+      const { error: uploadError } = await supabase.storage
+        .from(WORLD_MAP_BUCKET)
+        .uploadToSignedUrl(ticket.path, ticket.token, file, {
+          contentType: file.type,
+        });
+      if (uploadError) {
+        setError("上傳失敗,請稍後再試");
+        return;
+      }
+
+      const result = await finalizeWorldMapUpload(
+        worldId,
+        worldSlug,
+        ticket.path,
+      );
+      if (result && "error" in result) {
+        setError(result.error);
+        return;
+      }
+
+      formRef.current?.reset();
+    } catch {
+      setError("上傳失敗,請稍後再試");
+    } finally {
+      setPending(false);
+    }
+  }
 
   return (
     <div className="mt-4 flex max-w-xl flex-col gap-4">
@@ -27,9 +93,7 @@ export function WorldMapSettingsForm({
         />
       )}
 
-      <form action={formAction} className="flex flex-col gap-2">
-        <input type="hidden" name="worldId" value={worldId} />
-        <input type="hidden" name="worldSlug" value={worldSlug} />
+      <form ref={formRef} onSubmit={handleSubmit} className="flex flex-col gap-2">
         <label htmlFor="file" className="text-sm font-medium">
           {hasMap ? "更換底圖" : "上傳底圖"}(PNG / JPEG / WebP,最大 8MB)
         </label>
@@ -42,9 +106,7 @@ export function WorldMapSettingsForm({
           className="text-sm"
         />
 
-        {state && "error" in state && (
-          <p className="text-sm text-danger">{state.error}</p>
-        )}
+        {error && <p className="text-sm text-danger">{error}</p>}
 
         <button
           type="submit"

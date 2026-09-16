@@ -11,3 +11,17 @@ export const NODE_TYPE_LABEL: Record<NodeType, string> = {
   article: "文章",
   unspecified: "尚未分類(待撰寫)",
 };
+
+/**
+ * 首頁「未分類」區塊照類型分開展示時的順序——不含 character(角色有自己
+ * 獨立的區塊,不跟地點/物產混在一起分組)。
+ */
+export const FALLBACK_NODE_TYPE_ORDER: NodeType[] = [
+  "location",
+  "item",
+  "faction",
+  "concept",
+  "event",
+  "article",
+  "unspecified",
+];

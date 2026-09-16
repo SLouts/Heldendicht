@@ -7,6 +7,8 @@ import WorldMapView, {
   type MapNode,
 } from "@/app/dashboard/worlds/[slug]/worldmap/WorldMapView";
 import { NavMenu } from "@/components/NavMenu";
+import { CollapsibleSection } from "@/components/CollapsibleSection";
+import { NODE_TYPE_LABEL, FALLBACK_NODE_TYPE_ORDER } from "@/lib/nodeTypeLabels";
 import type { Database } from "@/lib/supabase/database.types";
 
 type ProfileSummary = Pick<
@@ -111,12 +113,17 @@ export default async function WorldPage({
   // 有掛分類的節點,顯示交給下面的「分類導覽」區塊;沒掛分類的節點才
   // 落回舊的「地點/物產」「角色」兩欄分法,兩邊不會重複列出同一個節點。
   const uncategorizedNodes = (nodes ?? []).filter((n) => n.category_id == null);
-  const locationsAndItems = uncategorizedNodes.filter((n) => n.node_type !== "character");
   const characterNodes = uncategorizedNodes.filter((n) => n.node_type === "character");
   const categoryGroups = (categories ?? []).map((category) => ({
     category,
     nodes: (nodes ?? []).filter((n) => n.category_id === category.id),
   }));
+  // 沒掛分類的地點/物產/勢力/概念/事件/文章,照類型分開展示成一個個下拉區塊,
+  // 不要全部混在同一條清單裡。
+  const uncategorizedByType = FALLBACK_NODE_TYPE_ORDER.map((nodeType) => ({
+    nodeType,
+    nodes: uncategorizedNodes.filter((n) => n.node_type === nodeType),
+  })).filter((g) => g.nodes.length > 0);
 
   const mapLayers: MapLayer[] = await Promise.all(
     (layers ?? []).map(async (l) => ({
@@ -190,11 +197,14 @@ export default async function WorldPage({
       {categoryGroups.length > 0 && (
         <section className="mt-10">
           <h2 className="text-xl font-semibold">分類導覽</h2>
-          <div className="mt-4 flex flex-col gap-6">
+          <div className="mt-4 flex flex-col gap-3">
             {categoryGroups.map(({ category, nodes: categoryNodes }) => (
-              <div key={category.id} className="rounded-lg border border-border bg-surface p-4">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h3 className="font-semibold">{category.name}</h3>
+              <CollapsibleSection
+                key={category.id}
+                title={category.name}
+                count={categoryNodes.length}
+                description={category.description ?? undefined}
+                badge={
                   <span
                     className={
                       category.accepts_submissions
@@ -204,38 +214,54 @@ export default async function WorldPage({
                   >
                     {category.accepts_submissions ? "開放投稿" : "未開放"}
                   </span>
-                </div>
-                {category.description && (
-                  <p className="mt-1 text-sm text-muted-foreground">{category.description}</p>
-                )}
+                }
+              >
                 <NodeList nodes={categoryNodes} worldSlug={slug} />
-              </div>
+              </CollapsibleSection>
             ))}
           </div>
         </section>
       )}
 
-      {(categoryGroups.length === 0 || locationsAndItems.length > 0) && (
+      {uncategorizedByType.length > 0 && (
         <section className="mt-10">
           <h2 className="text-xl font-semibold">
-            {categoryGroups.length > 0 ? "未分類地點 / 物產" : "地點 / 物產"}
+            {categoryGroups.length > 0 ? "未分類內容" : "地點 / 物產"}
           </h2>
-          <NodeList nodes={locationsAndItems} worldSlug={slug} />
+          <div className="mt-4 flex flex-col gap-3">
+            {uncategorizedByType.map(({ nodeType, nodes: typeNodes }) => (
+              <CollapsibleSection
+                key={nodeType}
+                title={NODE_TYPE_LABEL[nodeType]}
+                count={typeNodes.length}
+              >
+                <NodeList nodes={typeNodes} worldSlug={slug} />
+              </CollapsibleSection>
+            ))}
+          </div>
         </section>
       )}
 
       {(categoryGroups.length === 0 || characterNodes.length > 0) && (
         <section className="mt-8">
-          <h2 className="text-xl font-semibold">
-            {categoryGroups.length > 0 ? "未分類角色" : `角色(每人 PC 配額:${world.default_pc_quota})`}
-          </h2>
-          <NodeList nodes={characterNodes} worldSlug={slug} />
+          <CollapsibleSection
+            title={categoryGroups.length > 0 ? "未分類角色" : "角色"}
+            count={characterNodes.length}
+            description={
+              categoryGroups.length === 0
+                ? `每人 PC 配額:${world.default_pc_quota}`
+                : undefined
+            }
+          >
+            <NodeList nodes={characterNodes} worldSlug={slug} />
+          </CollapsibleSection>
         </section>
       )}
 
       <section className="mt-8">
-        <h2 className="text-xl font-semibold">人際關係線</h2>
-        <RelationshipList relationships={relationships} worldSlug={slug} />
+        <CollapsibleSection title="人際關係線" count={relationships?.length ?? 0}>
+          <RelationshipList relationships={relationships} worldSlug={slug} />
+        </CollapsibleSection>
       </section>
     </div>
   );

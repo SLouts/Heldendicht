@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/dal";
 import { createClient } from "@/lib/supabase/server";
 import { NavMenu } from "@/components/NavMenu";
+import { CollapsibleSection } from "@/components/CollapsibleSection";
+import { NODE_TYPE_LABEL, FALLBACK_NODE_TYPE_ORDER } from "@/lib/nodeTypeLabels";
 import type { Database } from "@/lib/supabase/database.types";
 
 type ProfileSummary = Pick<
@@ -90,12 +92,15 @@ export default async function WorldDashboardPage({
   ]);
 
   const uncategorizedNodes = (nodes ?? []).filter((n) => n.category_id == null);
-  const locationsAndItems = uncategorizedNodes.filter((n) => n.node_type !== "character");
   const characterNodes = uncategorizedNodes.filter((n) => n.node_type === "character");
   const categoryGroups = (categories ?? []).map((category) => ({
     category,
     nodes: (nodes ?? []).filter((n) => n.category_id === category.id),
   }));
+  const uncategorizedByType = FALLBACK_NODE_TYPE_ORDER.map((nodeType) => ({
+    nodeType,
+    nodes: uncategorizedNodes.filter((n) => n.node_type === nodeType),
+  })).filter((g) => g.nodes.length > 0);
 
   return (
     <div>
@@ -187,11 +192,14 @@ export default async function WorldDashboardPage({
               管理分類
             </Link>
           </div>
-          <div className="mt-4 flex flex-col gap-6">
+          <div className="mt-4 flex flex-col gap-3">
             {categoryGroups.map(({ category, nodes: categoryNodes }) => (
-              <div key={category.id} className="rounded-lg border border-border bg-surface p-4">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h3 className="font-semibold">{category.name}</h3>
+              <CollapsibleSection
+                key={category.id}
+                title={category.name}
+                count={categoryNodes.length}
+                description={category.description ?? undefined}
+                badge={
                   <span
                     className={
                       category.accepts_submissions
@@ -201,22 +209,20 @@ export default async function WorldDashboardPage({
                   >
                     {category.accepts_submissions ? "開放投稿" : "未開放"}
                   </span>
-                </div>
-                {category.description && (
-                  <p className="mt-1 text-sm text-muted-foreground">{category.description}</p>
-                )}
+                }
+              >
                 <NodeList nodes={categoryNodes} worldSlug={world.slug} currentUserId={user.id} />
-              </div>
+              </CollapsibleSection>
             ))}
           </div>
         </section>
       )}
 
-      {(categoryGroups.length === 0 || locationsAndItems.length > 0) && (
+      {uncategorizedByType.length > 0 && (
         <section className="mt-8">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold">
-              {categoryGroups.length > 0 ? "未分類地點 / 物產" : "地點 / 物產"}
+              {categoryGroups.length > 0 ? "未分類內容" : "地點 / 物產"}
             </h2>
             <Link
               href={`/dashboard/worlds/${world.slug}/nodes/new`}
@@ -225,11 +231,17 @@ export default async function WorldDashboardPage({
               + 新增節點
             </Link>
           </div>
-          <NodeList
-            nodes={locationsAndItems}
-            worldSlug={world.slug}
-            currentUserId={user.id}
-          />
+          <div className="mt-4 flex flex-col gap-3">
+            {uncategorizedByType.map(({ nodeType, nodes: typeNodes }) => (
+              <CollapsibleSection
+                key={nodeType}
+                title={NODE_TYPE_LABEL[nodeType]}
+                count={typeNodes.length}
+              >
+                <NodeList nodes={typeNodes} worldSlug={world.slug} currentUserId={user.id} />
+              </CollapsibleSection>
+            ))}
+          </div>
         </section>
       )}
 
@@ -248,11 +260,13 @@ export default async function WorldDashboardPage({
               + 新增角色
             </Link>
           </div>
-          <NodeList
-            nodes={characterNodes}
-            worldSlug={world.slug}
-            currentUserId={user.id}
-          />
+          <CollapsibleSection title="角色清單" count={characterNodes.length}>
+            <NodeList
+              nodes={characterNodes}
+              worldSlug={world.slug}
+              currentUserId={user.id}
+            />
+          </CollapsibleSection>
         </section>
       )}
 
@@ -266,7 +280,9 @@ export default async function WorldDashboardPage({
             + 新增關係線
           </Link>
         </div>
-        <RelationshipList relationships={relationships} worldSlug={world.slug} />
+        <CollapsibleSection title="關係線清單" count={relationships?.length ?? 0}>
+          <RelationshipList relationships={relationships} worldSlug={world.slug} />
+        </CollapsibleSection>
       </section>
     </div>
   );

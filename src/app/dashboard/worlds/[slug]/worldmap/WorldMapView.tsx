@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type {
   PointerEvent as ReactPointerEvent,
   WheelEvent as ReactWheelEvent,
 } from "react";
+import Link from "next/link";
 import { setNodeMapPosition, clearNodeMapPosition } from "@/lib/actions/worldmap";
 import { ImportMapForm } from "./ImportMapForm";
 
@@ -18,7 +19,9 @@ export type UnplacedNode = {
   characterType: "pc" | "npc" | null;
 };
 
-export type MapNode = UnplacedNode & { x: number; y: number };
+export type MapNode = UnplacedNode & { x: number; y: number; layerId: string };
+
+export type MapLayer = { id: string; name: string; imageUrl: string | null };
 
 type Transform = { x: number; y: number; k: number };
 
@@ -54,18 +57,22 @@ function pinColor(n: { isPlaceholder: boolean; nodeType: string; characterType: 
 }
 
 export default function WorldMapView({
-  imageUrl,
+  layers,
   nodes,
   unplacedNodes,
   isStaff,
+  manageLayersHref,
   worldId,
   worldSlug,
   basePath,
 }: {
-  imageUrl: string;
+  layers: MapLayer[];
+  /** 這個世界觀「所有」已標點的節點(不限於目前選到的圖層),用 layerId 分開顯示。 */
   nodes: MapNode[];
   unplacedNodes: UnplacedNode[];
   isStaff: boolean;
+  /** 有值才顯示「管理圖層」連結(只有 admin 看得到)。 */
+  manageLayersHref?: string;
   worldId: string;
   worldSlug: string;
   /** 節點標點點擊後要連去哪裡,例如 `/dashboard/worlds/xxx/nodes` 或公開版 `/worlds/xxx/nodes`。 */
@@ -74,12 +81,21 @@ export default function WorldMapView({
   const outerRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
 
+  const [selectedLayerId, setSelectedLayerId] = useState<string | null>(
+    layers[0]?.id ?? null,
+  );
   const [transform, setTransform] = useState<Transform>({ x: 0, y: 0, k: 1 });
   const [editMode, setEditMode] = useState(false);
   const [armedNodeId, setArmedNodeId] = useState<string | null>(null);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [localPositions, setLocalPositions] = useState<Record<string, { x: number; y: number }>>({});
   const [message, setMessage] = useState<string | null>(null);
+
+  const selectedLayer = layers.find((l) => l.id === selectedLayerId) ?? null;
+  const nodesOnLayer = useMemo(
+    () => nodes.filter((n) => n.layerId === selectedLayerId),
+    [nodes, selectedLayerId],
+  );
 
   const pointersRef = useRef(new Map<number, { x: number; y: number }>());
   const gestureRef = useRef<Gesture>({ mode: null });
@@ -213,9 +229,16 @@ export default function WorldMapView({
   }
 
   async function placeNode(nodeId: string, x: number, y: number) {
+    if (!selectedLayerId) return;
     setLocalPositions((prev) => ({ ...prev, [nodeId]: { x, y } }));
     setMessage("儲存中…");
-    const result = await setNodeMapPosition({ nodeId, worldSlug, x, y });
+    const result = await setNodeMapPosition({
+      nodeId,
+      worldSlug,
+      layerId: selectedLayerId,
+      x,
+      y,
+    });
     if ("error" in result) {
       setMessage(result.error);
     } else {
@@ -318,10 +341,34 @@ export default function WorldMapView({
     setMessage("error" in result ? result.error : null);
   }
 
-  const selectedNode = nodes.find((n) => n.id === selectedNodeId) ?? null;
+  const selectedNode = nodesOnLayer.find((n) => n.id === selectedNodeId) ?? null;
 
   return (
     <div className="mt-6">
+      {layers.length > 1 && (
+        <div className="mb-3 flex flex-wrap gap-1">
+          {layers.map((l) => (
+            <button
+              key={l.id}
+              type="button"
+              onClick={() => {
+                setSelectedLayerId(l.id);
+                setArmedNodeId(null);
+                setSelectedNodeId(null);
+              }}
+              className={
+                "rounded-full border px-3 py-1 text-sm transition " +
+                (l.id === selectedLayerId
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "border-border bg-surface hover:bg-muted")
+              }
+            >
+              {l.name}
+            </button>
+          ))}
+        </div>
+      )}
+
       {isStaff && (
         <div className="mb-3 flex flex-wrap items-center gap-2">
           <button
@@ -340,8 +387,35 @@ export default function WorldMapView({
           >
             {editMode ? "結束編輯標點" : "編輯標點位置"}
           </button>
+          {manageLayersHref && (
+            <Link href={manageLayersHref} className="text-xs text-muted-foreground underline">
+              管理圖層
+            </Link>
+          )}
           {message && <span className="text-xs text-muted-foreground">{message}</span>}
         </div>
+      )}
+
+      {!selectedLayer && (
+        <p className="text-sm text-muted-foreground">
+          這個世界觀還沒有地圖圖層。
+          {manageLayersHref && (
+            <Link href={manageLayersHref} className="ml-1 underline">
+              到「管理圖層」新增一張。
+            </Link>
+          )}
+        </p>
+      )}
+
+      {selectedLayer && !selectedLayer.imageUrl && (
+        <p className="text-sm text-muted-foreground">
+          這張圖層還沒有上傳底圖。
+          {manageLayersHref && (
+            <Link href={manageLayersHref} className="ml-1 underline">
+              到「管理圖層」上傳一張。
+            </Link>
+          )}
+        </p>
       )}
 
       {editMode && armedNodeId && (
@@ -357,6 +431,7 @@ export default function WorldMapView({
         </p>
       )}
 
+      {selectedLayer?.imageUrl && (
       <div className="relative">
         <div className="absolute right-2 top-2 z-10 flex gap-1">
           <button
@@ -406,15 +481,15 @@ export default function WorldMapView({
               {/* eslint-disable-next-line @next/next/no-img-element -- signed URL,無法用 next/image 白名單網域 */}
               <img
                 ref={imgRef}
-                src={imageUrl}
-                alt="世界地圖"
+                src={selectedLayer.imageUrl}
+                alt={selectedLayer.name}
                 draggable={false}
                 decoding="async"
                 className="block max-w-none select-none"
                 style={{ width: 1000, height: "auto" }}
               />
 
-              {nodes.map((n) => {
+              {nodesOnLayer.map((n) => {
                 const pos = localPositions[n.id] ?? n;
                 const style = {
                   left: `${pos.x * 100}%`,
@@ -452,6 +527,7 @@ export default function WorldMapView({
           </div>
         </div>
       </div>
+      )}
 
       {editMode && selectedNode && (
         <div className="mt-3 flex flex-wrap items-center gap-3 rounded-lg border border-border bg-surface px-3 py-2 text-sm">
@@ -472,9 +548,13 @@ export default function WorldMapView({
         </div>
       )}
 
-      {editMode && (
+      {editMode && selectedLayer?.imageUrl && (
         <div className="mt-4">
           <h3 className="text-sm font-semibold">尚未標示的節點</h3>
+          <p className="mt-1 text-xs text-muted-foreground">
+            這裡只列出完全還沒標在任何圖層上的節點——想把已經標在別張圖層的節點
+            移過來,先在那張圖層把它從地圖移除,再回到這裡重新標示。
+          </p>
           {unplacedNodes.length === 0 ? (
             <p className="mt-1 text-sm text-muted-foreground">全部節點都已經標到地圖上了。</p>
           ) : (
@@ -497,7 +577,7 @@ export default function WorldMapView({
               ))}
             </ul>
           )}
-          <ImportMapForm worldId={worldId} worldSlug={worldSlug} />
+          <ImportMapForm worldId={worldId} worldSlug={worldSlug} layerId={selectedLayer.id} />
         </div>
       )}
     </div>

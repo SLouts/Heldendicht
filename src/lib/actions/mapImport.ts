@@ -26,11 +26,13 @@ export async function importUsomapGeoJson(
 
   const worldId = formData.get("worldId");
   const worldSlug = formData.get("worldSlug");
+  const layerId = formData.get("layerId");
   const file = formData.get("file");
 
   if (
     typeof worldId !== "string" ||
     typeof worldSlug !== "string" ||
+    typeof layerId !== "string" ||
     !(file instanceof File)
   ) {
     return { error: "缺少必要欄位" };
@@ -70,6 +72,7 @@ export async function importUsomapGeoJson(
     content: "",
     edit_mode: "collaborative" as const,
     creator_id: user.id,
+    map_layer_id: layerId,
     map_x: n.x,
     map_y: n.y,
   }));

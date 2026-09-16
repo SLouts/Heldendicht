@@ -110,7 +110,6 @@ export type Database = {
           tagline: string | null;
           description: string | null;
           cover_image_url: string | null;
-          map_image_path: string | null;
           owner_id: string;
           default_pc_quota: number;
           is_public: boolean;
@@ -177,6 +176,7 @@ export type Database = {
           creator_id: string;
           reviewed_by: string | null;
           reviewed_at: string | null;
+          map_layer_id: string | null;
           map_x: number | null;
           map_y: number | null;
           created_at: string;
@@ -193,6 +193,37 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "nodes_world_id_fkey";
+            columns: ["world_id"];
+            isOneToOne: false;
+            referencedRelation: "worlds";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "nodes_map_layer_id_fkey";
+            columns: ["map_layer_id"];
+            isOneToOne: false;
+            referencedRelation: "world_map_layers";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      world_map_layers: {
+        Row: {
+          id: string;
+          world_id: string;
+          name: string;
+          image_path: string | null;
+          order_index: number;
+          created_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["world_map_layers"]["Row"]> & {
+          world_id: string;
+          name: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["world_map_layers"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "world_map_layers_world_id_fkey";
             columns: ["world_id"];
             isOneToOne: false;
             referencedRelation: "worlds";

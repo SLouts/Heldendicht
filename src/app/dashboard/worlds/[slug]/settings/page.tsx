@@ -2,9 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/dal";
 import { createClient } from "@/lib/supabase/server";
-import { getWorldMapSignedUrl } from "@/lib/worldmap";
 import { SettingsForm } from "./SettingsForm";
-import { WorldMapSettingsForm } from "./WorldMapSettingsForm";
 
 export default async function WorldSettingsPage({
   params,
@@ -16,7 +14,7 @@ export default async function WorldSettingsPage({
   const { data: world } = await supabase
     .from("worlds")
     .select(
-      "id, slug, name, tagline, description, default_pc_quota, is_public, map_image_path",
+      "id, slug, name, tagline, description, default_pc_quota, is_public",
     )
     .eq("slug", slug)
     .maybeSingle();
@@ -42,25 +40,22 @@ export default async function WorldSettingsPage({
     );
   }
 
-  const mapImageUrl = await getWorldMapSignedUrl(world.map_image_path);
-
   return (
     <div>
       <BackLink slug={slug} />
       <h1 className="mt-2 text-2xl font-semibold">世界觀設定</h1>
       <SettingsForm world={world} />
 
-      <h2 className="mt-10 text-lg font-semibold">世界地圖底圖</h2>
+      <h2 className="mt-10 text-lg font-semibold">世界地圖圖層</h2>
       <p className="mt-1 text-sm text-muted-foreground">
-        上傳一張世界地圖圖片,之後可以在「世界地圖」頁面把地點/角色/物產標到圖上。
-        誰可以標點、拖曳位置在世界地圖頁面另外由 staff(主辦/編輯)權限控管。
+        地圖可以分成好幾張圖層(例如不同樓層、大陸圖/城市圖),各自有自己的底圖跟座標系統。
       </p>
-      <WorldMapSettingsForm
-        worldId={world.id}
-        worldSlug={world.slug}
-        currentImageUrl={mapImageUrl}
-        hasMap={Boolean(world.map_image_path)}
-      />
+      <Link
+        href={`/dashboard/worlds/${world.slug}/worldmap/layers`}
+        className="mt-2 inline-block w-fit rounded-lg bg-primary px-4 py-2 text-sm text-primary-foreground transition hover:bg-primary-hover"
+      >
+        管理地圖圖層
+      </Link>
     </div>
   );
 }

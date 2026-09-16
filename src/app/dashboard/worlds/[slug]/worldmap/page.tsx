@@ -4,6 +4,7 @@ import { requireUser } from "@/lib/dal";
 import { createClient } from "@/lib/supabase/server";
 import { getWorldMapSignedUrl } from "@/lib/worldmap";
 import WorldMapView, {
+  type MapLayer,
   type MapNode,
   type UnplacedNode,
 } from "./WorldMapView";
@@ -17,26 +18,37 @@ export default async function WorldMapPage({
 
   const { data: world } = await supabase
     .from("worlds")
-    .select("id, slug, name, map_image_path")
+    .select("id, slug, name")
     .eq("slug", slug)
     .maybeSingle();
   if (!world) notFound();
 
-  const [{ data: isStaff }, { data: isAdmin }, { data: nodes }] =
+  const [{ data: isStaff }, { data: isAdmin }, { data: layers }, { data: nodes }] =
     await Promise.all([
       supabase.rpc("is_world_staff", { p_world_id: world.id }),
       supabase.rpc("is_world_admin", { p_world_id: world.id }),
       supabase
+        .from("world_map_layers")
+        .select("id, name, image_path")
+        .eq("world_id", world.id)
+        .order("order_index", { ascending: true }),
+      supabase
         .from("nodes")
         .select(
-          "id, title, slug, node_type, status, is_placeholder, map_x, map_y, characters(character_type)",
+          "id, title, slug, node_type, status, is_placeholder, map_layer_id, map_x, map_y, characters(character_type)",
         )
         .eq("world_id", world.id)
         .order("node_type")
         .order("title"),
     ]);
 
-  const mapImageUrl = await getWorldMapSignedUrl(world.map_image_path);
+  const mapLayers: MapLayer[] = await Promise.all(
+    (layers ?? []).map(async (l) => ({
+      id: l.id,
+      name: l.name,
+      imageUrl: await getWorldMapSignedUrl(l.image_path),
+    })),
+  );
 
   const placedNodes: MapNode[] = [];
   const unplacedNodes: UnplacedNode[] = [];
@@ -52,8 +64,8 @@ export default async function WorldMapPage({
       isPlaceholder: n.is_placeholder,
       characterType: char?.character_type ?? null,
     };
-    if (n.map_x != null && n.map_y != null) {
-      placedNodes.push({ ...base, x: n.map_x, y: n.map_y });
+    if (n.map_x != null && n.map_y != null && n.map_layer_id != null) {
+      placedNodes.push({ ...base, x: n.map_x, y: n.map_y, layerId: n.map_layer_id });
     } else {
       unplacedNodes.push(base);
     }
@@ -69,37 +81,21 @@ export default async function WorldMapPage({
       </Link>
       <h1 className="mt-2 text-2xl font-semibold">{world.name} 的世界地圖</h1>
       <p className="mt-1 text-sm text-muted-foreground">
-        跟「關係圖」是不同的檢視角度:這裡是有底圖、有自己座標系統的地理地圖,只顯示已經被標上位置的節點。
+        跟「關係圖」是不同的檢視角度:這裡是有底圖、有自己座標系統的地理地圖(可以分好幾張圖層),只顯示已經被標上位置的節點。
       </p>
 
-      {!mapImageUrl ? (
-        <p className="mt-6 text-sm text-muted-foreground">
-          這個世界觀還沒有上傳地圖底圖。
-          {isAdmin && (
-            <>
-              {" "}
-              到
-              <Link
-                href={`/dashboard/worlds/${world.slug}/settings`}
-                className="mx-1 underline"
-              >
-                世界觀設定
-              </Link>
-              上傳一張。
-            </>
-          )}
-        </p>
-      ) : (
-        <WorldMapView
-          imageUrl={mapImageUrl}
-          nodes={placedNodes}
-          unplacedNodes={unplacedNodes}
-          isStaff={Boolean(isStaff)}
-          worldId={world.id}
-          worldSlug={world.slug}
-          basePath={`/dashboard/worlds/${world.slug}/nodes`}
-        />
-      )}
+      <WorldMapView
+        layers={mapLayers}
+        nodes={placedNodes}
+        unplacedNodes={unplacedNodes}
+        isStaff={Boolean(isStaff)}
+        manageLayersHref={
+          isAdmin ? `/dashboard/worlds/${world.slug}/worldmap/layers` : undefined
+        }
+        worldId={world.id}
+        worldSlug={world.slug}
+        basePath={`/dashboard/worlds/${world.slug}/nodes`}
+      />
     </div>
   );
 }

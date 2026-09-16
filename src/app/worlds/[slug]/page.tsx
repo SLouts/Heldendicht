@@ -2,7 +2,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getWorldMapSignedUrl } from "@/lib/worldmap";
-import WorldMapView, { type MapNode } from "@/app/dashboard/worlds/[slug]/worldmap/WorldMapView";
+import WorldMapView, {
+  type MapLayer,
+  type MapNode,
+} from "@/app/dashboard/worlds/[slug]/worldmap/WorldMapView";
 import { NavMenu } from "@/components/NavMenu";
 import type { Database } from "@/lib/supabase/database.types";
 
@@ -50,7 +53,7 @@ export default async function WorldPage({
 
   const { data: world } = await supabase
     .from("worlds")
-    .select("id, name, tagline, description, default_pc_quota, map_image_path")
+    .select("id, name, tagline, description, default_pc_quota")
     .eq("slug", slug)
     .maybeSingle();
 
@@ -64,7 +67,7 @@ export default async function WorldPage({
   // 角色、關係線,可見度都只交給資料庫的 RLS 判斷(is_public/是否為
   // 成員/status <> rejected 等),這裡不再額外用 status='approved' 之類
   // 的條件收斂一次。跟登入後唯一的差異只有「不能建立/編輯」。
-  const [{ data: nodes }, { data: relationships }, { data: mapNodes }] =
+  const [{ data: nodes }, { data: relationships }, { data: layers }, { data: mapNodes }] =
     await Promise.all([
       supabase
         .from("nodes")
@@ -82,9 +85,14 @@ export default async function WorldPage({
         .eq("world_id", world.id)
         .order("created_at", { ascending: false }),
       supabase
+        .from("world_map_layers")
+        .select("id, name, image_path")
+        .eq("world_id", world.id)
+        .order("order_index", { ascending: true }),
+      supabase
         .from("nodes")
         .select(
-          "id, title, slug, node_type, status, is_placeholder, map_x, map_y, characters(character_type)",
+          "id, title, slug, node_type, status, is_placeholder, map_layer_id, map_x, map_y, characters(character_type)",
         )
         .eq("world_id", world.id)
         .not("map_x", "is", null),
@@ -93,7 +101,13 @@ export default async function WorldPage({
   const locationsAndItems = nodes?.filter((n) => n.node_type !== "character");
   const characterNodes = nodes?.filter((n) => n.node_type === "character");
 
-  const mapImageUrl = await getWorldMapSignedUrl(world.map_image_path);
+  const mapLayers: MapLayer[] = await Promise.all(
+    (layers ?? []).map(async (l) => ({
+      id: l.id,
+      name: l.name,
+      imageUrl: await getWorldMapSignedUrl(l.image_path),
+    })),
+  );
   const placedNodes: MapNode[] = (mapNodes ?? []).map((n) => {
     const char = Array.isArray(n.characters) ? n.characters[0] : n.characters;
     return {
@@ -106,8 +120,10 @@ export default async function WorldPage({
       characterType: char?.character_type ?? null,
       x: n.map_x!,
       y: n.map_y!,
+      layerId: n.map_layer_id!,
     };
   });
+  const hasVisibleMap = mapLayers.some((l) => l.imageUrl);
 
   return (
     <div className="mx-auto w-full max-w-5xl flex-1 px-6 py-12">
@@ -139,11 +155,11 @@ export default async function WorldPage({
         </p>
       )}
 
-      {mapImageUrl && (
+      {hasVisibleMap && (
         <section className="mt-8">
           <h2 className="text-xl font-semibold">世界地圖</h2>
           <WorldMapView
-            imageUrl={mapImageUrl}
+            layers={mapLayers}
             nodes={placedNodes}
             unplacedNodes={[]}
             isStaff={false}

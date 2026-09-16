@@ -6,9 +6,12 @@ import { importUsomapGeoJson } from "@/lib/actions/mapImport";
 export function ImportMapForm({
   worldId,
   worldSlug,
+  layerId,
 }: {
   worldId: string;
   worldSlug: string;
+  /** 匯入的地點會直接標在這張圖層上(呼叫端已經確保有選定的圖層才會顯示這個表單)。 */
+  layerId: string;
 }) {
   const [state, formAction, isPending] = useActionState(
     importUsomapGeoJson,
@@ -21,8 +24,8 @@ export function ImportMapForm({
       <h3 className="text-sm font-semibold">從 USOMAP 匯入地點</h3>
       <p className="mt-1 text-xs text-muted-foreground">
         上傳 USOMAP(架空地圖產生器)匯出的 .geojson 檔案,會自動把 city / nation
-        / label 三種資料建立成地點節點,並直接標好在地圖上的位置。匯入的節點跟手動
-        新增的一樣要先審核。
+        / label 三種資料建立成地點節點,並直接標好在目前這張圖層上的位置。匯入的
+        節點跟手動新增的一樣要先審核。
       </p>
       <form
         ref={formRef}
@@ -34,6 +37,7 @@ export function ImportMapForm({
       >
         <input type="hidden" name="worldId" value={worldId} />
         <input type="hidden" name="worldSlug" value={worldSlug} />
+        <input type="hidden" name="layerId" value={layerId} />
         <input
           type="file"
           name="file"

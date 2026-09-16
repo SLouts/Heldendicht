@@ -6,9 +6,11 @@ import { createCharacter } from "@/lib/actions/characters";
 export function NewCharacterForm({
   worldId,
   worldSlug,
+  characterFields,
 }: {
   worldId: string;
   worldSlug: string;
+  characterFields: { id: string; label: string }[];
 }) {
   const [state, formAction, pending] = useActionState(
     createCharacter,
@@ -78,6 +80,27 @@ export function NewCharacterForm({
           className="rounded-lg border border-border bg-surface px-3 py-2"
         />
       </div>
+
+      {characterFields.length > 0 && (
+        <div className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-3">
+          <p className="text-sm font-medium">
+            這個世界觀要求角色都要填以下基本資料
+          </p>
+          {characterFields.map((f) => (
+            <div key={f.id} className="flex flex-col gap-1">
+              <label htmlFor={`field_${f.id}`} className="text-sm font-medium">
+                {f.label}
+              </label>
+              <input
+                id={`field_${f.id}`}
+                name={`field_${f.id}`}
+                required
+                className="rounded-lg border border-border bg-background px-3 py-2"
+              />
+            </div>
+          ))}
+        </div>
+      )}
 
       {state && "error" in state && (
         <p className="text-sm text-danger">{state.error}</p>

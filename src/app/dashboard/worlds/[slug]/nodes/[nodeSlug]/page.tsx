@@ -8,6 +8,7 @@ import { EditNodeForm } from "./EditNodeForm";
 import { WikiLinkContent } from "./WikiLinkContent";
 import { AttachmentsSection, type AttachmentItem } from "./AttachmentsSection";
 import { CharacterPersonaForm } from "./CharacterPersonaForm";
+import { CharacterFieldsForm, CharacterFieldsDisplay } from "./CharacterFieldsForm";
 import { NodeSectionsEditor } from "./NodeSectionsEditor";
 import { ReportForm } from "@/components/ReportForm";
 
@@ -67,6 +68,8 @@ export default async function NodeDetailPage({
     { data: attachments },
     { data: personas },
     { data: sections },
+    { data: characterFieldDefs },
+    { data: characterFieldValues },
   ] = await Promise.all([
     supabase.rpc("is_world_staff", { p_world_id: world.id }),
     supabase.rpc("is_world_member", { p_world_id: world.id }),
@@ -100,7 +103,29 @@ export default async function NodeDetailPage({
       .select("id, title, content")
       .eq("node_id", node.id)
       .order("order_index", { ascending: true }),
+    node.node_type === "character"
+      ? supabase
+          .from("world_character_fields")
+          .select("id, label")
+          .eq("world_id", world.id)
+          .order("order_index", { ascending: true })
+      : Promise.resolve({ data: null }),
+    node.node_type === "character"
+      ? supabase
+          .from("character_field_values")
+          .select("field_id, value")
+          .eq("node_id", node.id)
+      : Promise.resolve({ data: null }),
   ]);
+
+  const valueByFieldId = new Map(
+    (characterFieldValues ?? []).map((v) => [v.field_id, v.value]),
+  );
+  const characterFields = (characterFieldDefs ?? []).map((f) => ({
+    id: f.id,
+    label: f.label,
+    value: valueByFieldId.get(f.id) ?? "",
+  }));
 
   const wikiLinkMap = new Map(
     (outboundLinks ?? []).map((link) => {
@@ -197,6 +222,17 @@ export default async function NodeDetailPage({
           </>
         )}
       </p>
+
+      {node.node_type === "character" &&
+        (canEdit ? (
+          <CharacterFieldsForm
+            nodeId={node.id}
+            worldSlug={world.slug}
+            fields={characterFields}
+          />
+        ) : (
+          <CharacterFieldsDisplay fields={characterFields} />
+        ))}
 
       {isPersonaOwner && (
         <CharacterPersonaForm

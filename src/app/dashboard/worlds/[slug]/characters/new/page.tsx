@@ -19,6 +19,12 @@ export default async function NewCharacterPage({
 
   if (!world) notFound();
 
+  const { data: characterFields } = await supabase
+    .from("world_character_fields")
+    .select("id, label")
+    .eq("world_id", world.id)
+    .order("order_index", { ascending: true });
+
   return (
     <div>
       <Link
@@ -32,7 +38,11 @@ export default async function NewCharacterPage({
         每人 PC 角色配額為 {world.default_pc_quota}
         隻(主辦不受限);NPC 不受配額限制。超過配額會由資料庫擋下並顯示錯誤訊息。
       </p>
-      <NewCharacterForm worldId={world.id} worldSlug={world.slug} />
+      <NewCharacterForm
+        worldId={world.id}
+        worldSlug={world.slug}
+        characterFields={characterFields ?? []}
+      />
     </div>
   );
 }

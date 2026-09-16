@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import * as z from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/dal";
+import { setCharacterFieldValues } from "@/lib/actions/characterFields";
 
 const CreateCharacterSchema = z.object({
   worldId: z.uuid(),
@@ -54,7 +55,26 @@ export async function createCharacter(
     parsed.data;
 
   const supabase = await createClient();
-  const { error } = await supabase.rpc("create_character", {
+
+  // 這個世界觀要求角色填的必填欄位——用當下資料庫的清單重新驗證,
+  // 不信任表單自己夾帶的欄位 id/名稱,避免有人繞過瀏覽器端的 required
+  // 屬性送出空值。在真的建立節點之前就先擋下,不要留下欄位沒填的角色。
+  const { data: characterFields } = await supabase
+    .from("world_character_fields")
+    .select("id, label")
+    .eq("world_id", worldId)
+    .order("order_index", { ascending: true });
+
+  const fieldValues: Record<string, string> = {};
+  for (const f of characterFields ?? []) {
+    const v = formData.get(`field_${f.id}`);
+    if (typeof v !== "string" || v.trim() === "") {
+      return { error: `請填寫「${f.label}」` };
+    }
+    fieldValues[f.id] = v;
+  }
+
+  const { data: nodeId, error } = await supabase.rpc("create_character", {
     p_world_id: worldId,
     p_title: title,
     p_slug: slug,
@@ -66,6 +86,10 @@ export async function createCharacter(
   if (error) {
     // 配額 / 權限被資料庫擋下時,error.message 就是 trigger 丟出的那句中文提示
     return { error: error.message };
+  }
+
+  if (characterFields && characterFields.length > 0 && nodeId) {
+    await setCharacterFieldValues(nodeId, worldSlug, characterFields, fieldValues);
   }
 
   revalidatePath(`/dashboard/worlds/${worldSlug}`);

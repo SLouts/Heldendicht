@@ -359,6 +359,60 @@ export type Database = {
           },
         ];
       };
+      world_character_fields: {
+        Row: {
+          id: string;
+          world_id: string;
+          label: string;
+          order_index: number;
+          created_at: string;
+        };
+        Insert: Partial<
+          Database["public"]["Tables"]["world_character_fields"]["Row"]
+        > & { world_id: string; label: string };
+        Update: Partial<
+          Database["public"]["Tables"]["world_character_fields"]["Row"]
+        >;
+        Relationships: [
+          {
+            foreignKeyName: "world_character_fields_world_id_fkey";
+            columns: ["world_id"];
+            isOneToOne: false;
+            referencedRelation: "worlds";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      character_field_values: {
+        Row: {
+          node_id: string;
+          field_id: string;
+          value: string;
+          updated_at: string;
+        };
+        Insert: Partial<
+          Database["public"]["Tables"]["character_field_values"]["Row"]
+        > & { node_id: string; field_id: string };
+        Update: Partial<
+          Database["public"]["Tables"]["character_field_values"]["Row"]
+        >;
+        Relationships: [
+          {
+            foreignKeyName: "character_field_values_node_id_fkey";
+            columns: ["node_id"];
+            isOneToOne: false;
+            referencedRelation: "nodes";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "character_field_values_field_id_fkey";
+            columns: ["field_id"];
+            isOneToOne: false;
+            referencedRelation: "world_character_fields";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       relationships: {
         Row: {
           id: string;

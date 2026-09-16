@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getAttachmentSignedUrl } from "@/lib/attachments";
 import { WikiLinkContent } from "@/app/dashboard/worlds/[slug]/nodes/[nodeSlug]/WikiLinkContent";
 import { NodeSectionsEditor } from "@/app/dashboard/worlds/[slug]/nodes/[nodeSlug]/NodeSectionsEditor";
+import { CharacterFieldsDisplay } from "@/app/dashboard/worlds/[slug]/nodes/[nodeSlug]/CharacterFieldsForm";
 
 const NODE_TYPE_LABEL: Record<string, string> = {
   location: "地點",
@@ -55,25 +56,52 @@ export default async function PublicNodeDetailPage({
       : character.profiles
     : null;
 
-  const [{ data: outboundLinks }, { data: attachments }, { data: sections }] =
-    await Promise.all([
-      supabase
-        .from("wikilinks")
-        .select(
-          "raw_text, target:nodes!wikilinks_target_node_id_fkey(slug, is_placeholder)",
-        )
-        .eq("source_node_id", node.id),
-      supabase
-        .from("node_attachments")
-        .select("id, file_name, kind, storage_path, created_at")
-        .eq("node_id", node.id)
-        .order("created_at", { ascending: false }),
-      supabase
-        .from("node_sections")
-        .select("id, title, content")
-        .eq("node_id", node.id)
-        .order("order_index", { ascending: true }),
-    ]);
+  const [
+    { data: outboundLinks },
+    { data: attachments },
+    { data: sections },
+    { data: characterFieldDefs },
+    { data: characterFieldValues },
+  ] = await Promise.all([
+    supabase
+      .from("wikilinks")
+      .select(
+        "raw_text, target:nodes!wikilinks_target_node_id_fkey(slug, is_placeholder)",
+      )
+      .eq("source_node_id", node.id),
+    supabase
+      .from("node_attachments")
+      .select("id, file_name, kind, storage_path, created_at")
+      .eq("node_id", node.id)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("node_sections")
+      .select("id, title, content")
+      .eq("node_id", node.id)
+      .order("order_index", { ascending: true }),
+    node.node_type === "character"
+      ? supabase
+          .from("world_character_fields")
+          .select("id, label")
+          .eq("world_id", world.id)
+          .order("order_index", { ascending: true })
+      : Promise.resolve({ data: null }),
+    node.node_type === "character"
+      ? supabase
+          .from("character_field_values")
+          .select("field_id, value")
+          .eq("node_id", node.id)
+      : Promise.resolve({ data: null }),
+  ]);
+
+  const valueByFieldId = new Map(
+    (characterFieldValues ?? []).map((v) => [v.field_id, v.value]),
+  );
+  const characterFields = (characterFieldDefs ?? []).map((f) => ({
+    id: f.id,
+    label: f.label,
+    value: valueByFieldId.get(f.id) ?? "",
+  }));
 
   // wikilinks_select RLS 已經確保這裡拿到的 target 都是訪客看得到的節點
   // (rejected 的節點對非 creator/staff 一律不可見,不會出現在這裡)——
@@ -148,6 +176,10 @@ export default async function PublicNodeDetailPage({
           </>
         )}
       </p>
+
+      {node.node_type === "character" && (
+        <CharacterFieldsDisplay fields={characterFields} />
+      )}
 
       <div className="mt-6">
         <WikiLinkContent

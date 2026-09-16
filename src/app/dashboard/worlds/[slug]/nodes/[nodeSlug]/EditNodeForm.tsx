@@ -1,7 +1,15 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { updateNodeContent } from "@/lib/actions/nodes";
+import { createClient } from "@/lib/supabase/client";
+import {
+  createNodeAttachmentUploadTicket,
+  finalizeNodeAttachmentUpload,
+} from "@/lib/actions/attachments";
+import { insertTextAtCursor } from "@/lib/insertAtCursor";
+
+const NODE_ATTACHMENTS_BUCKET = "node-attachments";
 
 export function EditNodeForm({
   nodeId,
@@ -28,6 +36,70 @@ export function EditNodeForm({
     updateNodeContent,
     undefined,
   );
+  const [pasteUploading, setPasteUploading] = useState(false);
+  const [pasteError, setPasteError] = useState<string | null>(null);
+
+  /**
+   * 讓貼圖片到內文欄位就像貼到一般電子郵件一樣直接嵌入,不用先手動上傳
+   * 附件、再另外複製語法貼回來。貼上的是圖片時攔截預設貼上行為,改成
+   * 上傳成附件後把 {{image:id}} 插到游標位置(用當初上傳附件同一套
+   * 兩段式簽名上傳流程,detail 見 lib/actions/attachments.ts)。
+   */
+  async function handleContentPaste(e: React.ClipboardEvent<HTMLTextAreaElement>) {
+    const item = Array.from(e.clipboardData.items).find((i) =>
+      i.type.startsWith("image/"),
+    );
+    if (!item) return;
+    const file = item.getAsFile();
+    if (!file) return;
+
+    e.preventDefault();
+    setPasteError(null);
+    setPasteUploading(true);
+    const textarea = e.currentTarget;
+    try {
+      const ticket = await createNodeAttachmentUploadTicket(
+        nodeId,
+        file.type,
+        file.size,
+      );
+      if ("error" in ticket) {
+        setPasteError(ticket.error);
+        return;
+      }
+
+      const supabase = createClient();
+      const { error: uploadError } = await supabase.storage
+        .from(NODE_ATTACHMENTS_BUCKET)
+        .uploadToSignedUrl(ticket.path, ticket.token, file, {
+          contentType: file.type,
+        });
+      if (uploadError) {
+        setPasteError("上傳失敗,請稍後再試");
+        return;
+      }
+
+      const result = await finalizeNodeAttachmentUpload(
+        nodeId,
+        worldSlug,
+        nodeSlug,
+        ticket.path,
+        file.name || "貼上的圖片",
+        file.type,
+        file.size,
+      );
+      if ("error" in result) {
+        setPasteError(result.error);
+        return;
+      }
+
+      insertTextAtCursor(textarea, `{{image:${result.id}}}`);
+    } catch {
+      setPasteError("上傳失敗,請稍後再試");
+    } finally {
+      setPasteUploading(false);
+    }
+  }
 
   return (
     <form action={formAction} className="flex flex-col gap-4">
@@ -111,9 +183,14 @@ export function EditNodeForm({
           name="content"
           rows={10}
           defaultValue={content}
-          placeholder="可以用 [[名稱]] 建立 WikiLink,用 {{image:附件id}} 嵌入下方附件裡的圖片"
+          onPaste={handleContentPaste}
+          placeholder="可以用 [[名稱]] 建立 WikiLink;直接貼上圖片(像貼到一般電子郵件一樣)就會自動上傳並嵌入"
           className="rounded-lg border border-border bg-surface px-3 py-2 font-mono text-sm"
         />
+        {pasteUploading && (
+          <p className="text-xs text-muted-foreground">圖片上傳中…</p>
+        )}
+        {pasteError && <p className="text-xs text-danger">{pasteError}</p>}
       </div>
 
       {state && "error" in state && (

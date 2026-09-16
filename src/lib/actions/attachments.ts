@@ -12,6 +12,8 @@ import {
 
 export type AttachmentFormState = { error: string } | undefined;
 
+export type FinalizeAttachmentResult = { error: string } | { id: string };
+
 export type AttachmentUploadTicketResult =
   | { error: string }
   | { path: string; token: string };
@@ -73,7 +75,11 @@ export async function createNodeAttachmentUploadTicket(
   return { path: data.path, token: data.token };
 }
 
-/** 瀏覽器直接把檔案傳到 Supabase Storage 成功後,呼叫這裡寫入附件的 metadata。 */
+/**
+ * 瀏覽器直接把檔案傳到 Supabase Storage 成功後,呼叫這裡寫入附件的 metadata。
+ * 回傳新附件的 id,讓呼叫端(例如貼上圖片直接嵌入內文)可以立刻組出
+ * `{{image:<id>}}` 語法插入內文,不用使用者自己再多一步操作。
+ */
 export async function finalizeNodeAttachmentUpload(
   nodeId: string,
   worldSlug: string,
@@ -82,7 +88,7 @@ export async function finalizeNodeAttachmentUpload(
   fileName: string,
   contentType: string,
   fileSize: number,
-): Promise<AttachmentFormState> {
+): Promise<FinalizeAttachmentResult> {
   const user = await requireUser();
 
   const typeInfo = NODE_ATTACHMENT_ALLOWED_TYPES[contentType];
@@ -105,25 +111,29 @@ export async function finalizeNodeAttachmentUpload(
     return { error: "你沒有權限編輯這個節點,無法上傳附件" };
   }
 
-  const { error: insertError } = await supabase.from("node_attachments").insert({
-    node_id: nodeId,
-    world_id: node.world_id,
-    storage_path: path,
-    file_name: fileName || `檔案.${typeInfo.ext}`,
-    content_type: contentType,
-    file_size: fileSize,
-    kind: typeInfo.kind,
-    uploader_id: user.id,
-  });
+  const { data: attachment, error: insertError } = await supabase
+    .from("node_attachments")
+    .insert({
+      node_id: nodeId,
+      world_id: node.world_id,
+      storage_path: path,
+      file_name: fileName || `檔案.${typeInfo.ext}`,
+      content_type: contentType,
+      file_size: fileSize,
+      kind: typeInfo.kind,
+      uploader_id: user.id,
+    })
+    .select("id")
+    .single();
 
-  if (insertError) {
+  if (insertError || !attachment) {
     const admin = createAdminClient();
     await admin.storage.from(NODE_ATTACHMENTS_BUCKET).remove([path]);
     return { error: "儲存附件資料失敗,請稍後再試" };
   }
 
   revalidatePath(`/dashboard/worlds/${worldSlug}/nodes/${nodeSlug}`);
-  return undefined;
+  return { id: attachment.id };
 }
 
 /** 刪除節點附件。權限一樣是 can_edit_node,不限上傳者本人,由 node_attachments_delete RLS policy 把關。 */

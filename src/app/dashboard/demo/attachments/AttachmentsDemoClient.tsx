@@ -143,10 +143,16 @@ export function AttachmentsDemoClient() {
   const [role, setRole] = useState<"viewer" | "editor">("viewer");
   const [content, setContent] = useState(INITIAL_CONTENT);
   const [attachments, setAttachments] = useState<Attachment[]>(INITIAL_ATTACHMENTS);
-  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [insertedId, setInsertedId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const contentRef = useRef(content);
+
+  useEffect(() => {
+    contentRef.current = content;
+  }, [content]);
 
   useEffect(() => {
     return () => {
@@ -166,16 +172,67 @@ export function AttachmentsDemoClient() {
     showToast("示範連結,不會真的跳頁");
   }, [showToast]);
 
-  const handleCopy = useCallback(async (id: string) => {
-    const token = `{{image:${id}}}`;
-    try {
-      await navigator.clipboard.writeText(token);
-    } catch {
-      // demo 用,剪貼簿權限被拒就安靜忽略
+  // 跟真正的 EditNodeForm 一樣改成「直接插到游標位置」,不用再讓使用者
+  // 自己複製語法、切去內文欄位貼上——差別是這裡的 textarea 是 controlled
+  // (value + onChange),所以插入完要用 requestAnimationFrame 在下一次
+  // render 之後才能正確設回游標位置,不能像真正那邊直接操作 DOM value。
+  const insertIntoContent = useCallback((text: string) => {
+    const textarea = textareaRef.current;
+    if (!textarea) {
+      setContent((prev) => prev + text);
+      return;
     }
-    setCopiedId(id);
-    setTimeout(() => setCopiedId((cur) => (cur === id ? null : cur)), 1400);
+    const start = textarea.selectionStart ?? contentRef.current.length;
+    const end = textarea.selectionEnd ?? contentRef.current.length;
+    setContent(contentRef.current.slice(0, start) + text + contentRef.current.slice(end));
+    requestAnimationFrame(() => {
+      textarea.focus();
+      textarea.selectionStart = textarea.selectionEnd = start + text.length;
+    });
   }, []);
+
+  const handleInsert = useCallback(
+    (id: string) => {
+      insertIntoContent(`{{image:${id}}}`);
+      setInsertedId(id);
+      setTimeout(() => setInsertedId((cur) => (cur === id ? null : cur)), 1400);
+    },
+    [insertIntoContent],
+  );
+
+  const handleContentPaste = useCallback(
+    (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+      const item = Array.from(e.clipboardData.items).find((i) =>
+        i.type.startsWith("image/"),
+      );
+      if (!item) return;
+      const file = item.getAsFile();
+      if (!file) return;
+      e.preventDefault();
+
+      const id = `up-${crypto.randomUUID()}`;
+      const reader = new FileReader();
+      reader.onload = () => {
+        const url = reader.result as string;
+        setAttachments((prev) => [
+          {
+            id,
+            kind: "image",
+            fileName: file.name || "貼上的圖片.png",
+            fileSize: file.size,
+            uploader: "你",
+            date: "剛剛",
+            url,
+          },
+          ...prev,
+        ]);
+        insertIntoContent(`{{image:${id}}}`);
+        showToast("已貼上圖片並自動嵌入");
+      };
+      reader.readAsDataURL(file);
+    },
+    [insertIntoContent, showToast],
+  );
 
   const handleDelete = useCallback(
     (id: string, fileName: string) => {
@@ -279,9 +336,11 @@ export function AttachmentsDemoClient() {
             </label>
             <textarea
               id="demo-content"
+              ref={textareaRef}
               rows={8}
               value={content}
               onChange={(e) => setContent(e.target.value)}
+              onPaste={handleContentPaste}
               className="rounded-lg border border-border bg-surface px-3 py-2 font-mono text-sm"
             />
           </div>
@@ -299,7 +358,7 @@ export function AttachmentsDemoClient() {
       <div className="rounded-lg border border-border bg-surface p-5">
         <h3 className="text-lg font-semibold">附件</h3>
         <p className="mt-1 text-sm text-muted-foreground">
-          圖片可以用「複製嵌入語法」貼到上面的內文裡指定位置顯示;PDF 等文件只會列在這裡,不能嵌入內文。
+          圖片點「插入到內文」就會直接放到上面內文欄位游標所在的位置;也可以直接複製貼上圖片到內文欄位裡,像貼到一般電子郵件一樣會自動上傳並插入。PDF 等文件只會列在這裡,不能嵌入內文。
         </p>
 
         {canEdit && (
@@ -352,13 +411,15 @@ export function AttachmentsDemoClient() {
                 <div className="flex flex-wrap items-center gap-2 text-sm">
                   {a.kind === "image" ? (
                     <>
-                      <button
-                        type="button"
-                        onClick={() => handleCopy(a.id)}
-                        className="underline"
-                      >
-                        {copiedId === a.id ? "已複製!" : "複製嵌入語法"}
-                      </button>
+                      {canEdit && (
+                        <button
+                          type="button"
+                          onClick={() => handleInsert(a.id)}
+                          className="underline"
+                        >
+                          {insertedId === a.id ? "已插入!" : "插入到內文"}
+                        </button>
+                      )}
                       <a
                         href={a.url}
                         target="_blank"

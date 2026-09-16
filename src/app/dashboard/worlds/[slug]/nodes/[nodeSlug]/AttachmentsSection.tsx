@@ -7,6 +7,7 @@ import {
   finalizeNodeAttachmentUpload,
   deleteNodeAttachment,
 } from "@/lib/actions/attachments";
+import { insertTextAtCursor } from "@/lib/insertAtCursor";
 
 const NODE_ATTACHMENTS_BUCKET = "node-attachments";
 
@@ -42,16 +43,25 @@ export function AttachmentsSection({
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
-  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [insertedId, setInsertedId] = useState<string | null>(null);
+  const [insertError, setInsertError] = useState<string | null>(null);
 
-  async function handleCopy(id: string) {
-    try {
-      await navigator.clipboard.writeText(`{{image:${id}}}`);
-      setCopiedId(id);
-      setTimeout(() => setCopiedId((cur) => (cur === id ? null : cur)), 1500);
-    } catch {
-      // clipboard API 在某些環境(例如非 https、權限被拒)可能會丟例外,安靜忽略即可。
+  /**
+   * 直接把 {{image:id}} 語法插到內文欄位目前的游標位置,不用使用者自己
+   * 「複製」再切去內文欄位「貼上」——內文的 textarea 有固定的 id="content",
+   * 這裡跨元件直接用 DOM API 操作,不需要額外把 ref 往上提。
+   */
+  function handleInsert(id: string) {
+    const textarea = document.getElementById("content") as HTMLTextAreaElement | null;
+    if (!textarea) {
+      setInsertError("找不到內文欄位,請確認你有編輯權限");
+      return;
     }
+    insertTextAtCursor(textarea, `{{image:${id}}}`);
+    textarea.focus();
+    setInsertError(null);
+    setInsertedId(id);
+    setTimeout(() => setInsertedId((cur) => (cur === id ? null : cur)), 1500);
   }
 
   // 兩段式上傳(見 lib/actions/attachments.ts 的說明):先要簽名上傳票券,
@@ -101,7 +111,7 @@ export function AttachmentsSection({
         file.type,
         file.size,
       );
-      if (result && "error" in result) {
+      if ("error" in result) {
         setError(result.error);
         return;
       }
@@ -118,8 +128,9 @@ export function AttachmentsSection({
     <section className="mt-10">
       <h2 className="text-lg font-semibold">附件</h2>
       <p className="mt-1 text-sm text-muted-foreground">
-        圖片可以用「複製嵌入語法」貼到上面的內文裡指定位置顯示;PDF 等文件只會列在這裡,不能嵌入內文。
+        圖片點「插入到內文」就會直接放到上面內文欄位游標所在的位置(先點一下內文決定要插在哪裡,再回來點這個按鈕);也可以直接把圖片複製貼上到內文欄位裡,像貼到一般電子郵件一樣會自動上傳並插入。PDF 等文件只會列在這裡,不能嵌入內文。
       </p>
+      {insertError && <p className="mt-1 text-sm text-danger">{insertError}</p>}
 
       {canEdit && (
         <form
@@ -176,13 +187,13 @@ export function AttachmentsSection({
               </div>
 
               <div className="flex flex-wrap items-center gap-2 text-sm">
-                {a.kind === "image" && (
+                {a.kind === "image" && canEdit && (
                   <button
                     type="button"
-                    onClick={() => handleCopy(a.id)}
+                    onClick={() => handleInsert(a.id)}
                     className="underline"
                   >
-                    {copiedId === a.id ? "已複製!" : "複製嵌入語法"}
+                    {insertedId === a.id ? "已插入!" : "插入到內文"}
                   </button>
                 )}
                 <a href={a.url} target="_blank" rel="noreferrer" className="underline">

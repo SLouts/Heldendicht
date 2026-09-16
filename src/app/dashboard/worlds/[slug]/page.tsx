@@ -87,64 +87,63 @@ export default async function WorldDashboardPage({
       <Link href="/dashboard" className="text-sm text-muted-foreground hover:underline">
         ← 我的世界觀
       </Link>
-      <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">{world.name}</h1>
-          {world.tagline && (
-            <p className="mt-1 text-sm text-muted-foreground">{world.tagline}</p>
-          )}
-        </div>
-        <NavMenu>
-          <Link
-            href={`/worlds/${world.slug}`}
-            className="rounded-md px-2 py-1.5 text-sm hover:bg-muted"
-          >
-            公開頁面
-          </Link>
-          <Link
-            href={`/dashboard/worlds/${world.slug}/story`}
-            className="rounded-md px-2 py-1.5 text-sm hover:bg-muted"
-          >
-            故事時間軸
-          </Link>
-          <Link
-            href={`/dashboard/worlds/${world.slug}/map`}
-            className="rounded-md px-2 py-1.5 text-sm hover:bg-muted"
-          >
-            關係圖
-          </Link>
-          <Link
-            href={`/dashboard/worlds/${world.slug}/worldmap`}
-            className="rounded-md px-2 py-1.5 text-sm hover:bg-muted"
-          >
-            世界地圖
-          </Link>
-          {isStaff && (
-            <Link
-              href={`/dashboard/worlds/${world.slug}/reports`}
-              className="rounded-md px-2 py-1.5 text-sm hover:bg-muted"
-            >
-              檢舉列表
-            </Link>
-          )}
-          {isAdmin && (
-            <Link
-              href={`/dashboard/worlds/${world.slug}/members`}
-              className="rounded-md px-2 py-1.5 text-sm hover:bg-muted"
-            >
-              成員
-            </Link>
-          )}
-          {isStaff && (
-            <Link
-              href={`/dashboard/worlds/${world.slug}/settings`}
-              className="rounded-md px-2 py-1.5 text-sm hover:bg-muted"
-            >
-              世界觀設定
-            </Link>
-          )}
-        </NavMenu>
+      <div className="mt-2">
+        <h1 className="text-2xl font-semibold">{world.name}</h1>
+        {world.tagline && (
+          <p className="mt-1 text-sm text-muted-foreground">{world.tagline}</p>
+        )}
       </div>
+
+      <NavMenu>
+        <Link
+          href={`/worlds/${world.slug}`}
+          className="rounded-md px-3 py-1.5 hover:bg-surface hover:underline"
+        >
+          公開頁面
+        </Link>
+        <Link
+          href={`/dashboard/worlds/${world.slug}/story`}
+          className="rounded-md px-3 py-1.5 hover:bg-surface hover:underline"
+        >
+          故事時間軸
+        </Link>
+        <Link
+          href={`/dashboard/worlds/${world.slug}/map`}
+          className="rounded-md px-3 py-1.5 hover:bg-surface hover:underline"
+        >
+          關係圖
+        </Link>
+        <Link
+          href={`/dashboard/worlds/${world.slug}/worldmap`}
+          className="rounded-md px-3 py-1.5 hover:bg-surface hover:underline"
+        >
+          世界地圖
+        </Link>
+        {isStaff && (
+          <Link
+            href={`/dashboard/worlds/${world.slug}/reports`}
+            className="rounded-md px-3 py-1.5 hover:bg-surface hover:underline"
+          >
+            檢舉列表
+          </Link>
+        )}
+        {isAdmin && (
+          <Link
+            href={`/dashboard/worlds/${world.slug}/members`}
+            className="rounded-md px-3 py-1.5 hover:bg-surface hover:underline"
+          >
+            成員
+          </Link>
+        )}
+        {isStaff && (
+          <Link
+            href={`/dashboard/worlds/${world.slug}/settings`}
+            className="rounded-md px-3 py-1.5 hover:bg-surface hover:underline"
+          >
+            世界觀設定
+          </Link>
+        )}
+      </NavMenu>
 
       <section className="mt-8">
         <div className="flex items-center justify-between">

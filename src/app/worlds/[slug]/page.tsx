@@ -111,28 +111,27 @@ export default async function WorldPage({
 
   return (
     <div className="mx-auto w-full max-w-5xl flex-1 px-6 py-12">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-semibold tracking-tight">{world.name}</h1>
-          {world.tagline && (
-            <p className="mt-2 text-muted-foreground">{world.tagline}</p>
-          )}
-        </div>
-        <NavMenu>
-          <Link
-            href={`/worlds/${slug}/story`}
-            className="rounded-md px-2 py-1.5 text-sm hover:bg-muted"
-          >
-            故事時間軸
-          </Link>
-          <Link
-            href={`/worlds/${slug}/map`}
-            className="rounded-md px-2 py-1.5 text-sm hover:bg-muted"
-          >
-            關係圖
-          </Link>
-        </NavMenu>
+      <div>
+        <h1 className="text-3xl font-semibold tracking-tight">{world.name}</h1>
+        {world.tagline && (
+          <p className="mt-2 text-muted-foreground">{world.tagline}</p>
+        )}
       </div>
+
+      <NavMenu>
+        <Link
+          href={`/worlds/${slug}/story`}
+          className="rounded-md px-3 py-1.5 hover:bg-surface hover:underline"
+        >
+          故事時間軸
+        </Link>
+        <Link
+          href={`/worlds/${slug}/map`}
+          className="rounded-md px-3 py-1.5 hover:bg-surface hover:underline"
+        >
+          關係圖
+        </Link>
+      </NavMenu>
 
       {world.description && (
         <p className="mt-4 max-w-2xl whitespace-pre-wrap text-sm text-muted-foreground">

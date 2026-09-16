@@ -102,6 +102,34 @@ export type Database = {
           },
         ];
       };
+      follows: {
+        Row: {
+          follower_id: string;
+          followee_id: string;
+          created_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["follows"]["Row"]> & {
+          follower_id: string;
+          followee_id: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["follows"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "follows_follower_id_fkey";
+            columns: ["follower_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "follows_followee_id_fkey";
+            columns: ["followee_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       worlds: {
         Row: {
           id: string;

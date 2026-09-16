@@ -1,14 +1,17 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/dal";
 import { getProfileMediaPublicUrl } from "@/lib/profileMedia";
 import type { PersonaField } from "@/lib/actions/personas";
+import { FollowButton } from "./FollowButton";
 
 export default async function PublicProfilePage({
   params,
 }: PageProps<"/u/[username]">) {
   const { username } = await params;
   const supabase = await createClient();
+  const currentUser = await getCurrentUser();
 
   const { data: profile } = await supabase
     .from("profiles")
@@ -18,16 +21,34 @@ export default async function PublicProfilePage({
 
   if (!profile) notFound();
 
-  const [{ data: worlds }, { data: personas }] = await Promise.all([
-    supabase.rpc("public_world_memberships", { p_user_id: profile.id }),
-    supabase
-      .from("character_personas")
-      .select(
-        "id, name, tagline, bio, fields, avatar_path, characters(node_id, nodes(slug, title, status, worlds(slug, name)))",
-      )
-      .eq("owner_id", profile.id)
-      .order("created_at", { ascending: true }),
-  ]);
+  const [{ data: worlds }, { data: personas }, { count: followerCount }, { count: followingCount }, isFollowing] =
+    await Promise.all([
+      supabase.rpc("public_world_memberships", { p_user_id: profile.id }),
+      supabase
+        .from("character_personas")
+        .select(
+          "id, name, tagline, bio, fields, avatar_path, characters(node_id, nodes(slug, title, status, worlds(slug, name)))",
+        )
+        .eq("owner_id", profile.id)
+        .order("created_at", { ascending: true }),
+      supabase
+        .from("follows")
+        .select("follower_id", { count: "exact", head: true })
+        .eq("followee_id", profile.id),
+      supabase
+        .from("follows")
+        .select("followee_id", { count: "exact", head: true })
+        .eq("follower_id", profile.id),
+      currentUser
+        ? supabase
+            .from("follows")
+            .select("follower_id")
+            .eq("follower_id", currentUser.id)
+            .eq("followee_id", profile.id)
+            .maybeSingle()
+            .then(({ data }) => Boolean(data))
+        : Promise.resolve(false),
+    ]);
 
   const avatarUrl = getProfileMediaPublicUrl(profile.avatar_path);
   const bannerUrl = getProfileMediaPublicUrl(profile.banner_path);
@@ -97,10 +118,24 @@ export default async function PublicProfilePage({
           )}
         </div>
 
-        <h1 className="mt-4 text-2xl font-semibold">{label}</h1>
-        {profile.username && (
-          <p className="text-sm text-muted-foreground">@{profile.username}</p>
-        )}
+        <div className="mt-4 flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-semibold">{label}</h1>
+            {profile.username && (
+              <p className="text-sm text-muted-foreground">@{profile.username}</p>
+            )}
+            <p className="mt-1 text-sm text-muted-foreground">
+              追蹤者 {followerCount ?? 0} ・ 追蹤中 {followingCount ?? 0}
+            </p>
+          </div>
+          {currentUser && currentUser.id !== profile.id && (
+            <FollowButton
+              followeeId={profile.id}
+              username={username}
+              initialFollowing={isFollowing}
+            />
+          )}
+        </div>
 
         {profile.bio && (
           <p className="mt-4 max-w-2xl whitespace-pre-wrap text-sm">

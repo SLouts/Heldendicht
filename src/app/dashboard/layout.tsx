@@ -21,6 +21,9 @@ export default async function DashboardLayout({
             <span className="text-xs text-muted-foreground">後台</span>
           </span>
           <div className="flex items-center gap-4 text-sm">
+            <Link href="/dashboard/friends" className="hover:underline">
+              好友
+            </Link>
             <Link href="/dashboard/profile" className="hover:underline">
               {profile?.display_name ?? profile?.email}
             </Link>

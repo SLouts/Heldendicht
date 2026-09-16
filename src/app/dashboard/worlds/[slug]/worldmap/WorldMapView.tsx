@@ -8,6 +8,13 @@ import type {
 import Link from "next/link";
 import { setNodeMapPosition, clearNodeMapPosition } from "@/lib/actions/worldmap";
 import { ImportMapForm } from "./ImportMapForm";
+import { NodeCategoryFilter } from "@/components/NodeCategoryFilter";
+import {
+  nodeCategory,
+  NODE_CATEGORIES,
+  NODE_CATEGORY_COLOR_VARS,
+  type NodeCategory,
+} from "@/lib/nodeCategory";
 
 export type UnplacedNode = {
   id: string;
@@ -46,16 +53,6 @@ function clamp01(v: number) {
   return Math.min(1, Math.max(0, v));
 }
 
-function pinColor(n: { isPlaceholder: boolean; nodeType: string; characterType: "pc" | "npc" | null }): string {
-  if (n.isPlaceholder) return "var(--muted-foreground)";
-  if (n.nodeType === "location") return "var(--success)";
-  if (n.nodeType === "item") return "var(--primary)";
-  if (n.nodeType === "character") {
-    return n.characterType === "pc" ? "var(--badge-info-fg)" : "var(--muted-foreground)";
-  }
-  return "var(--muted-foreground)";
-}
-
 export default function WorldMapView({
   layers,
   nodes,
@@ -90,11 +87,27 @@ export default function WorldMapView({
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [localPositions, setLocalPositions] = useState<Record<string, { x: number; y: number }>>({});
   const [message, setMessage] = useState<string | null>(null);
+  const [visibleCategories, setVisibleCategories] = useState<Set<NodeCategory>>(
+    () => new Set(NODE_CATEGORIES),
+  );
+
+  function toggleCategory(category: NodeCategory) {
+    setVisibleCategories((prev) => {
+      const next = new Set(prev);
+      if (next.has(category)) next.delete(category);
+      else next.add(category);
+      return next;
+    });
+  }
 
   const selectedLayer = layers.find((l) => l.id === selectedLayerId) ?? null;
   const nodesOnLayer = useMemo(
     () => nodes.filter((n) => n.layerId === selectedLayerId),
     [nodes, selectedLayerId],
+  );
+  const visibleNodesOnLayer = useMemo(
+    () => nodesOnLayer.filter((n) => visibleCategories.has(nodeCategory(n))),
+    [nodesOnLayer, visibleCategories],
   );
 
   const pointersRef = useRef(new Map<number, { x: number; y: number }>());
@@ -369,6 +382,10 @@ export default function WorldMapView({
         </div>
       )}
 
+      <div className="mb-3">
+        <NodeCategoryFilter visible={visibleCategories} onToggle={toggleCategory} />
+      </div>
+
       {isStaff && (
         <div className="mb-3 flex flex-wrap items-center gap-2">
           <button
@@ -489,7 +506,7 @@ export default function WorldMapView({
                 style={{ width: 1000, height: "auto" }}
               />
 
-              {nodesOnLayer.map((n) => {
+              {visibleNodesOnLayer.map((n) => {
                 const pos = localPositions[n.id] ?? n;
                 const style = {
                   left: `${pos.x * 100}%`,
@@ -594,7 +611,7 @@ function Pin({
       <span
         className="block h-4 w-4 rounded-full border-2"
         style={{
-          backgroundColor: pinColor(node),
+          backgroundColor: NODE_CATEGORY_COLOR_VARS[nodeCategory(node)],
           borderColor: "var(--surface)",
           borderStyle: node.status !== "approved" ? "dashed" : "solid",
         }}

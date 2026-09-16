@@ -1,7 +1,14 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import type { PointerEvent as ReactPointerEvent, WheelEvent as ReactWheelEvent } from "react";
+import { NodeCategoryFilter } from "@/components/NodeCategoryFilter";
+import {
+  nodeCategory,
+  NODE_CATEGORIES,
+  NODE_CATEGORY_COLOR_VARS,
+  type NodeCategory,
+} from "@/lib/nodeCategory";
 
 export type GraphNodeData = {
   id: string;
@@ -63,9 +70,35 @@ export default function StoryMapGraph({
 }) {
   const svgRef = useRef<SVGSVGElement>(null);
   const [transform, setTransform] = useState<Transform>({ x: 0, y: 0, k: 1 });
+  const [visibleCategories, setVisibleCategories] = useState<Set<NodeCategory>>(
+    () => new Set(NODE_CATEGORIES),
+  );
   const pointersRef = useRef(new Map<number, { x: number; y: number }>());
   const gestureRef = useRef<Gesture>({ mode: null });
   const suppressClickRef = useRef(false);
+
+  function toggleCategory(category: NodeCategory) {
+    setVisibleCategories((prev) => {
+      const next = new Set(prev);
+      if (next.has(category)) next.delete(category);
+      else next.add(category);
+      return next;
+    });
+  }
+
+  const visibleNodes = useMemo(
+    () => nodes.filter((n) => visibleCategories.has(nodeCategory(n))),
+    [nodes, visibleCategories],
+  );
+  const visibleIds = useMemo(() => new Set(visibleNodes.map((n) => n.id)), [visibleNodes]);
+  const visibleRelEdges = useMemo(
+    () => relEdges.filter((e) => visibleIds.has(e.source) && visibleIds.has(e.target)),
+    [relEdges, visibleIds],
+  );
+  const visibleWikiEdges = useMemo(
+    () => wikiEdges.filter((e) => visibleIds.has(e.source) && visibleIds.has(e.target)),
+    [wikiEdges, visibleIds],
+  );
 
   const posMap = new Map(nodes.map((n) => [n.id, n]));
 
@@ -199,143 +232,139 @@ export default function StoryMapGraph({
   }
 
   return (
-    <div className="relative mt-6">
-      <div className="absolute right-2 top-2 z-10 flex gap-1">
-        <button
-          type="button"
-          onClick={() => zoomBy(1.25)}
-          aria-label="放大"
-          className="h-8 w-8 rounded-lg border border-border bg-surface text-sm shadow-sm hover:bg-muted"
-        >
-          +
-        </button>
-        <button
-          type="button"
-          onClick={() => zoomBy(0.8)}
-          aria-label="縮小"
-          className="h-8 w-8 rounded-lg border border-border bg-surface text-sm shadow-sm hover:bg-muted"
-        >
-          −
-        </button>
-        <button
-          type="button"
-          onClick={resetView}
-          className="h-8 rounded-lg border border-border bg-surface px-2 text-xs shadow-sm hover:bg-muted"
-        >
-          重置
-        </button>
+    <div className="mt-6">
+      <div className="mb-3">
+        <NodeCategoryFilter visible={visibleCategories} onToggle={toggleCategory} />
       </div>
 
-      <svg
-        ref={svgRef}
-        viewBox={`0 0 ${width} ${height}`}
-        className="w-full touch-none rounded-lg border border-border bg-surface"
-        style={{ cursor: "grab" }}
-        role="img"
-        aria-label="節點關係圖(可縮放、拖曳)"
-        onWheel={handleWheel}
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerLeave={handlePointerUp}
-        onPointerCancel={handlePointerUp}
-      >
-        <g transform={`translate(${transform.x} ${transform.y}) scale(${transform.k})`}>
-          {wikiEdges.map((e, i) => {
-            const a = posMap.get(e.source);
-            const b = posMap.get(e.target);
-            if (!a || !b) return null;
-            return (
-              <line
-                key={`w-${i}`}
-                x1={a.x}
-                y1={a.y}
-                x2={b.x}
-                y2={b.y}
-                stroke="var(--muted-foreground)"
-                strokeWidth={1}
-                strokeDasharray="2 3"
-                opacity={0.5}
-              />
-            );
-          })}
-
-          {relEdges.map((e, i) => {
-            const a = posMap.get(e.source);
-            const b = posMap.get(e.target);
-            if (!a || !b) return null;
-            return (
-              <g key={`r-${i}`}>
+      <div className="relative">
+        <div className="absolute right-2 top-2 z-10 flex gap-1">
+          <button
+            type="button"
+            onClick={() => zoomBy(1.25)}
+            aria-label="放大"
+            className="h-8 w-8 rounded-lg border border-border bg-surface text-sm shadow-sm hover:bg-muted"
+          >
+            +
+          </button>
+          <button
+            type="button"
+            onClick={() => zoomBy(0.8)}
+            aria-label="縮小"
+            className="h-8 w-8 rounded-lg border border-border bg-surface text-sm shadow-sm hover:bg-muted"
+          >
+            −
+          </button>
+          <button
+            type="button"
+            onClick={resetView}
+            className="h-8 rounded-lg border border-border bg-surface px-2 text-xs shadow-sm hover:bg-muted"
+          >
+            重置
+          </button>
+        </div>
+  
+        <svg
+          ref={svgRef}
+          viewBox={`0 0 ${width} ${height}`}
+          className="w-full touch-none rounded-lg border border-border bg-surface"
+          style={{ cursor: "grab" }}
+          role="img"
+          aria-label="節點關係圖(可縮放、拖曳)"
+          onWheel={handleWheel}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerLeave={handlePointerUp}
+          onPointerCancel={handlePointerUp}
+        >
+          <g transform={`translate(${transform.x} ${transform.y}) scale(${transform.k})`}>
+            {visibleWikiEdges.map((e, i) => {
+              const a = posMap.get(e.source);
+              const b = posMap.get(e.target);
+              if (!a || !b) return null;
+              return (
                 <line
+                  key={`w-${i}`}
                   x1={a.x}
                   y1={a.y}
                   x2={b.x}
                   y2={b.y}
-                  stroke="var(--foreground)"
-                  strokeOpacity={0.5}
-                  strokeWidth={1.5}
-                  strokeDasharray={e.dashed ? "6 4" : undefined}
+                  stroke="var(--muted-foreground)"
+                  strokeWidth={1}
+                  strokeDasharray="2 3"
+                  opacity={0.5}
                 />
-                {e.label && (
-                  <text
-                    x={(a.x + b.x) / 2}
-                    y={(a.y + b.y) / 2}
-                    textAnchor="middle"
-                    fontSize={11}
-                    fill="var(--muted-foreground)"
-                    paintOrder="stroke"
-                    stroke="var(--surface)"
-                    strokeWidth={4}
-                  >
-                    {e.label}
-                  </text>
-                )}
-              </g>
-            );
-          })}
-
-          {nodes.map((n) => (
-            <a
-              key={n.id}
-              href={`${basePath}/${n.slug}`}
-              onClick={handleNodeClick}
-            >
-              <circle
-                cx={n.x}
-                cy={n.y}
-                r={12}
-                style={{ fill: nodeFillColor(n) }}
-                strokeDasharray={n.status !== "approved" ? "3 2" : undefined}
-                stroke="var(--surface)"
-                strokeWidth={2}
-              />
-              <text
-                x={n.x}
-                y={n.y + 24}
-                textAnchor="middle"
-                fontSize={12}
-                fontStyle={n.isPlaceholder ? "italic" : undefined}
-                fill="var(--foreground)"
-                paintOrder="stroke"
-                stroke="var(--surface)"
-                strokeWidth={4}
+              );
+            })}
+  
+            {visibleRelEdges.map((e, i) => {
+              const a = posMap.get(e.source);
+              const b = posMap.get(e.target);
+              if (!a || !b) return null;
+              return (
+                <g key={`r-${i}`}>
+                  <line
+                    x1={a.x}
+                    y1={a.y}
+                    x2={b.x}
+                    y2={b.y}
+                    stroke="var(--foreground)"
+                    strokeOpacity={0.5}
+                    strokeWidth={1.5}
+                    strokeDasharray={e.dashed ? "6 4" : undefined}
+                  />
+                  {e.label && (
+                    <text
+                      x={(a.x + b.x) / 2}
+                      y={(a.y + b.y) / 2}
+                      textAnchor="middle"
+                      fontSize={11}
+                      fill="var(--muted-foreground)"
+                      paintOrder="stroke"
+                      stroke="var(--surface)"
+                      strokeWidth={4}
+                    >
+                      {e.label}
+                    </text>
+                  )}
+                </g>
+              );
+            })}
+  
+            {visibleNodes.map((n) => (
+              <a
+                key={n.id}
+                href={`${basePath}/${n.slug}`}
+                onClick={handleNodeClick}
               >
-                {n.title}
-              </text>
-            </a>
-          ))}
-        </g>
-      </svg>
+                <circle
+                  cx={n.x}
+                  cy={n.y}
+                  r={12}
+                  style={{ fill: NODE_CATEGORY_COLOR_VARS[nodeCategory(n)] }}
+                  strokeDasharray={n.status !== "approved" ? "3 2" : undefined}
+                  stroke="var(--surface)"
+                  strokeWidth={2}
+                />
+                <text
+                  x={n.x}
+                  y={n.y + 24}
+                  textAnchor="middle"
+                  fontSize={12}
+                  fontStyle={n.isPlaceholder ? "italic" : undefined}
+                  fill="var(--foreground)"
+                  paintOrder="stroke"
+                  stroke="var(--surface)"
+                  strokeWidth={4}
+                >
+                  {n.title}
+                </text>
+              </a>
+            ))}
+          </g>
+        </svg>
+      </div>
     </div>
   );
-}
-
-function nodeFillColor(n: GraphNodeData): string {
-  if (n.isPlaceholder) return "var(--muted-foreground)";
-  if (n.nodeType === "location") return "var(--success)";
-  if (n.nodeType === "item") return "var(--primary)";
-  if (n.nodeType === "character") {
-    return n.characterType === "pc" ? "var(--badge-info-fg)" : "var(--muted-foreground)";
-  }
-  return "var(--muted-foreground)";
 }

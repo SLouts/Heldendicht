@@ -23,7 +23,7 @@ type CharacterSummary = Pick<
 
 type NodeRow = Pick<
   Database["public"]["Tables"]["nodes"]["Row"],
-  "id" | "title" | "slug" | "node_type" | "status" | "is_placeholder"
+  "id" | "title" | "slug" | "node_type" | "status" | "is_placeholder" | "category_id"
 > & {
   characters: CharacterSummary | CharacterSummary[] | null;
 };
@@ -67,39 +67,56 @@ export default async function WorldPage({
   // 角色、關係線,可見度都只交給資料庫的 RLS 判斷(is_public/是否為
   // 成員/status <> rejected 等),這裡不再額外用 status='approved' 之類
   // 的條件收斂一次。跟登入後唯一的差異只有「不能建立/編輯」。
-  const [{ data: nodes }, { data: relationships }, { data: layers }, { data: mapNodes }] =
-    await Promise.all([
-      supabase
-        .from("nodes")
-        .select(
-          "id, title, slug, node_type, status, is_placeholder, characters(character_type, owner_id, profiles(display_name, username))",
-        )
-        .eq("world_id", world.id)
-        .order("node_type")
-        .order("title"),
-      supabase
-        .from("relationships")
-        .select(
-          "id, label, status, node_a:nodes!relationships_node_a_id_fkey(title), node_b:nodes!relationships_node_b_id_fkey(title)",
-        )
-        .eq("world_id", world.id)
-        .order("created_at", { ascending: false }),
-      supabase
-        .from("world_map_layers")
-        .select("id, name, image_path")
-        .eq("world_id", world.id)
-        .order("order_index", { ascending: true }),
-      supabase
-        .from("nodes")
-        .select(
-          "id, title, slug, node_type, status, is_placeholder, map_layer_id, map_x, map_y, characters(character_type)",
-        )
-        .eq("world_id", world.id)
-        .not("map_x", "is", null),
-    ]);
+  const [
+    { data: nodes },
+    { data: relationships },
+    { data: categories },
+    { data: layers },
+    { data: mapNodes },
+  ] = await Promise.all([
+    supabase
+      .from("nodes")
+      .select(
+        "id, title, slug, node_type, status, is_placeholder, category_id, characters(character_type, owner_id, profiles(display_name, username))",
+      )
+      .eq("world_id", world.id)
+      .order("node_type")
+      .order("title"),
+    supabase
+      .from("relationships")
+      .select(
+        "id, label, status, node_a:nodes!relationships_node_a_id_fkey(title), node_b:nodes!relationships_node_b_id_fkey(title)",
+      )
+      .eq("world_id", world.id)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("world_content_categories")
+      .select("id, name, description, accepts_submissions")
+      .eq("world_id", world.id)
+      .order("order_index", { ascending: true }),
+    supabase
+      .from("world_map_layers")
+      .select("id, name, image_path")
+      .eq("world_id", world.id)
+      .order("order_index", { ascending: true }),
+    supabase
+      .from("nodes")
+      .select(
+        "id, title, slug, node_type, status, is_placeholder, map_layer_id, map_x, map_y, characters(character_type)",
+      )
+      .eq("world_id", world.id)
+      .not("map_x", "is", null),
+  ]);
 
-  const locationsAndItems = nodes?.filter((n) => n.node_type !== "character");
-  const characterNodes = nodes?.filter((n) => n.node_type === "character");
+  // 有掛分類的節點,顯示交給下面的「分類導覽」區塊;沒掛分類的節點才
+  // 落回舊的「地點/物產」「角色」兩欄分法,兩邊不會重複列出同一個節點。
+  const uncategorizedNodes = (nodes ?? []).filter((n) => n.category_id == null);
+  const locationsAndItems = uncategorizedNodes.filter((n) => n.node_type !== "character");
+  const characterNodes = uncategorizedNodes.filter((n) => n.node_type === "character");
+  const categoryGroups = (categories ?? []).map((category) => ({
+    category,
+    nodes: (nodes ?? []).filter((n) => n.category_id === category.id),
+  }));
 
   const mapLayers: MapLayer[] = await Promise.all(
     (layers ?? []).map(async (l) => ({
@@ -170,17 +187,51 @@ export default async function WorldPage({
         </section>
       )}
 
-      <section className="mt-10">
-        <h2 className="text-xl font-semibold">地點 / 物產</h2>
-        <NodeList nodes={locationsAndItems} worldSlug={slug} />
-      </section>
+      {categoryGroups.length > 0 && (
+        <section className="mt-10">
+          <h2 className="text-xl font-semibold">分類導覽</h2>
+          <div className="mt-4 flex flex-col gap-6">
+            {categoryGroups.map(({ category, nodes: categoryNodes }) => (
+              <div key={category.id} className="rounded-lg border border-border bg-surface p-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="font-semibold">{category.name}</h3>
+                  <span
+                    className={
+                      category.accepts_submissions
+                        ? "rounded-full bg-badge-info-bg px-2 py-0.5 text-xs text-badge-info-fg"
+                        : "rounded-full bg-badge-neutral-bg px-2 py-0.5 text-xs text-badge-neutral-fg"
+                    }
+                  >
+                    {category.accepts_submissions ? "開放投稿" : "未開放"}
+                  </span>
+                </div>
+                {category.description && (
+                  <p className="mt-1 text-sm text-muted-foreground">{category.description}</p>
+                )}
+                <NodeList nodes={categoryNodes} worldSlug={slug} />
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
-      <section className="mt-8">
-        <h2 className="text-xl font-semibold">
-          角色(每人 PC 配額:{world.default_pc_quota})
-        </h2>
-        <NodeList nodes={characterNodes} worldSlug={slug} />
-      </section>
+      {(categoryGroups.length === 0 || locationsAndItems.length > 0) && (
+        <section className="mt-10">
+          <h2 className="text-xl font-semibold">
+            {categoryGroups.length > 0 ? "未分類地點 / 物產" : "地點 / 物產"}
+          </h2>
+          <NodeList nodes={locationsAndItems} worldSlug={slug} />
+        </section>
+      )}
+
+      {(categoryGroups.length === 0 || characterNodes.length > 0) && (
+        <section className="mt-8">
+          <h2 className="text-xl font-semibold">
+            {categoryGroups.length > 0 ? "未分類角色" : `角色(每人 PC 配額:${world.default_pc_quota})`}
+          </h2>
+          <NodeList nodes={characterNodes} worldSlug={slug} />
+        </section>
+      )}
 
       <section className="mt-8">
         <h2 className="text-xl font-semibold">人際關係線</h2>

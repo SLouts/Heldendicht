@@ -5,13 +5,7 @@ import { getAttachmentSignedUrl } from "@/lib/attachments";
 import { WikiLinkContent } from "@/app/dashboard/worlds/[slug]/nodes/[nodeSlug]/WikiLinkContent";
 import { NodeSectionsEditor } from "@/app/dashboard/worlds/[slug]/nodes/[nodeSlug]/NodeSectionsEditor";
 import { CharacterFieldsDisplay } from "@/app/dashboard/worlds/[slug]/nodes/[nodeSlug]/CharacterFieldsForm";
-
-const NODE_TYPE_LABEL: Record<string, string> = {
-  location: "地點",
-  item: "物產",
-  character: "角色",
-  unspecified: "尚未分類(待撰寫)",
-};
+import { NODE_TYPE_LABEL } from "@/lib/nodeTypeLabels";
 
 const STATUS_LABEL: Record<string, string> = {
   pending: "未正式過審",
@@ -40,7 +34,7 @@ export default async function PublicNodeDetailPage({
   const { data: node } = await supabase
     .from("nodes")
     .select(
-      "id, title, slug, node_type, content, status, is_placeholder, characters(character_type, owner_id, profiles(display_name, username))",
+      "id, title, slug, node_type, content, status, is_placeholder, category_id, characters(character_type, owner_id, profiles(display_name, username))",
     )
     .eq("world_id", world.id)
     .eq("slug", nodeSlug)
@@ -62,6 +56,7 @@ export default async function PublicNodeDetailPage({
     { data: sections },
     { data: characterFieldDefs },
     { data: characterFieldValues },
+    { data: category },
   ] = await Promise.all([
     supabase
       .from("wikilinks")
@@ -91,6 +86,13 @@ export default async function PublicNodeDetailPage({
           .from("character_field_values")
           .select("field_id, value")
           .eq("node_id", node.id)
+      : Promise.resolve({ data: null }),
+    node.category_id
+      ? supabase
+          .from("world_content_categories")
+          .select("name")
+          .eq("id", node.category_id)
+          .maybeSingle()
       : Promise.resolve({ data: null }),
   ]);
 
@@ -168,6 +170,7 @@ export default async function PublicNodeDetailPage({
       </div>
       <p className="mt-1 text-sm text-muted-foreground">
         {NODE_TYPE_LABEL[node.node_type]}
+        {category && <> ・分類:{category.name}</>}
         {character?.character_type === "pc" && (
           <>
             {" "}

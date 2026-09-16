@@ -19,11 +19,24 @@ export default async function NewCharacterPage({
 
   if (!world) notFound();
 
-  const { data: characterFields } = await supabase
-    .from("world_character_fields")
-    .select("id, label")
-    .eq("world_id", world.id)
-    .order("order_index", { ascending: true });
+  const [{ data: characterFields }, { data: isStaff }, { data: categories }] =
+    await Promise.all([
+      supabase
+        .from("world_character_fields")
+        .select("id, label")
+        .eq("world_id", world.id)
+        .order("order_index", { ascending: true }),
+      supabase.rpc("is_world_staff", { p_world_id: world.id }),
+      supabase
+        .from("world_content_categories")
+        .select("id, name, accepts_submissions")
+        .eq("world_id", world.id)
+        .order("order_index", { ascending: true }),
+    ]);
+
+  const selectableCategories = (categories ?? []).filter(
+    (c) => c.accepts_submissions || isStaff,
+  );
 
   return (
     <div>
@@ -42,6 +55,7 @@ export default async function NewCharacterPage({
         worldId={world.id}
         worldSlug={world.slug}
         characterFields={characterFields ?? []}
+        categories={selectableCategories}
       />
     </div>
   );

@@ -14,7 +14,15 @@ export type Json =
 export type SiteRole = "site_admin" | "user";
 export type WorldRole = "admin" | "editor" | "member";
 export type MembershipStatus = "active" | "banned";
-export type NodeType = "location" | "item" | "character" | "unspecified";
+export type NodeType =
+  | "location"
+  | "item"
+  | "character"
+  | "faction"
+  | "concept"
+  | "event"
+  | "article"
+  | "unspecified";
 export type NodeStatus = "pending" | "approved" | "rejected";
 export type EditMode = "owner_only" | "collaborative";
 export type CharacterType = "pc" | "npc";
@@ -207,6 +215,7 @@ export type Database = {
           map_layer_id: string | null;
           map_x: number | null;
           map_y: number | null;
+          category_id: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -231,6 +240,39 @@ export type Database = {
             columns: ["map_layer_id"];
             isOneToOne: false;
             referencedRelation: "world_map_layers";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "nodes_category_id_fkey";
+            columns: ["category_id"];
+            isOneToOne: false;
+            referencedRelation: "world_content_categories";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      world_content_categories: {
+        Row: {
+          id: string;
+          world_id: string;
+          name: string;
+          description: string | null;
+          accepts_submissions: boolean;
+          order_index: number;
+          created_at: string;
+        };
+        Insert: Partial<
+          Database["public"]["Tables"]["world_content_categories"]["Row"]
+        > & { world_id: string; name: string };
+        Update: Partial<
+          Database["public"]["Tables"]["world_content_categories"]["Row"]
+        >;
+        Relationships: [
+          {
+            foreignKeyName: "world_content_categories_world_id_fkey";
+            columns: ["world_id"];
+            isOneToOne: false;
+            referencedRelation: "worlds";
             referencedColumns: ["id"];
           },
         ];

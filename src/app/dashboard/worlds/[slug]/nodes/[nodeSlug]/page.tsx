@@ -11,18 +11,12 @@ import { CharacterPersonaForm } from "./CharacterPersonaForm";
 import { CharacterFieldsForm, CharacterFieldsDisplay } from "./CharacterFieldsForm";
 import { NodeSectionsEditor } from "./NodeSectionsEditor";
 import { ReportForm } from "@/components/ReportForm";
+import { NODE_TYPE_LABEL } from "@/lib/nodeTypeLabels";
 
 const STATUS_LABEL: Record<string, string> = {
   pending: "未正式過審",
   approved: "已過審",
   rejected: "已駁回",
-};
-
-const NODE_TYPE_LABEL: Record<string, string> = {
-  location: "地點",
-  item: "物產",
-  character: "角色",
-  unspecified: "尚未分類(待撰寫)",
 };
 
 export default async function NodeDetailPage({
@@ -42,7 +36,7 @@ export default async function NodeDetailPage({
   const { data: node } = await supabase
     .from("nodes")
     .select(
-      "id, title, slug, node_type, content, status, edit_mode, is_placeholder, creator_id, characters(character_type, owner_id, persona_id, profiles(display_name, username, email))",
+      "id, title, slug, node_type, content, status, edit_mode, is_placeholder, creator_id, category_id, characters(character_type, owner_id, persona_id, profiles(display_name, username, email))",
     )
     .eq("world_id", world.id)
     .eq("slug", nodeSlug)
@@ -70,6 +64,7 @@ export default async function NodeDetailPage({
     { data: sections },
     { data: characterFieldDefs },
     { data: characterFieldValues },
+    { data: categories },
   ] = await Promise.all([
     supabase.rpc("is_world_staff", { p_world_id: world.id }),
     supabase.rpc("is_world_member", { p_world_id: world.id }),
@@ -116,7 +111,18 @@ export default async function NodeDetailPage({
           .select("field_id, value")
           .eq("node_id", node.id)
       : Promise.resolve({ data: null }),
+    supabase
+      .from("world_content_categories")
+      .select("id, name, accepts_submissions")
+      .eq("world_id", world.id)
+      .order("order_index", { ascending: true }),
   ]);
+
+  // 一般成員只能改選開放投稿的分類,或是節點目前已經掛著的那個分類
+  // (即使那個分類後來被關閉,也不會因此把選項憑空拿掉、逼他們選別的)。
+  const selectableCategories = (categories ?? []).filter(
+    (c) => c.accepts_submissions || isStaff || c.id === node.category_id,
+  );
 
   const valueByFieldId = new Map(
     (characterFieldValues ?? []).map((v) => [v.field_id, v.value]),
@@ -211,6 +217,10 @@ export default async function NodeDetailPage({
       <p className="mt-1 text-sm text-muted-foreground">
         {NODE_TYPE_LABEL[node.node_type]} ·{" "}
         {node.edit_mode === "collaborative" ? "開放共筆" : "僅自己可改"}
+        {(() => {
+          const category = categories?.find((c) => c.id === node.category_id);
+          return category ? <> ・分類:{category.name}</> : null;
+        })()}
         {character?.character_type === "pc" && (
           <>
             {" "}
@@ -269,6 +279,8 @@ export default async function NodeDetailPage({
             content={node.content}
             isPlaceholder={node.is_placeholder}
             nodeType={node.node_type}
+            categories={selectableCategories}
+            currentCategoryId={node.category_id}
           />
         ) : (
           <WikiLinkContent

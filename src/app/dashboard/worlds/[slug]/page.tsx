@@ -19,7 +19,7 @@ type CharacterSummary = Pick<
 
 type NodeRow = Pick<
   Database["public"]["Tables"]["nodes"]["Row"],
-  "id" | "title" | "slug" | "node_type" | "status" | "is_placeholder" | "creator_id"
+  "id" | "title" | "slug" | "node_type" | "status" | "is_placeholder" | "creator_id" | "category_id"
 > & {
   characters: CharacterSummary | CharacterSummary[] | null;
 };
@@ -58,29 +58,44 @@ export default async function WorldDashboardPage({
 
   if (!world) notFound();
 
-  const [{ data: isStaff }, { data: isAdmin }, { data: nodes }, { data: relationships }] =
-    await Promise.all([
-      supabase.rpc("is_world_staff", { p_world_id: world.id }),
-      supabase.rpc("is_world_admin", { p_world_id: world.id }),
-      supabase
-        .from("nodes")
-        .select(
-          "id, title, slug, node_type, status, is_placeholder, creator_id, characters(character_type, owner_id, profiles(display_name, username, email))",
-        )
-        .eq("world_id", world.id)
-        .order("node_type")
-        .order("title"),
-      supabase
-        .from("relationships")
-        .select(
-          "id, label, status, node_a:nodes!relationships_node_a_id_fkey(title), node_b:nodes!relationships_node_b_id_fkey(title)",
-        )
-        .eq("world_id", world.id)
-        .order("created_at", { ascending: false }),
-    ]);
+  const [
+    { data: isStaff },
+    { data: isAdmin },
+    { data: nodes },
+    { data: relationships },
+    { data: categories },
+  ] = await Promise.all([
+    supabase.rpc("is_world_staff", { p_world_id: world.id }),
+    supabase.rpc("is_world_admin", { p_world_id: world.id }),
+    supabase
+      .from("nodes")
+      .select(
+        "id, title, slug, node_type, status, is_placeholder, creator_id, category_id, characters(character_type, owner_id, profiles(display_name, username, email))",
+      )
+      .eq("world_id", world.id)
+      .order("node_type")
+      .order("title"),
+    supabase
+      .from("relationships")
+      .select(
+        "id, label, status, node_a:nodes!relationships_node_a_id_fkey(title), node_b:nodes!relationships_node_b_id_fkey(title)",
+      )
+      .eq("world_id", world.id)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("world_content_categories")
+      .select("id, name, description, accepts_submissions")
+      .eq("world_id", world.id)
+      .order("order_index", { ascending: true }),
+  ]);
 
-  const locationsAndItems = nodes?.filter((n) => n.node_type !== "character");
-  const characterNodes = nodes?.filter((n) => n.node_type === "character");
+  const uncategorizedNodes = (nodes ?? []).filter((n) => n.category_id == null);
+  const locationsAndItems = uncategorizedNodes.filter((n) => n.node_type !== "character");
+  const characterNodes = uncategorizedNodes.filter((n) => n.node_type === "character");
+  const categoryGroups = (categories ?? []).map((category) => ({
+    category,
+    nodes: (nodes ?? []).filter((n) => n.category_id === category.id),
+  }));
 
   return (
     <div>
@@ -129,6 +144,14 @@ export default async function WorldDashboardPage({
         )}
         {isStaff && (
           <Link
+            href={`/dashboard/worlds/${world.slug}/categories`}
+            className="rounded-md px-3 py-1.5 hover:bg-surface hover:underline"
+          >
+            內容分類
+          </Link>
+        )}
+        {isStaff && (
+          <Link
             href={`/dashboard/worlds/${world.slug}/reports`}
             className="rounded-md px-3 py-1.5 hover:bg-surface hover:underline"
           >
@@ -153,41 +176,85 @@ export default async function WorldDashboardPage({
         )}
       </NavMenu>
 
-      <section className="mt-8">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">地點 / 物產</h2>
-          <Link
-            href={`/dashboard/worlds/${world.slug}/nodes/new`}
-            className="text-sm underline"
-          >
-            + 新增節點
-          </Link>
-        </div>
-        <NodeList
-          nodes={locationsAndItems}
-          worldSlug={world.slug}
-          currentUserId={user.id}
-        />
-      </section>
+      {categoryGroups.length > 0 && (
+        <section className="mt-8">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold">分類導覽</h2>
+            <Link
+              href={`/dashboard/worlds/${world.slug}/categories`}
+              className="text-sm underline"
+            >
+              管理分類
+            </Link>
+          </div>
+          <div className="mt-4 flex flex-col gap-6">
+            {categoryGroups.map(({ category, nodes: categoryNodes }) => (
+              <div key={category.id} className="rounded-lg border border-border bg-surface p-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="font-semibold">{category.name}</h3>
+                  <span
+                    className={
+                      category.accepts_submissions
+                        ? "rounded-full bg-badge-info-bg px-2 py-0.5 text-xs text-badge-info-fg"
+                        : "rounded-full bg-badge-neutral-bg px-2 py-0.5 text-xs text-badge-neutral-fg"
+                    }
+                  >
+                    {category.accepts_submissions ? "開放投稿" : "未開放"}
+                  </span>
+                </div>
+                {category.description && (
+                  <p className="mt-1 text-sm text-muted-foreground">{category.description}</p>
+                )}
+                <NodeList nodes={categoryNodes} worldSlug={world.slug} currentUserId={user.id} />
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
-      <section className="mt-8">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">
-            角色(每人 PC 配額:{world.default_pc_quota})
-          </h2>
-          <Link
-            href={`/dashboard/worlds/${world.slug}/characters/new`}
-            className="text-sm underline"
-          >
-            + 新增角色
-          </Link>
-        </div>
-        <NodeList
-          nodes={characterNodes}
-          worldSlug={world.slug}
-          currentUserId={user.id}
-        />
-      </section>
+      {(categoryGroups.length === 0 || locationsAndItems.length > 0) && (
+        <section className="mt-8">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold">
+              {categoryGroups.length > 0 ? "未分類地點 / 物產" : "地點 / 物產"}
+            </h2>
+            <Link
+              href={`/dashboard/worlds/${world.slug}/nodes/new`}
+              className="text-sm underline"
+            >
+              + 新增節點
+            </Link>
+          </div>
+          <NodeList
+            nodes={locationsAndItems}
+            worldSlug={world.slug}
+            currentUserId={user.id}
+          />
+        </section>
+      )}
+
+      {(categoryGroups.length === 0 || characterNodes.length > 0) && (
+        <section className="mt-8">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold">
+              {categoryGroups.length > 0
+                ? "未分類角色"
+                : `角色(每人 PC 配額:${world.default_pc_quota})`}
+            </h2>
+            <Link
+              href={`/dashboard/worlds/${world.slug}/characters/new`}
+              className="text-sm underline"
+            >
+              + 新增角色
+            </Link>
+          </div>
+          <NodeList
+            nodes={characterNodes}
+            worldSlug={world.slug}
+            currentUserId={user.id}
+          />
+        </section>
+      )}
 
       <section className="mt-8">
         <div className="flex items-center justify-between">

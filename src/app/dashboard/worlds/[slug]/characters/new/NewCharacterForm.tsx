@@ -7,10 +7,12 @@ export function NewCharacterForm({
   worldId,
   worldSlug,
   characterFields,
+  categories,
 }: {
   worldId: string;
   worldSlug: string;
   characterFields: { id: string; label: string }[];
+  categories: { id: string; name: string; accepts_submissions: boolean }[];
 }) {
   const [state, formAction, pending] = useActionState(
     createCharacter,
@@ -80,6 +82,27 @@ export function NewCharacterForm({
           className="rounded-lg border border-border bg-surface px-3 py-2"
         />
       </div>
+
+      {categories.length > 0 && (
+        <div className="flex flex-col gap-1">
+          <label htmlFor="categoryId" className="text-sm font-medium">
+            分類(選填)
+          </label>
+          <select
+            id="categoryId"
+            name="categoryId"
+            defaultValue=""
+            className="w-56 rounded-lg border border-border bg-surface px-3 py-2"
+          >
+            <option value="">不掛分類</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       {characterFields.length > 0 && (
         <div className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-3">

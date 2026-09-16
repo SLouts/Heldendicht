@@ -11,6 +11,8 @@ export function EditNodeForm({
   content,
   isPlaceholder,
   nodeType,
+  categories,
+  currentCategoryId,
 }: {
   nodeId: string;
   worldSlug: string;
@@ -19,6 +21,8 @@ export function EditNodeForm({
   content: string;
   isPlaceholder: boolean;
   nodeType: string;
+  categories: { id: string; name: string; accepts_submissions: boolean }[];
+  currentCategoryId: string | null;
 }) {
   const [state, formAction, pending] = useActionState(
     updateNodeContent,
@@ -34,11 +38,11 @@ export function EditNodeForm({
       {isPlaceholder && (
         <div className="rounded-lg border border-badge-pending-fg/30 bg-badge-pending-bg p-3 text-sm">
           <p className="text-badge-pending-fg">
-            這是 WikiLink 自動建立的待撰寫節點,請補上正確分類跟內容。
+            這是 WikiLink 自動建立的待撰寫節點,請補上正確類型跟內容。
           </p>
           <div className="mt-2 flex flex-col gap-1">
             <label htmlFor="nodeType" className="text-sm font-medium">
-              分類
+              類型
             </label>
             <select
               id="nodeType"
@@ -48,15 +52,40 @@ export function EditNodeForm({
               className="w-40 rounded-lg border border-border bg-surface px-3 py-2"
             >
               <option value="" disabled>
-                選擇分類
+                選擇類型
               </option>
               <option value="location">地點</option>
               <option value="item">物產</option>
+              <option value="faction">勢力</option>
+              <option value="concept">概念</option>
+              <option value="event">事件</option>
+              <option value="article">文章</option>
             </select>
             <p className="mt-1 text-xs text-badge-pending-fg/80">
               如果這個名稱其實該是角色,請改用「新增角色」重新建立,再手動把這個待撰寫節點刪掉。
             </p>
           </div>
+        </div>
+      )}
+
+      {categories.length > 0 && (
+        <div className="flex flex-col gap-1">
+          <label htmlFor="categoryId" className="text-sm font-medium">
+            內容分類(選填)
+          </label>
+          <select
+            id="categoryId"
+            name="categoryId"
+            defaultValue={currentCategoryId ?? ""}
+            className="w-56 rounded-lg border border-border bg-surface px-3 py-2"
+          >
+            <option value="">不掛分類</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
         </div>
       )}
 

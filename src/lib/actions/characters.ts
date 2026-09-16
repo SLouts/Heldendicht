@@ -17,6 +17,7 @@ const CreateCharacterSchema = z.object({
     .regex(/^[a-z0-9-]+$/, { error: "slug 只能用小寫英數字與連字號" }),
   content: z.string(),
   characterType: z.enum(["pc", "npc"]),
+  categoryId: z.union([z.uuid(), z.literal("")]).optional(),
 });
 
 export type CreateCharacterState =
@@ -47,11 +48,12 @@ export async function createCharacter(
     slug: formData.get("slug"),
     content: formData.get("content") ?? "",
     characterType: formData.get("characterType"),
+    categoryId: formData.get("categoryId") ?? "",
   });
   if (!parsed.success) {
     return { fieldErrors: parsed.error.flatten().fieldErrors };
   }
-  const { worldId, worldSlug, title, slug, content, characterType } =
+  const { worldId, worldSlug, title, slug, content, characterType, categoryId } =
     parsed.data;
 
   const supabase = await createClient();
@@ -90,6 +92,19 @@ export async function createCharacter(
 
   if (characterFields && characterFields.length > 0 && nodeId) {
     await setCharacterFieldValues(nodeId, worldSlug, characterFields, fieldValues);
+  }
+
+  // create_character RPC 沒有 category_id 參數,所以用一次額外的 update 補上——
+  // 跟填必填欄位一樣,分類是否開放投稿由 guard_node_category trigger 把關,
+  // 不在這裡重複判斷。
+  if (categoryId && nodeId) {
+    const { error: categoryError } = await supabase
+      .from("nodes")
+      .update({ category_id: categoryId })
+      .eq("id", nodeId);
+    if (categoryError) {
+      return { error: categoryError.message };
+    }
   }
 
   revalidatePath(`/dashboard/worlds/${worldSlug}`);

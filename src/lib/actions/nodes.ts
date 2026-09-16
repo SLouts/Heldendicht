@@ -19,11 +19,14 @@ const SlugSchema = z
 const CreateNodeSchema = z.object({
   worldId: z.uuid(),
   worldSlug: z.string().min(1),
-  nodeType: z.enum(["location", "item"]),
+  nodeType: z.enum(["location", "item", "faction", "concept", "event", "article"]),
   title: z.string().min(1, { error: "請輸入標題" }),
   slug: SlugSchema,
   content: z.string(),
   editMode: z.enum(["owner_only", "collaborative"]),
+  // 選填,世界觀自訂的內容分類——分類是否開放投稿由 guard_node_category
+  // trigger 把關,這裡不重複判斷。
+  categoryId: z.union([z.uuid(), z.literal("")]).optional(),
 });
 
 /**
@@ -45,6 +48,7 @@ export async function createNode(
     slug: formData.get("slug"),
     content: formData.get("content") ?? "",
     editMode: formData.get("editMode"),
+    categoryId: formData.get("categoryId") ?? "",
   });
   if (!parsed.success) {
     return { fieldErrors: parsed.error.flatten().fieldErrors };
@@ -61,6 +65,7 @@ export async function createNode(
       content: parsed.data.content,
       edit_mode: parsed.data.editMode,
       creator_id: user.id,
+      category_id: parsed.data.categoryId || null,
     })
     .select("slug")
     .single();
@@ -68,9 +73,11 @@ export async function createNode(
   if (error) {
     return {
       error:
-        error.code === "23505"
-          ? "這個 slug 在這個世界觀裡已經被用過了"
-          : "建立失敗,可能是你還不是這個世界觀的成員",
+        error.message.includes("這個分類目前不開放投稿")
+          ? error.message
+          : error.code === "23505"
+            ? "這個 slug 在這個世界觀裡已經被用過了"
+            : "建立失敗,可能是你還不是這個世界觀的成員",
     };
   }
 
@@ -85,7 +92,9 @@ const UpdateNodeContentSchema = z.object({
   content: z.string(),
   // 只有「補完」WikiLink 自動建立的待撰寫節點時才會帶這個欄位,
   // 一般節點編輯表單沒有這個欄位,formData.get() 會是 null。
-  nodeType: z.enum(["location", "item"]).optional(),
+  nodeType: z.enum(["location", "item", "faction", "concept", "event", "article"]).optional(),
+  // 選填,世界觀自訂的內容分類;空字串表示「移回未分類」。
+  categoryId: z.union([z.uuid(), z.literal("")]).optional(),
 });
 
 /**
@@ -110,6 +119,8 @@ export async function updateNodeContent(
     title: formData.get("title"),
     content: formData.get("content") ?? "",
     nodeType: formData.get("nodeType") || undefined,
+    // 表單沒有帶這個欄位就代表「不改分類」;帶了空字串代表「移回未分類」。
+    categoryId: formData.has("categoryId") ? formData.get("categoryId") ?? "" : undefined,
   });
   if (!parsed.success) {
     return { fieldErrors: parsed.error.flatten().fieldErrors };
@@ -126,13 +137,20 @@ export async function updateNodeContent(
           node_type: parsed.data.nodeType,
           is_placeholder: false,
         }),
+        ...(parsed.data.categoryId !== undefined && {
+          category_id: parsed.data.categoryId || null,
+        }),
       },
       { count: "exact" },
     )
     .eq("id", parsed.data.nodeId);
 
   if (error) {
-    return { error: "更新失敗,請稍後再試" };
+    return {
+      error: error.message.includes("這個分類目前不開放投稿")
+        ? error.message
+        : "更新失敗,請稍後再試",
+    };
   }
   if (count === 0) {
     return { error: "你沒有權限編輯這個節點" };

@@ -6,19 +6,18 @@ import * as z from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/dal";
 import { setCharacterFieldValues } from "@/lib/actions/characterFields";
+import { generateNodeSlug } from "@/lib/slug";
 
 const CreateCharacterSchema = z.object({
   worldId: z.uuid(),
   worldSlug: z.string().min(1),
   title: z.string().min(1, { error: "請輸入角色名稱" }),
-  slug: z
-    .string()
-    .min(1)
-    .regex(/^[a-z0-9-]+$/, { error: "slug 只能用小寫英數字與連字號" }),
   content: z.string(),
   characterType: z.enum(["pc", "npc"]),
   categoryId: z.union([z.uuid(), z.literal("")]).optional(),
 });
+
+const MAX_SLUG_ATTEMPTS = 5;
 
 export type CreateCharacterState =
   | { error: string }
@@ -45,7 +44,6 @@ export async function createCharacter(
     worldId: formData.get("worldId"),
     worldSlug: formData.get("worldSlug"),
     title: formData.get("title"),
-    slug: formData.get("slug"),
     content: formData.get("content") ?? "",
     characterType: formData.get("characterType"),
     categoryId: formData.get("categoryId") ?? "",
@@ -53,8 +51,7 @@ export async function createCharacter(
   if (!parsed.success) {
     return { fieldErrors: parsed.error.flatten().fieldErrors };
   }
-  const { worldId, worldSlug, title, slug, content, characterType, categoryId } =
-    parsed.data;
+  const { worldId, worldSlug, title, content, characterType, categoryId } = parsed.data;
 
   const supabase = await createClient();
 
@@ -76,18 +73,29 @@ export async function createCharacter(
     fieldValues[f.id] = v;
   }
 
-  const { data: nodeId, error } = await supabase.rpc("create_character", {
-    p_world_id: worldId,
-    p_title: title,
-    p_slug: slug,
-    p_content: content,
-    p_character_type: characterType,
-    p_owner_id: characterType === "pc" ? user.id : null,
-  });
+  // slug 不讓使用者自己填(理由跟 lib/actions/nodes.ts 的 createNode 一樣),
+  // 自動產生,撞號時重試幾次即可。
+  let nodeId: string | null = null;
+  let slug = "";
+  let error: { message: string; code?: string } | null = null;
+  for (let attempt = 0; attempt < MAX_SLUG_ATTEMPTS; attempt++) {
+    slug = generateNodeSlug(title);
+    const result = await supabase.rpc("create_character", {
+      p_world_id: worldId,
+      p_title: title,
+      p_slug: slug,
+      p_content: content,
+      p_character_type: characterType,
+      p_owner_id: characterType === "pc" ? user.id : null,
+    });
+    nodeId = result.data;
+    error = result.error;
+    if (!error || error.code !== "23505") break;
+  }
 
   if (error) {
     // 配額 / 權限被資料庫擋下時,error.message 就是 trigger 丟出的那句中文提示
-    return { error: error.message };
+    return { error: error.code === "23505" ? "建立失敗,請稍後再試" : error.message };
   }
 
   if (characterFields && characterFields.length > 0 && nodeId) {

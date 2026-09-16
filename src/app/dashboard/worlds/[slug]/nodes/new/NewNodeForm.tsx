@@ -75,22 +75,6 @@ export function NewNodeForm({
       </div>
 
       <div className="flex flex-col gap-1">
-        <label htmlFor="slug" className="text-sm font-medium">
-          slug(網址用)
-        </label>
-        <input
-          id="slug"
-          name="slug"
-          required
-          pattern="[a-z0-9-]+"
-          className="rounded-lg border border-border bg-surface px-3 py-2 font-mono text-sm"
-        />
-        {state && "fieldErrors" in state && state.fieldErrors.slug && (
-          <p className="text-sm text-danger">{state.fieldErrors.slug[0]}</p>
-        )}
-      </div>
-
-      <div className="flex flex-col gap-1">
         <label htmlFor="content" className="text-sm font-medium">
           內文
         </label>

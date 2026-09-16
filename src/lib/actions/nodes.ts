@@ -5,23 +5,18 @@ import { revalidatePath } from "next/cache";
 import * as z from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/dal";
+import { generateNodeSlug } from "@/lib/slug";
 
 export type NodeFormState =
   | { error: string }
   | { fieldErrors: Record<string, string[]> }
   | undefined;
 
-const SlugSchema = z
-  .string()
-  .min(1, { error: "請輸入 slug" })
-  .regex(/^[a-z0-9-]+$/, { error: "slug 只能用小寫英文、數字與連字號" });
-
 const CreateNodeSchema = z.object({
   worldId: z.uuid(),
   worldSlug: z.string().min(1),
   nodeType: z.enum(["location", "item", "faction", "concept", "event", "article"]),
   title: z.string().min(1, { error: "請輸入標題" }),
-  slug: SlugSchema,
   content: z.string(),
   editMode: z.enum(["owner_only", "collaborative"]),
   // 選填,世界觀自訂的內容分類——分類是否開放投稿由 guard_node_category
@@ -29,10 +24,16 @@ const CreateNodeSchema = z.object({
   categoryId: z.union([z.uuid(), z.literal("")]).optional(),
 });
 
+const MAX_SLUG_ATTEMPTS = 5;
+
 /**
  * 建立地點/物產節點(角色正史走 characters.ts 的 create_character RPC,不走這裡)。
  * 建立者必須是該世界觀成員,狀態一律從 pending 開始 —— 這兩點都由
  * nodes_insert_member 這條 RLS policy 保證,這裡不重複檢查。
+ *
+ * slug 不讓使用者自己填(標題常常是中文,硬要想一個英數字網址代號體驗很差),
+ * 改成自動產生(見 lib/slug.ts),撞號時重試幾次即可——世界觀內節點量
+ * 不大,撞號機率極低。
  */
 export async function createNode(
   _prevState: NodeFormState,
@@ -45,7 +46,6 @@ export async function createNode(
     worldSlug: formData.get("worldSlug"),
     nodeType: formData.get("nodeType"),
     title: formData.get("title"),
-    slug: formData.get("slug"),
     content: formData.get("content") ?? "",
     editMode: formData.get("editMode"),
     categoryId: formData.get("categoryId") ?? "",
@@ -55,30 +55,39 @@ export async function createNode(
   }
 
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("nodes")
-    .insert({
-      world_id: parsed.data.worldId,
-      node_type: parsed.data.nodeType,
-      title: parsed.data.title,
-      slug: parsed.data.slug,
-      content: parsed.data.content,
-      edit_mode: parsed.data.editMode,
-      creator_id: user.id,
-      category_id: parsed.data.categoryId || null,
-    })
-    .select("slug")
-    .single();
+  let data: { slug: string } | null = null;
+  let error: { code?: string; message: string } | null = null;
+  for (let attempt = 0; attempt < MAX_SLUG_ATTEMPTS; attempt++) {
+    const result = await supabase
+      .from("nodes")
+      .insert({
+        world_id: parsed.data.worldId,
+        node_type: parsed.data.nodeType,
+        title: parsed.data.title,
+        slug: generateNodeSlug(parsed.data.title),
+        content: parsed.data.content,
+        edit_mode: parsed.data.editMode,
+        creator_id: user.id,
+        category_id: parsed.data.categoryId || null,
+      })
+      .select("slug")
+      .single();
+    data = result.data;
+    error = result.error;
+    if (!error || error.code !== "23505") break;
+  }
 
   if (error) {
     return {
-      error:
-        error.message.includes("這個分類目前不開放投稿")
-          ? error.message
-          : error.code === "23505"
-            ? "這個 slug 在這個世界觀裡已經被用過了"
-            : "建立失敗,可能是你還不是這個世界觀的成員",
+      error: error.message.includes("這個分類目前不開放投稿")
+        ? error.message
+        : error.code === "23505"
+          ? "建立失敗,請稍後再試"
+          : "建立失敗,可能是你還不是這個世界觀的成員",
     };
+  }
+  if (!data) {
+    return { error: "建立失敗,請稍後再試" };
   }
 
   redirect(`/dashboard/worlds/${parsed.data.worldSlug}/nodes/${data.slug}`);

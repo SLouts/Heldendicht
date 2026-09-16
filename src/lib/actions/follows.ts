@@ -28,7 +28,6 @@ export async function followUser(
     return { error: error.code === "23505" ? "已經追蹤過了" : "追蹤失敗,請稍後再試" };
   }
 
-  revalidatePath("/dashboard/friends");
   if (profileUsername) revalidatePath(`/u/${profileUsername}`);
   return { ok: true };
 }
@@ -49,7 +48,6 @@ export async function unfollowUser(
     return { error: "取消追蹤失敗,請稍後再試" };
   }
 
-  revalidatePath("/dashboard/friends");
   if (profileUsername) revalidatePath(`/u/${profileUsername}`);
   return { ok: true };
 }

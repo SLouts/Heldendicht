@@ -5,6 +5,8 @@ import { getCurrentUser } from "@/lib/dal";
 import { getProfileMediaPublicUrl } from "@/lib/profileMedia";
 import type { PersonaField } from "@/lib/actions/personas";
 import { FollowButton } from "./FollowButton";
+import { FollowListCard, type FollowProfile } from "./FollowListCard";
+import { UnfollowButton } from "./UnfollowButton";
 
 export default async function PublicProfilePage({
   params,
@@ -21,7 +23,7 @@ export default async function PublicProfilePage({
 
   if (!profile) notFound();
 
-  const [{ data: worlds }, { data: personas }, { count: followerCount }, { count: followingCount }, isFollowing] =
+  const [{ data: worlds }, { data: personas }, { data: followerRows }, { data: followingRows }, isFollowing] =
     await Promise.all([
       supabase.rpc("public_world_memberships", { p_user_id: profile.id }),
       supabase
@@ -33,12 +35,14 @@ export default async function PublicProfilePage({
         .order("created_at", { ascending: true }),
       supabase
         .from("follows")
-        .select("follower_id", { count: "exact", head: true })
-        .eq("followee_id", profile.id),
+        .select("follower:profiles!follows_follower_id_fkey(id, username, display_name, avatar_path)")
+        .eq("followee_id", profile.id)
+        .order("created_at", { ascending: false }),
       supabase
         .from("follows")
-        .select("followee_id", { count: "exact", head: true })
-        .eq("follower_id", profile.id),
+        .select("followee:profiles!follows_followee_id_fkey(id, username, display_name, avatar_path)")
+        .eq("follower_id", profile.id)
+        .order("created_at", { ascending: false }),
       currentUser
         ? supabase
             .from("follows")
@@ -49,6 +53,14 @@ export default async function PublicProfilePage({
             .then(({ data }) => Boolean(data))
         : Promise.resolve(false),
     ]);
+
+  const isOwnProfile = currentUser?.id === profile.id;
+  const followerProfiles = (followerRows ?? [])
+    .map((r) => (Array.isArray(r.follower) ? r.follower[0] : r.follower))
+    .filter((p): p is FollowProfile => p != null);
+  const followingProfiles = (followingRows ?? [])
+    .map((r) => (Array.isArray(r.followee) ? r.followee[0] : r.followee))
+    .filter((p): p is FollowProfile => p != null);
 
   const avatarUrl = getProfileMediaPublicUrl(profile.avatar_path);
   const bannerUrl = getProfileMediaPublicUrl(profile.banner_path);
@@ -125,7 +137,7 @@ export default async function PublicProfilePage({
               <p className="text-sm text-muted-foreground">@{profile.username}</p>
             )}
             <p className="mt-1 text-sm text-muted-foreground">
-              追蹤者 {followerCount ?? 0} ・ 追蹤中 {followingCount ?? 0}
+              追蹤者 {followerProfiles.length} ・ 追蹤中 {followingProfiles.length}
             </p>
           </div>
           {currentUser && currentUser.id !== profile.id && (
@@ -142,6 +154,42 @@ export default async function PublicProfilePage({
             {profile.bio}
           </p>
         )}
+
+        <div className="mt-10 grid gap-8 sm:grid-cols-2">
+          <div>
+            <h2 className="text-lg font-semibold">追蹤者 ({followerProfiles.length})</h2>
+            {followerProfiles.length === 0 ? (
+              <p className="mt-2 text-sm text-muted-foreground">目前還沒有人追蹤。</p>
+            ) : (
+              <div className="mt-3 flex flex-col gap-2">
+                {followerProfiles.map((p) => (
+                  <FollowListCard key={p.id} profile={p} />
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div>
+            <h2 className="text-lg font-semibold">追蹤中 ({followingProfiles.length})</h2>
+            {followingProfiles.length === 0 ? (
+              <p className="mt-2 text-sm text-muted-foreground">還沒有追蹤任何人。</p>
+            ) : (
+              <div className="mt-3 flex flex-col gap-2">
+                {followingProfiles.map((p) => (
+                  <FollowListCard
+                    key={p.id}
+                    profile={p}
+                    action={
+                      isOwnProfile ? (
+                        <UnfollowButton followeeId={p.id} username={username} />
+                      ) : undefined
+                    }
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
 
         <h2 className="mt-10 text-lg font-semibold">參加的企劃</h2>
         <div className="mt-4 grid gap-3 sm:grid-cols-2">

@@ -32,6 +32,10 @@ export type ReportTargetType = "relationship" | "node";
 export type ReportStatus = "open" | "resolved" | "dismissed";
 export type StoryScope = "official" | "character";
 export type AttachmentKind = "image" | "file";
+export type NotificationType =
+  | "new_follower"
+  | "followed_node"
+  | "followed_world_join";
 
 export type Database = {
   public: {
@@ -723,6 +727,87 @@ export type Database = {
           },
         ];
       };
+      notifications: {
+        Row: {
+          id: string;
+          recipient_id: string;
+          type: NotificationType;
+          actor_id: string | null;
+          node_id: string | null;
+          world_id: string | null;
+          is_read: boolean;
+          created_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["notifications"]["Row"]> & {
+          recipient_id: string;
+          type: NotificationType;
+        };
+        Update: Partial<Database["public"]["Tables"]["notifications"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "notifications_recipient_id_fkey";
+            columns: ["recipient_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "notifications_actor_id_fkey";
+            columns: ["actor_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "notifications_node_id_fkey";
+            columns: ["node_id"];
+            isOneToOne: false;
+            referencedRelation: "nodes";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "notifications_world_id_fkey";
+            columns: ["world_id"];
+            isOneToOne: false;
+            referencedRelation: "worlds";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      direct_messages: {
+        Row: {
+          id: string;
+          sender_id: string;
+          recipient_id: string;
+          content: string;
+          created_at: string;
+          read_at: string | null;
+        };
+        Insert: Partial<
+          Database["public"]["Tables"]["direct_messages"]["Row"]
+        > & {
+          sender_id: string;
+          recipient_id: string;
+          content: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["direct_messages"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "direct_messages_sender_id_fkey";
+            columns: ["sender_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "direct_messages_recipient_id_fkey";
+            columns: ["recipient_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -766,6 +851,13 @@ export type Database = {
           role: WorldRole;
         }[];
       };
+      staff_review_summary: {
+        Args: Record<string, never>;
+        Returns: {
+          pending_nodes_count: number;
+          open_reports_count: number;
+        }[];
+      };
     };
     Enums: {
       site_role: SiteRole;
@@ -780,6 +872,7 @@ export type Database = {
       report_target_type: ReportTargetType;
       report_status: ReportStatus;
       story_scope: StoryScope;
+      notification_type: NotificationType;
     };
   };
 };

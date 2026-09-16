@@ -141,11 +141,19 @@ export default async function PublicProfilePage({
             </p>
           </div>
           {currentUser && currentUser.id !== profile.id && (
-            <FollowButton
-              followeeId={profile.id}
-              username={username}
-              initialFollowing={isFollowing}
-            />
+            <div className="flex items-center gap-2">
+              <FollowButton
+                followeeId={profile.id}
+                username={username}
+                initialFollowing={isFollowing}
+              />
+              <Link
+                href={`/dashboard/messages/${profile.id}`}
+                className="w-fit rounded-lg border border-border bg-surface px-4 py-1.5 text-sm transition hover:bg-muted"
+              >
+                私訊
+              </Link>
+            </div>
           )}
         </div>
 

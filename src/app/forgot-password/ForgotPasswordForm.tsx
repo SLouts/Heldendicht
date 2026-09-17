@@ -14,8 +14,10 @@ export function ForgotPasswordForm({ expired }: { expired: boolean }) {
     return (
       <div>
         <p className="mt-4 text-sm">
-          如果這個 Email 有註冊過,我們已經寄出重設密碼的信,請去信箱收信
-          (也檢查一下垃圾郵件)。
+          如果這個 Email 有註冊過,我們已經寄出重設密碼的信,請去信箱收信。
+        </p>
+        <p className="mt-2 text-sm text-muted-foreground">
+          沒看到信的話,先檢查一下垃圾郵件匣;如果還是沒有,也可能是短時間內申請太多次觸發了寄信限制,稍等幾分鐘後再試一次看看。
         </p>
         <Link href="/login" className="mt-4 inline-block text-sm underline">
           回登入頁

@@ -16,6 +16,7 @@ export type NotificationItem = {
   actorUsername: string | null;
   nodeTitle: string | null;
   worldSlug: string | null;
+  worldName: string | null;
   nodeSlug: string | null;
 };
 
@@ -33,13 +34,19 @@ function describe(n: NotificationItem): { text: string; href: string | null } {
       };
     case "followed_world_join":
       return {
-        text: `你追蹤的 ${n.actorLabel} 加入了新的世界觀`,
-        href: n.actorUsername ? `/u/${n.actorUsername}` : null,
+        text: `你追蹤的 ${n.actorLabel} 加入了世界觀「${n.worldName ?? "?"}」`,
+        href: n.worldSlug
+          ? `/worlds/${n.worldSlug}`
+          : n.actorUsername
+            ? `/u/${n.actorUsername}`
+            : null,
       };
   }
 }
 
-export type ReviewSummary = {
+export type ReviewWorldSummary = {
+  worldSlug: string;
+  worldName: string;
   pendingNodesCount: number;
   openReportsCount: number;
 };
@@ -47,15 +54,18 @@ export type ReviewSummary = {
 export function NotificationBell({
   notifications,
   unreadCount,
-  reviewSummary,
+  reviewSummaries,
 }: {
   notifications: NotificationItem[];
   unreadCount: number;
-  reviewSummary: ReviewSummary;
+  reviewSummaries: ReviewWorldSummary[];
 }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
-  const reviewCount = reviewSummary.pendingNodesCount + reviewSummary.openReportsCount;
+  const reviewCount = reviewSummaries.reduce(
+    (sum, w) => sum + w.pendingNodesCount + w.openReportsCount,
+    0,
+  );
   const badgeCount = unreadCount + reviewCount;
 
   useEffect(() => {
@@ -98,23 +108,35 @@ export function NotificationBell({
             )}
           </div>
 
-          {reviewCount > 0 && (
-            <Link
-              href="/dashboard"
-              onClick={() => setOpen(false)}
-              className="mt-1 flex flex-col gap-0.5 rounded-md bg-badge-pending-bg px-2 py-2 text-sm text-badge-pending-fg transition hover:opacity-80"
-            >
-              <span className="font-medium">
-                {reviewSummary.pendingNodesCount > 0 &&
-                  `${reviewSummary.pendingNodesCount} 個節點待審核`}
-                {reviewSummary.pendingNodesCount > 0 &&
-                  reviewSummary.openReportsCount > 0 &&
-                  "・"}
-                {reviewSummary.openReportsCount > 0 &&
-                  `${reviewSummary.openReportsCount} 個檢舉未結案`}
-              </span>
-              <span className="text-xs opacity-80">身為主辦/管理需要處理</span>
-            </Link>
+          {reviewSummaries.length > 0 && (
+            <div className="mt-1 flex flex-col gap-1">
+              {reviewSummaries.map((w) => (
+                <div
+                  key={w.worldSlug}
+                  className="flex flex-col gap-1 rounded-md bg-badge-pending-bg px-2 py-2 text-sm text-badge-pending-fg"
+                >
+                  <span className="text-xs font-semibold opacity-80">{w.worldName}</span>
+                  {w.pendingNodesCount > 0 && (
+                    <Link
+                      href={`/dashboard/worlds/${w.worldSlug}`}
+                      onClick={() => setOpen(false)}
+                      className="hover:underline"
+                    >
+                      {w.pendingNodesCount} 個節點待審核
+                    </Link>
+                  )}
+                  {w.openReportsCount > 0 && (
+                    <Link
+                      href={`/dashboard/worlds/${w.worldSlug}/reports`}
+                      onClick={() => setOpen(false)}
+                      className="hover:underline"
+                    >
+                      {w.openReportsCount} 個檢舉未結案
+                    </Link>
+                  )}
+                </div>
+              ))}
+            </div>
           )}
 
           {notifications.length === 0 ? (
@@ -135,8 +157,13 @@ export function NotificationBell({
                     }
                   >
                     <span>{text}</span>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="flex items-center gap-2 text-xs text-muted-foreground">
                       {new Date(n.createdAt).toLocaleString("zh-TW")}
+                      {n.worldName && (
+                        <span className="rounded-full bg-badge-neutral-bg px-1.5 py-0.5 text-badge-neutral-fg">
+                          {n.worldName}
+                        </span>
+                      )}
                     </span>
                   </div>
                 );

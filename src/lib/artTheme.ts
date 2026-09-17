@@ -7,6 +7,7 @@ export const ART_THEMES = [
   { id: "script", label: "劇本手稿" },
   { id: "field", label: "田野筆記" },
   { id: "card", label: "角色卡牌" },
+  { id: "wuxia", label: "東方玄幻" },
 ] as const;
 
 export type ArtTheme = (typeof ART_THEMES)[number]["id"];

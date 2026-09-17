@@ -166,7 +166,7 @@ export default async function WorldDashboardPage({
         ← 我的世界觀
       </Link>
       <div className="mt-2">
-        <WorldHero name={world.name} bannerUrl={bannerUrl} iconUrl={iconUrl} />
+        <WorldHero name={world.name} tagline={world.tagline} bannerUrl={bannerUrl} iconUrl={iconUrl} />
       </div>
 
       <NavMenu>

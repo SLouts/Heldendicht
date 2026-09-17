@@ -389,6 +389,63 @@ export function NotificationBell({
               </div>
             )}
           </div>
+
+          {/* ---------- 東方玄幻:手札 ---------- */}
+          <div className="bell-variant bell-wuxia absolute right-0 z-20 mt-2 w-80 rounded border border-border bg-surface p-2 shadow-lg">
+            <div className="flex items-center justify-between px-1 py-1">
+              <span className="font-display text-lg">手札</span>
+              {unreadCount > 0 && (
+                <form action={markAllNotificationsRead}>
+                  <button type="submit" className="text-xs underline">
+                    全部標記已讀
+                  </button>
+                </form>
+              )}
+            </div>
+            {reviewCount === 0 && notifications.length === 0 ? (
+              <p className="px-2 py-4 text-center text-sm text-muted-foreground">目前沒有通知。</p>
+            ) : (
+              <div className="mt-1 flex max-h-96 flex-col gap-2 overflow-y-auto">
+                {reviewSummaries.map((w) => (
+                  <div key={w.worldSlug} className="bell-wuxia-note">
+                    <span className="bell-wuxia-seal-badge">{w.worldName}</span>
+                    {w.pendingNodesCount > 0 && (
+                      <Link href={`/dashboard/worlds/${w.worldSlug}`} onClick={close} className="block text-sm hover:underline">
+                        {w.pendingNodesCount} 個節點待審核
+                      </Link>
+                    )}
+                    {w.openReportsCount > 0 && (
+                      <Link
+                        href={`/dashboard/worlds/${w.worldSlug}/reports`}
+                        onClick={close}
+                        className="block text-sm hover:underline"
+                      >
+                        {w.openReportsCount} 個檢舉未結案
+                      </Link>
+                    )}
+                  </div>
+                ))}
+                {notifications.map((n) => {
+                  const { text, href } = describe(n);
+                  const inner = (
+                    <div className={"bell-wuxia-note" + (n.isRead ? " opacity-60" : "")}>
+                      {n.worldName && <span className="bell-wuxia-seal-badge">{n.worldName}</span>}
+                      <div className="text-sm">{text}</div>
+                    </div>
+                  );
+                  return href ? (
+                    <Link key={n.id} href={href} onClick={() => onNotifClick(n)}>
+                      {inner}
+                    </Link>
+                  ) : (
+                    <div key={n.id} role="button" tabIndex={0} onClick={() => onNotifClick(n)}>
+                      {inner}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </>
       )}
     </div>

@@ -3,17 +3,23 @@
  * (/dashboard/worlds/[slug])共用——跟 worldmap/WorldMapView.tsx 一樣的
  * 「元件放在 dashboard 底下、公開頁面跨路徑 import」慣例。
  *
- * 四個 <div> 都會渲染,實際顯示哪一個交給 globals.css 依
+ * 五個 <div> 都會渲染,實際顯示哪一個交給 globals.css 依
  * <html data-art-theme> 用 CSS 切換(見「Hero 依美術方向切換」那段)——
  * 這樣切換美術方向不用重新整理頁面,也不用在這裡多寫一次 client
  * component 去讀 localStorage。
+ *
+ * tagline 是世界觀設定頁本來就有的「一句話介紹」欄位,主辦自己填、
+ * 自己可以清空——劇本手稿跟東方玄幻的標題副文字直接顯示這個真資料,
+ * 不是寫死的文案,主辦不填就不顯示那一行。
  */
 export function WorldHero({
   name,
+  tagline,
   bannerUrl,
   iconUrl,
 }: {
   name: string;
+  tagline: string | null;
   bannerUrl: string | null;
   iconUrl: string | null;
 }) {
@@ -67,7 +73,7 @@ export function WorldHero({
         )}
         <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Heldendicht</p>
         <h1 className="font-display mt-3 text-3xl font-bold uppercase tracking-wide">{name}</h1>
-        <p className="mt-3 text-xs italic text-muted-foreground">眾筆共著</p>
+        {tagline && <p className="mt-3 text-xs italic text-muted-foreground">{tagline}</p>}
         {bannerUrl && (
           // eslint-disable-next-line @next/next/no-img-element -- signed URL,無法用 next/image 白名單網域
           <img
@@ -124,11 +130,38 @@ export function WorldHero({
               <polygon fill="#4fae8c" points="9,1 16,6 13,17 5,17 2,6" />
             </svg>
           </div>
-          <div className="hero-card-art">
-            {(bannerUrl || iconUrl) && (
-              // eslint-disable-next-line @next/next/no-img-element -- signed URL,無法用 next/image 白名單網域
+          {/* 沒有橫幅或頭像時,卡框只留標題列,不再用一塊固定色卡當佔位 */}
+          {(bannerUrl || iconUrl) && (
+            <div className="hero-card-art">
+              {/* eslint-disable-next-line @next/next/no-img-element -- signed URL,無法用 next/image 白名單網域 */}
               <img src={bannerUrl ?? iconUrl ?? undefined} alt="" />
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ---------- 05 東方玄幻:硃砂印 ---------- */}
+      <div className="hero-variant hero-wuxia">
+        <div className="hero-wuxia-wrap">
+          {bannerUrl && (
+            // eslint-disable-next-line @next/next/no-img-element -- signed URL,無法用 next/image 白名單網域
+            <img src={bannerUrl} alt="" className="hero-wuxia-banner" />
+          )}
+          <div className="hero-wuxia-row">
+            {iconUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element -- signed URL,無法用 next/image 白名單網域
+              <img
+                src={iconUrl}
+                alt=""
+                className="h-11 w-11 shrink-0 rounded-full border border-border object-cover"
+              />
+            ) : (
+              <span className="hero-wuxia-seal">{name.slice(0, 1)}</span>
             )}
+            <div>
+              <h1 className="font-display text-3xl">{name}</h1>
+              {tagline && <p className="hero-wuxia-tagline">{tagline}</p>}
+            </div>
           </div>
         </div>
       </div>

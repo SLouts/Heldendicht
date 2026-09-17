@@ -84,6 +84,11 @@
 :root[data-art-theme="card"] {
   --font-display: var(--font-card);
 }
+/* 東方玄幻沒有另外載入西文 webfont(標題本來就以中文為主),
+   拉丁字母退回系統襯線就好,對照下面 h1~h3 規則裡真正管中文字型的部分。 */
+:root[data-art-theme="wuxia"] {
+  --font-display: serif;
+}
 
 @media (prefers-color-scheme: dark) {
   :root {
@@ -324,6 +329,72 @@
   }
 }
 
+/* ---------- 東方玄幻:宣紙底 + 硃砂印 + 玉色點綴 ---------- */
+:root[data-art-theme="wuxia"] {
+  --background: #eee7d8;
+  --foreground: #221f1a;
+  --surface: #f5efe0;
+  --border: #8a7355;
+  --muted: #e2d8bf;
+  --muted-foreground: #6b5f45;
+
+  --primary: #a3272a;
+  --primary-hover: #8a1f22;
+  --primary-foreground: #f8ece7;
+
+  --danger: #7a1c1f;
+  --danger-hover: #631618;
+  --danger-foreground: #f8e6e5;
+
+  --success: #3f6b4f;
+  --success-hover: #345a41;
+  --success-foreground: #eaf2ec;
+
+  --badge-pending-bg: #ecd9a3;
+  --badge-pending-fg: #6b4a12;
+  --badge-danger-bg: #e7c3ab;
+  --badge-danger-fg: #7a1c1f;
+  --badge-success-bg: #dde2bf;
+  --badge-success-fg: #345a41;
+  --badge-info-bg: #d7dfd6;
+  --badge-info-fg: #3a5a4a;
+  --badge-neutral-bg: #ddceac;
+  --badge-neutral-fg: #6a5936;
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-art-theme="wuxia"] {
+    --background: #15130f;
+    --foreground: #e6ddc4;
+    --surface: #1c1912;
+    --border: #4a3d28;
+    --muted: #241f15;
+    --muted-foreground: #a89876;
+
+    --primary: #d9564f;
+    --primary-hover: #e37870;
+    --primary-foreground: #220705;
+
+    --danger: #c0454a;
+    --danger-hover: #cc6a6e;
+    --danger-foreground: #1f0708;
+
+    --success: #6fae8c;
+    --success-hover: #83bd9d;
+    --success-foreground: #0d1a13;
+
+    --badge-pending-bg: #3d2f13;
+    --badge-pending-fg: #e3bd6e;
+    --badge-danger-bg: #3a2319;
+    --badge-danger-fg: #e39278;
+    --badge-success-bg: #1c2a1f;
+    --badge-success-fg: #a0cdad;
+    --badge-info-bg: #1c2622;
+    --badge-info-fg: #9bc0ad;
+    --badge-neutral-bg: #332919;
+    --badge-neutral-fg: #c1b189;
+  }
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
@@ -347,6 +418,9 @@ body {
   display: block;
 }
 :root[data-art-theme="card"] .hero-card {
+  display: block;
+}
+:root[data-art-theme="wuxia"] .hero-wuxia {
   display: block;
 }
 
@@ -376,7 +450,7 @@ body {
   border-radius: 8px;
   overflow: hidden;
   position: relative;
-  background: linear-gradient(160deg, #2c4a41, #12211c);
+  background: #1e1b14;
 }
 .hero-card-art img {
   position: absolute;
@@ -384,6 +458,45 @@ body {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+/* ---------- 東方玄幻 hero:印章 + 橫幅 ---------- */
+.hero-wuxia-wrap {
+  position: relative;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.hero-wuxia-banner {
+  display: block;
+  width: 100%;
+  max-height: 220px;
+  object-fit: cover;
+}
+.hero-wuxia-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding-block: 6px;
+}
+.hero-wuxia-seal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: 4px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font-family: "Kaiti TC", "STKaiti", "Noto Serif TC", serif;
+  font-size: 22px;
+  font-weight: 700;
+  transform: rotate(-3deg);
+}
+.hero-wuxia-tagline {
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--muted-foreground);
 }
 
 /* ============================================================
@@ -403,6 +516,9 @@ body {
   display: block;
 }
 :root[data-art-theme="card"] .bell-card {
+  display: block;
+}
+:root[data-art-theme="wuxia"] .bell-wuxia {
   display: block;
 }
 
@@ -443,6 +559,22 @@ body {
   font-size: 13px;
 }
 
+.bell-wuxia-note {
+  border-left: 3px solid var(--primary);
+  background: var(--background);
+  padding: 8px 10px 9px 12px;
+}
+.bell-wuxia-seal-badge {
+  display: inline-block;
+  border-radius: 3px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font-size: 11px;
+  padding: 1px 7px;
+  margin-bottom: 4px;
+  transform: rotate(-1.5deg);
+}
+
 /* 標題一律用史詩碑文體(Cinzel),中文字則交給系統襯線字型堆疊接手,
    不額外載入巨大的中文襯線 webfont。稍微拉開字距,加強碑刻感。 */
 h1,
@@ -479,4 +611,12 @@ h3,
   font-family: var(--font-display), "Noto Serif TC", "Songti TC", serif;
   letter-spacing: 0.03em;
   text-transform: uppercase;
+}
+:root[data-art-theme="wuxia"] h1,
+:root[data-art-theme="wuxia"] h2,
+:root[data-art-theme="wuxia"] h3,
+:root[data-art-theme="wuxia"] .font-display {
+  font-family: var(--font-display), "Kaiti TC", "STKaiti", "Noto Serif TC", serif;
+  letter-spacing: 0.04em;
+  font-weight: 500;
 }

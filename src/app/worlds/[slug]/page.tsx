@@ -159,7 +159,7 @@ export default async function WorldPage({
 
   return (
     <div className="mx-auto w-full max-w-5xl flex-1 px-6 py-12">
-      <WorldHero name={world.name} bannerUrl={bannerUrl} iconUrl={iconUrl} />
+      <WorldHero name={world.name} tagline={world.tagline} bannerUrl={bannerUrl} iconUrl={iconUrl} />
 
       <NavMenu>
         <Link

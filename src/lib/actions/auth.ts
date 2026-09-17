@@ -4,10 +4,12 @@ import { redirect } from "next/navigation";
 import * as z from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { requireUser } from "@/lib/dal";
 
 export type AuthFormState =
   | { error: string }
   | { fieldErrors: Record<string, string[]> }
+  | { success: true }
   | undefined;
 
 const LoginSchema = z.object({
@@ -131,4 +133,58 @@ export async function logout() {
   const supabase = await createClient();
   await supabase.auth.signOut();
   redirect("/");
+}
+
+const ChangePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, { error: "請輸入目前的密碼" }),
+    newPassword: z.string().min(8, { error: "新密碼至少需要 8 個字元" }),
+    confirmPassword: z.string().min(1, { error: "請再輸入一次新密碼" }),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    error: "兩次輸入的新密碼不一樣",
+    path: ["confirmPassword"],
+  });
+
+/**
+ * 修改密碼前先用 signInWithPassword 驗證使用者輸入的「目前密碼」是不是正確
+ * ——Supabase 的 updateUser() 只要求現有 session 有效就能改密碼,不會自己
+ * 要求再驗證一次舊密碼,如果不在這裡多做這一步,共用電腦上沒登出的 session
+ * 就能被任何人直接改密碼、把原本的使用者鎖在外面。
+ */
+export async function changePassword(
+  _prevState: AuthFormState,
+  formData: FormData,
+): Promise<AuthFormState> {
+  const user = await requireUser();
+
+  const parsed = ChangePasswordSchema.safeParse({
+    currentPassword: formData.get("currentPassword"),
+    newPassword: formData.get("newPassword"),
+    confirmPassword: formData.get("confirmPassword"),
+  });
+  if (!parsed.success) {
+    return { fieldErrors: parsed.error.flatten().fieldErrors };
+  }
+  if (!user.email) {
+    return { error: "此帳號沒有 Email,無法用這種方式修改密碼" };
+  }
+
+  const supabase = await createClient();
+  const { error: verifyError } = await supabase.auth.signInWithPassword({
+    email: user.email,
+    password: parsed.data.currentPassword,
+  });
+  if (verifyError) {
+    return { fieldErrors: { currentPassword: ["目前的密碼不正確"] } };
+  }
+
+  const { error: updateError } = await supabase.auth.updateUser({
+    password: parsed.data.newPassword,
+  });
+  if (updateError) {
+    return { error: "修改密碼失敗,請稍後再試" };
+  }
+
+  return { success: true };
 }

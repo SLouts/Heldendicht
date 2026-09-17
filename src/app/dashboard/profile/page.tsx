@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getProfileMediaPublicUrl } from "@/lib/profileMedia";
 import { uploadAvatar, uploadBanner } from "@/lib/actions/profile";
 import { ProfileDetailsForm } from "./ProfileDetailsForm";
+import { ChangePasswordForm } from "./ChangePasswordForm";
 import { ProfileImageForm } from "./ProfileImageForm";
 import { CreatePersonaForm } from "./CreatePersonaForm";
 import { PersonaCard, type PersonaLink } from "./PersonaCard";
@@ -104,6 +105,11 @@ export default async function ProfilePage() {
         username={profile?.username ?? null}
         bio={profile?.bio ?? null}
       />
+
+      <section className="mt-10">
+        <h2 className="text-lg font-semibold">修改密碼</h2>
+        <ChangePasswordForm />
+      </section>
 
       <section className="mt-10">
         <h2 className="text-lg font-semibold">參加的世界觀</h2>

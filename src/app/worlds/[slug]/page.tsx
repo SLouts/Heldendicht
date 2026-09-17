@@ -153,9 +153,6 @@ export default async function WorldPage({
     <div className="mx-auto w-full max-w-5xl flex-1 px-6 py-12">
       <div>
         <h1 className="text-3xl font-semibold tracking-tight">{world.name}</h1>
-        {world.tagline && (
-          <p className="mt-2 text-muted-foreground">{world.tagline}</p>
-        )}
       </div>
 
       <NavMenu>

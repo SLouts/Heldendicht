@@ -43,9 +43,6 @@ export default async function NewNodePage({
         ← 返回世界觀
       </Link>
       <h1 className="mt-2 text-2xl font-semibold">在「{world.name}」新增節點</h1>
-      <p className="mt-1 text-sm text-muted-foreground">
-        新節點會先進入「未正式過審」狀態,主辦/編輯者審核後才會轉為已過審。
-      </p>
       <NewNodeForm
         worldId={world.id}
         worldSlug={world.slug}

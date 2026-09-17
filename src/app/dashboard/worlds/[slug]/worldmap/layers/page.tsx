@@ -28,9 +28,6 @@ export default async function MapLayersPage({
       <div>
         <BackLink slug={slug} />
         <h1 className="mt-2 text-2xl font-semibold">管理地圖圖層</h1>
-        <p className="mt-4 text-sm text-muted-foreground">
-          只有這個世界觀的主辦(admin)可以管理地圖圖層。
-        </p>
       </div>
     );
   }
@@ -54,9 +51,6 @@ export default async function MapLayersPage({
     <div>
       <BackLink slug={slug} />
       <h1 className="mt-2 text-2xl font-semibold">管理地圖圖層</h1>
-      <p className="mt-1 text-sm text-muted-foreground">
-        每張圖層各自有自己的底圖跟座標系統(例如不同樓層、大陸圖/城市圖),節點一次只會標在其中一張。誰能把節點標到圖層上,由「世界地圖」頁面另外用 staff(主辦/編輯)權限控管。
-      </p>
       <MapLayersEditor worldId={world.id} worldSlug={world.slug} layers={layersWithUrl} />
     </div>
   );

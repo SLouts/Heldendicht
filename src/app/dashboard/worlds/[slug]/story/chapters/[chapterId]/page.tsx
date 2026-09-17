@@ -72,9 +72,6 @@ export default async function ChapterDetailPage({
           {chapter.scope === "official" ? "企劃時間軸" : `${character?.title ?? ""} 的時間軸`}
         </span>
       </div>
-      {chapter.description && (
-        <p className="mt-1 text-sm text-muted-foreground">{chapter.description}</p>
-      )}
 
       {canManage && (
         <EditChapterForm

@@ -15,9 +15,6 @@ export default async function InviteCodesPage() {
       <div>
         <BackLink />
         <h1 className="mt-2 text-2xl font-semibold">邀請碼管理</h1>
-        <p className="mt-4 text-sm text-muted-foreground">
-          只有站務(site_admin)可以管理邀請碼。
-        </p>
       </div>
     );
   }
@@ -33,9 +30,6 @@ export default async function InviteCodesPage() {
     <div>
       <BackLink />
       <h1 className="mt-2 text-2xl font-semibold">邀請碼管理</h1>
-      <p className="mt-1 text-sm text-muted-foreground">
-        本站採邀請碼制註冊,只有站務能建立邀請碼。
-      </p>
 
       <CreateInviteCodeForm />
 

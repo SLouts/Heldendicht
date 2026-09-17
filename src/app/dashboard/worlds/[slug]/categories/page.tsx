@@ -27,9 +27,6 @@ export default async function ContentCategoriesPage({
       <div>
         <BackLink slug={slug} />
         <h1 className="mt-2 text-2xl font-semibold">內容分類</h1>
-        <p className="mt-4 text-sm text-muted-foreground">
-          只有這個世界觀的主辦/編輯可以管理內容分類。
-        </p>
       </div>
     );
   }
@@ -44,9 +41,6 @@ export default async function ContentCategoriesPage({
     <div>
       <BackLink slug={slug} />
       <h1 className="mt-2 text-2xl font-semibold">內容分類</h1>
-      <p className="mt-1 text-sm text-muted-foreground">
-        用來在世界觀首頁做導覽分組(例如「修仙誌‧宗門」「風土誌‧軼事」),建立節點時可以選擇性掛一個分類。「開放投稿」關閉時,只有主辦/編輯可以把節點掛進這個分類。
-      </p>
       <CategoriesEditor
         worldId={world.id}
         worldSlug={world.slug}

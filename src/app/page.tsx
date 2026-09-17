@@ -38,9 +38,6 @@ export default async function Home() {
         <h1 className="text-3xl font-semibold tracking-tight">
           歡迎來到多世界觀企劃站
         </h1>
-        <p className="mt-2 max-w-2xl text-muted-foreground">
-          每個世界觀都有各自的企劃介紹、正史節點與人際關係網,登入後即可依所在世界觀建立角色、留下筆記。
-        </p>
 
         <h2 className="mt-10 text-xl font-semibold">公開世界觀</h2>
         <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

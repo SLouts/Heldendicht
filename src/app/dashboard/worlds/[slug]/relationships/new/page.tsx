@@ -36,9 +36,6 @@ export default async function NewRelationshipPage({
       <h1 className="mt-2 text-2xl font-semibold">
         在「{world.name}」建立人際關係線
       </h1>
-      <p className="mt-1 text-sm text-muted-foreground">
-        關係線免審核,建立後立即生效;主辦之後可以撤銷或強制斷線。
-      </p>
       {nodes && nodes.length >= 2 ? (
         <NewRelationshipForm
           worldId={world.id}

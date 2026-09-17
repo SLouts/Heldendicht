@@ -9,9 +9,6 @@ export default function NewWorldPage() {
   return (
     <div className="max-w-xl">
       <h1 className="text-2xl font-semibold">建立世界觀</h1>
-      <p className="mt-1 text-sm text-muted-foreground">
-        建立後你會自動成為這個世界觀的主辦(admin)。
-      </p>
 
       <form action={formAction} className="mt-6 flex flex-col gap-4">
         <div className="flex flex-col gap-1">

@@ -127,9 +127,6 @@ export default async function PublicStoryMapPage({
         ← 返回世界觀
       </Link>
       <h1 className="mt-2 text-2xl font-semibold">{world.name} 的關係圖</h1>
-      <p className="mt-1 text-sm text-muted-foreground">
-        點節點可以跳到詳細頁,拖曳空白處可以平移,滾輪(或雙指縮放)可以放大縮小。實線是生效中的人際關係線,虛線是已撤銷或牽涉到未過審節點的關係線,細點線是內文 WikiLink 提及。
-      </p>
 
       {graphNodes.length === 0 ? (
         <p className="mt-6 text-sm text-muted-foreground">這個世界觀還沒有節點。</p>

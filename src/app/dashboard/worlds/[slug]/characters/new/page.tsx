@@ -47,10 +47,6 @@ export default async function NewCharacterPage({
         ← 返回世界觀
       </Link>
       <h1 className="mt-2 text-2xl font-semibold">在「{world.name}」新增角色</h1>
-      <p className="mt-1 text-sm text-muted-foreground">
-        每人 PC 角色配額為 {world.default_pc_quota}
-        隻(主辦不受限);NPC 不受配額限制。超過配額會由資料庫擋下並顯示錯誤訊息。
-      </p>
       <NewCharacterForm
         worldId={world.id}
         worldSlug={world.slug}

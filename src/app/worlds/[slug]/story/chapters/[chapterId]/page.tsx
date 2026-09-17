@@ -57,9 +57,6 @@ export default async function PublicChapterDetailPage({
           {chapter.scope === "official" ? "企劃時間軸" : `${character?.title ?? ""} 的時間軸`}
         </span>
       </div>
-      {chapter.description && (
-        <p className="mt-1 text-sm text-muted-foreground">{chapter.description}</p>
-      )}
 
       <h2 className="mt-8 text-lg font-semibold">段落</h2>
       <div className="mt-3 flex flex-col gap-3">

@@ -109,9 +109,6 @@ export default async function WorldDashboardPage({
       </Link>
       <div className="mt-2">
         <h1 className="text-2xl font-semibold">{world.name}</h1>
-        {world.tagline && (
-          <p className="mt-1 text-sm text-muted-foreground">{world.tagline}</p>
-        )}
       </div>
 
       <NavMenu>

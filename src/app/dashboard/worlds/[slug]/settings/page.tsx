@@ -33,9 +33,6 @@ export default async function WorldSettingsPage({
       <div>
         <BackLink slug={slug} />
         <h1 className="mt-2 text-2xl font-semibold">世界觀設定</h1>
-        <p className="mt-4 text-sm text-muted-foreground">
-          只有這個世界觀的主辦(admin)可以修改設定。
-        </p>
       </div>
     );
   }

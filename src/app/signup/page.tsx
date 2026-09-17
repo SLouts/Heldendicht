@@ -16,9 +16,6 @@ export default function SignupPage() {
   return (
     <div className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center px-6 py-12">
       <h1 className="text-2xl font-semibold">註冊</h1>
-      <p className="mt-1 text-sm text-muted-foreground">
-        本站採邀請碼制註冊,請向站務或世界觀主辦索取邀請碼。
-      </p>
 
       <form action={formAction} className="mt-6 flex flex-col gap-4">
         <div className="flex flex-col gap-1">

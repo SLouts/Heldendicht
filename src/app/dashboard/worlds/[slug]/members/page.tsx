@@ -29,9 +29,6 @@ export default async function MembersPage({
       <div>
         <BackLink slug={slug} />
         <h1 className="mt-2 text-2xl font-semibold">世界觀成員</h1>
-        <p className="mt-4 text-sm text-muted-foreground">
-          只有這個世界觀的主辦(admin)可以管理成員。
-        </p>
       </div>
     );
   }
@@ -46,9 +43,6 @@ export default async function MembersPage({
     <div>
       <BackLink slug={slug} />
       <h1 className="mt-2 text-2xl font-semibold">{world.name} 的成員</h1>
-      <p className="mt-1 text-sm text-muted-foreground">
-        要邀請的人必須已經先用邀請碼註冊過帳號,這裡只負責把已經有帳號的人加進這個世界觀。
-      </p>
 
       <InviteMemberForm worldId={world.id} worldSlug={world.slug} />
 

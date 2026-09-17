@@ -80,9 +80,6 @@ export default async function WorldMapPage({
         ← 返回世界觀
       </Link>
       <h1 className="mt-2 text-2xl font-semibold">{world.name} 的世界地圖</h1>
-      <p className="mt-1 text-sm text-muted-foreground">
-        跟「關係圖」是不同的檢視角度:這裡是有底圖、有自己座標系統的地理地圖(可以分好幾張圖層),只顯示已經被標上位置的節點。
-      </p>
 
       <WorldMapView
         layers={mapLayers}

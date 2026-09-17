@@ -19,6 +19,13 @@ export function ForgotPasswordForm({ expired }: { expired: boolean }) {
         <p className="mt-2 text-sm text-muted-foreground">
           沒看到信的話,先檢查一下垃圾郵件匣;如果還是沒有,也可能是短時間內申請太多次觸發了寄信限制,稍等幾分鐘後再試一次看看。
         </p>
+        <p className="mt-2 text-sm text-muted-foreground">
+          一直收不到的話,也可以寫信到{" "}
+          <a href="mailto:heldendicht.cit@gmail.com" className="underline">
+            heldendicht.cit@gmail.com
+          </a>{" "}
+          請站務幫忙手動重設,不過站務不一定隨時都在,可能要等一下才會處理。
+        </p>
         <Link href="/login" className="mt-4 inline-block text-sm underline">
           回登入頁
         </Link>

@@ -63,6 +63,9 @@ export default async function DashboardPage() {
           <Link href="/dashboard/admin/invite-codes" className="ml-1 underline">
             邀請碼管理
           </Link>
+          <Link href="/dashboard/admin/reset-password" className="ml-3 underline">
+            手動重設密碼
+          </Link>
         </p>
       )}
     </div>

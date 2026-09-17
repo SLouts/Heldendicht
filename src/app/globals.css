@@ -69,6 +69,22 @@
   --font-display: var(--font-display);
 }
 
+/* 標題字體跟著美術方向換——每種方向各自載入自己的西文顯示字,中文
+   一律交給下面 h1/h2/h3 規則裡的系統襯線堆疊接手(不額外載入大型中文
+   webfont)。「泥金手抄本」是預設值,不用寫屬性選擇器。 */
+:root {
+  --font-display: var(--font-illuminated);
+}
+:root[data-art-theme="script"] {
+  --font-display: var(--font-script);
+}
+:root[data-art-theme="field"] {
+  --font-display: var(--font-field);
+}
+:root[data-art-theme="card"] {
+  --font-display: var(--font-card);
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     /* 「篝火夜色」配色:黑曜岩底、青銅金光 —— 深色模式 */
@@ -104,9 +120,327 @@
   }
 }
 
+/* ============================================================
+   美術方向切換(訪客自選,存在 localStorage,靠 <html data-art-theme>
+   這個屬性套用)。「泥金手抄本」是預設值,沒有屬性時就是上面那組
+   token,所以不用另外寫一份——這裡只補另外三種方向各自的配色。
+============================================================= */
+
+/* ---------- 劇本手稿:道林紙白 + 唯一一抹紅筆 ---------- */
+:root[data-art-theme="script"] {
+  --background: #efeee6;
+  --foreground: #1a1917;
+  --surface: #f8f7f2;
+  --border: #d4d1c3;
+  --muted: #e7e5db;
+  --muted-foreground: #8b8578;
+
+  --primary: #b23327;
+  --primary-hover: #9c2a20;
+  --primary-foreground: #fdf3f1;
+
+  --danger: #7a1f1c;
+  --danger-hover: #631a17;
+  --danger-foreground: #fbeae8;
+
+  --success: #2f6b4f;
+  --success-hover: #275a42;
+  --success-foreground: #eaf5ef;
+
+  --badge-pending-bg: #f0ddd0;
+  --badge-pending-fg: #7a3b1f;
+  --badge-danger-bg: #f0d3ce;
+  --badge-danger-fg: #7a1f1c;
+  --badge-success-bg: #dbe8de;
+  --badge-success-fg: #275a42;
+  --badge-info-bg: #dde3ea;
+  --badge-info-fg: #33506e;
+  --badge-neutral-bg: #e2ded2;
+  --badge-neutral-fg: #6b6558;
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-art-theme="script"] {
+    --background: #171713;
+    --foreground: #eae7dc;
+    --surface: #1d1c17;
+    --border: #332f27;
+    --muted: #242219;
+    --muted-foreground: #9a9488;
+
+    --primary: #e2695c;
+    --primary-hover: #ea8478;
+    --primary-foreground: #240a08;
+
+    --danger: #c9584c;
+    --danger-hover: #d47267;
+    --danger-foreground: #200806;
+
+    --success: #7fb08f;
+    --success-hover: #93bfa1;
+    --success-foreground: #0f1c14;
+
+    --badge-pending-bg: #3a2a1c;
+    --badge-pending-fg: #e3a978;
+    --badge-danger-bg: #3a201c;
+    --badge-danger-fg: #e39288;
+    --badge-success-bg: #1e2c22;
+    --badge-success-fg: #a8cdb4;
+    --badge-info-bg: #1f2a33;
+    --badge-info-fg: #9cc0d8;
+    --badge-neutral-bg: #322e24;
+    --badge-neutral-fg: #c4bda8;
+  }
+}
+
+/* ---------- 田野筆記:點格紙 + 藍曬(cyanotype)墨色 ---------- */
+:root[data-art-theme="field"] {
+  --background: #eef0e3;
+  --foreground: #2b3a2c;
+  --surface: #f6f8ee;
+  --border: #c7cdb8;
+  --muted: #e2e6d3;
+  --muted-foreground: #65715f;
+
+  --primary: #1f5170;
+  --primary-hover: #193f58;
+  --primary-foreground: #eaf3f8;
+
+  --danger: #a5432a;
+  --danger-hover: #8a3722;
+  --danger-foreground: #f7e9e3;
+
+  --success: #3f6b34;
+  --success-hover: #345a2b;
+  --success-foreground: #eaf2e5;
+
+  --badge-pending-bg: #e4d9b8;
+  --badge-pending-fg: #6b5320;
+  --badge-danger-bg: #e8d2c6;
+  --badge-danger-fg: #7a3220;
+  --badge-success-bg: #dbe6d2;
+  --badge-success-fg: #345a2b;
+  --badge-info-bg: #d4e0e6;
+  --badge-info-fg: #1f5170;
+  --badge-neutral-bg: #dfe2d2;
+  --badge-neutral-fg: #5c6350;
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-art-theme="field"] {
+    --background: #111509;
+    --foreground: #dbe3d2;
+    --surface: #161c0e;
+    --border: #2b331f;
+    --muted: #1c2312;
+    --muted-foreground: #9aa48d;
+
+    --primary: #6fb2d6;
+    --primary-hover: #8ac2e1;
+    --primary-foreground: #0c1e27;
+
+    --danger: #d1734f;
+    --danger-hover: #dc8a68;
+    --danger-foreground: #250f08;
+
+    --success: #8fc46a;
+    --success-hover: #a2cf80;
+    --success-foreground: #10190a;
+
+    --badge-pending-bg: #332912;
+    --badge-pending-fg: #d1ab5c;
+    --badge-danger-bg: #35241a;
+    --badge-danger-fg: #dc9068;
+    --badge-success-bg: #202c17;
+    --badge-success-fg: #aed08c;
+    --badge-info-bg: #17262e;
+    --badge-info-fg: #8fc0da;
+    --badge-neutral-bg: #262c1c;
+    --badge-neutral-fg: #b7c0a4;
+  }
+}
+
+/* ---------- 角色卡牌:牛皮/金箔邊 + 綠寶石強調 ---------- */
+:root[data-art-theme="card"] {
+  --background: #f2f0e9;
+  --foreground: #221c10;
+  --surface: #ece0c4;
+  --border: #b6912f;
+  --muted: #e3d5ac;
+  --muted-foreground: #6b5e40;
+
+  --primary: #1f6f54;
+  --primary-hover: #185a44;
+  --primary-foreground: #eafaf3;
+
+  --danger: #7d2632;
+  --danger-hover: #691f2a;
+  --danger-foreground: #fbe9ec;
+
+  --success: #1f6f54;
+  --success-hover: #185a44;
+  --success-foreground: #eafaf3;
+
+  --badge-pending-bg: #e9d9ad;
+  --badge-pending-fg: #6b5215;
+  --badge-danger-bg: #ecd3d7;
+  --badge-danger-fg: #7d2632;
+  --badge-success-bg: #d7ebe1;
+  --badge-success-fg: #185a44;
+  --badge-info-bg: #d8e4e8;
+  --badge-info-fg: #29566c;
+  --badge-neutral-bg: #e6dabc;
+  --badge-neutral-fg: #6b5e40;
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-art-theme="card"] {
+    --background: #131310;
+    --foreground: #e9dfc4;
+    --surface: #241f14;
+    --border: #8a6b28;
+    --muted: #2a2416;
+    --muted-foreground: #a2937a;
+
+    --primary: #4fae8c;
+    --primary-hover: #63bd9c;
+    --primary-foreground: #0a1712;
+
+    --danger: #c0596a;
+    --danger-hover: #ca7382;
+    --danger-foreground: #200a0d;
+
+    --success: #4fae8c;
+    --success-hover: #63bd9c;
+    --success-foreground: #0a1712;
+
+    --badge-pending-bg: #33290f;
+    --badge-pending-fg: #d8b45c;
+    --badge-danger-bg: #33191d;
+    --badge-danger-fg: #d38b96;
+    --badge-success-bg: #17281f;
+    --badge-success-fg: #8fcfb2;
+    --badge-info-bg: #172429;
+    --badge-info-fg: #8fbccf;
+    --badge-neutral-bg: #2c2716;
+    --badge-neutral-fg: #bcae8a;
+  }
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
+}
+
+/* ============================================================
+   Hero 依美術方向切換 —— WorldHero.tsx 一次渲染四份,這裡只切換
+   哪一份看得到,不用另外寫 client component 去讀 localStorage。
+============================================================= */
+.hero-variant {
+  display: none;
+}
+:root:not([data-art-theme]) .hero-illuminated,
+:root[data-art-theme="illuminated"] .hero-illuminated {
+  display: block;
+}
+:root[data-art-theme="script"] .hero-script {
+  display: block;
+}
+:root[data-art-theme="field"] .hero-field {
+  display: block;
+}
+:root[data-art-theme="card"] .hero-card {
+  display: block;
+}
+
+.hero-field-dots {
+  background-image: radial-gradient(circle, var(--border) 1px, transparent 1.3px);
+  background-size: 16px 16px;
+}
+
+/* 卡牌方向的卡框是「卡牌本身固定的樣子」,不隨淺色/深色主題翻轉——
+   跟紋章四稿的角色卡牌提案一樣,刻意維持恆定的墨黑卡框。 */
+.hero-card-frame {
+  background: #141414;
+  color: #e9dfc4;
+  border-radius: 14px;
+  padding: 10px;
+}
+.hero-card-titlebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 8px 10px;
+  font-size: 1.35rem;
+  letter-spacing: 0.02em;
+}
+.hero-card-art {
+  aspect-ratio: 16 / 6;
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+  background: linear-gradient(160deg, #2c4a41, #12211c);
+}
+.hero-card-art img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ============================================================
+   通知鈴鐺依美術方向切換 —— 同 hero,四份一起渲染,CSS 決定哪份可見。
+============================================================= */
+.bell-variant {
+  display: none;
+}
+:root:not([data-art-theme]) .bell-illuminated,
+:root[data-art-theme="illuminated"] .bell-illuminated {
+  display: block;
+}
+:root[data-art-theme="script"] .bell-script {
+  display: block;
+}
+:root[data-art-theme="field"] .bell-field {
+  display: block;
+}
+:root[data-art-theme="card"] .bell-card {
+  display: block;
+}
+
+.bell-field-tag {
+  position: relative;
+  border: 1px solid var(--border);
+  background: var(--background);
+  padding: 10px 10px 8px;
+}
+.bell-field-tag-k {
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+.bell-field-tag-v {
+  font-size: 13px;
+}
+
+.bell-card-quest {
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+.bell-card-quest-bar {
+  background: #141414;
+  color: #e9dfc4;
+  font-size: 12px;
+  letter-spacing: 0.03em;
+  padding: 6px 10px;
+}
+.bell-card-quest-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: var(--muted);
+  padding: 8px 10px 10px;
+  font-size: 13px;
 }
 
 /* 標題一律用史詩碑文體(Cinzel),中文字則交給系統襯線字型堆疊接手,
@@ -118,4 +452,31 @@ h3,
   font-family: var(--font-display), "Noto Serif TC", "Songti TC", "PMingLiU",
     serif;
   letter-spacing: 0.01em;
+}
+
+/* 其他三個美術方向各自的標題排版習慣(等寬打字機體全大寫、手寫體
+   不拉字距、卡牌體全大寫拉字距),中文字對應換一套比較搭的系統字堆疊。 */
+:root[data-art-theme="script"] h1,
+:root[data-art-theme="script"] h2,
+:root[data-art-theme="script"] h3,
+:root[data-art-theme="script"] .font-display {
+  font-family: var(--font-display), "Courier New", "Heiti TC", monospace;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+:root[data-art-theme="field"] h1,
+:root[data-art-theme="field"] h2,
+:root[data-art-theme="field"] h3,
+:root[data-art-theme="field"] .font-display {
+  font-family: var(--font-display), "Noto Sans TC", "Heiti TC", sans-serif;
+  letter-spacing: 0;
+  text-transform: none;
+}
+:root[data-art-theme="card"] h1,
+:root[data-art-theme="card"] h2,
+:root[data-art-theme="card"] h3,
+:root[data-art-theme="card"] .font-display {
+  font-family: var(--font-display), "Noto Serif TC", "Songti TC", serif;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
 }

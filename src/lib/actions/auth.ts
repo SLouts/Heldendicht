@@ -1,10 +1,23 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import * as z from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { requireUser } from "@/lib/dal";
+import { requireUser, getCurrentUser } from "@/lib/dal";
+
+/**
+ * 從 request header 組出目前這個部署的網址,拿來組「重設密碼信」裡的
+ * 連結——沒有另外存一個 SITE_URL 環境變數,直接讀當次 request 的
+ * host,本地開發、Vercel preview、正式站都不用另外設定。
+ */
+async function getSiteOrigin(): Promise<string> {
+  const h = await headers();
+  const host = h.get("host") ?? "localhost:3000";
+  const proto = h.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
+  return `${proto}://${host}`;
+}
 
 export type AuthFormState =
   | { error: string }
@@ -187,4 +200,81 @@ export async function changePassword(
   }
 
   return { success: true };
+}
+
+const ForgotPasswordSchema = z.object({
+  email: z.email({ error: "請輸入有效的 Email" }),
+});
+
+/**
+ * 忘記密碼,寄重設密碼信。不管這個 Email 有沒有註冊過都回傳一樣的
+ * 成功訊息,避免被拿來測試「哪些 Email 有在這個網站註冊過」。
+ *
+ * 信裡的連結會先連到 /auth/confirm(見該路由的說明),驗證成功後才
+ * 帶著已登入的 session 轉去 /reset-password 讓使用者設定新密碼——這一步
+ * 需要在 Supabase Dashboard 把「Reset Password」信件範本的連結換成
+ * {{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=recovery&next=/reset-password,
+ * 不然預設範本寄出的連結不會跳到我們自己的網址。
+ */
+export async function requestPasswordReset(
+  _prevState: AuthFormState,
+  formData: FormData,
+): Promise<AuthFormState> {
+  const parsed = ForgotPasswordSchema.safeParse({
+    email: formData.get("email"),
+  });
+  if (!parsed.success) {
+    return { fieldErrors: parsed.error.flatten().fieldErrors };
+  }
+
+  const origin = await getSiteOrigin();
+  const supabase = await createClient();
+  await supabase.auth.resetPasswordForEmail(parsed.data.email, {
+    redirectTo: `${origin}/auth/confirm?next=/reset-password`,
+  });
+
+  return { success: true };
+}
+
+const CompletePasswordResetSchema = z
+  .object({
+    newPassword: z.string().min(8, { error: "新密碼至少需要 8 個字元" }),
+    confirmPassword: z.string().min(1, { error: "請再輸入一次新密碼" }),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    error: "兩次輸入的新密碼不一樣",
+    path: ["confirmPassword"],
+  });
+
+/**
+ * 忘記密碼流程的最後一步。這裡不用像 changePassword 那樣驗證「目前密碼」
+ * ——使用者是靠點擊信箱裡的重設連結(/auth/confirm 那邊 verifyOtp 通過)
+ * 才能有 session 走到這一步,等同已經證明過身分。
+ */
+export async function completePasswordReset(
+  _prevState: AuthFormState,
+  formData: FormData,
+): Promise<AuthFormState> {
+  const user = await getCurrentUser();
+  if (!user) {
+    return { error: "重設連結已失效,請重新申請一次" };
+  }
+
+  const parsed = CompletePasswordResetSchema.safeParse({
+    newPassword: formData.get("newPassword"),
+    confirmPassword: formData.get("confirmPassword"),
+  });
+  if (!parsed.success) {
+    return { fieldErrors: parsed.error.flatten().fieldErrors };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.updateUser({
+    password: parsed.data.newPassword,
+  });
+  if (error) {
+    return { error: "修改密碼失敗,請稍後再試" };
+  }
+
+  redirect("/dashboard");
 }

@@ -34,9 +34,14 @@ export default function LoginPage() {
         </div>
 
         <div className="flex flex-col gap-1">
-          <label htmlFor="password" className="text-sm font-medium">
-            密碼
-          </label>
+          <div className="flex items-center justify-between">
+            <label htmlFor="password" className="text-sm font-medium">
+              密碼
+            </label>
+            <Link href="/forgot-password" className="text-xs underline">
+              忘記密碼?
+            </Link>
+          </div>
           <input
             id="password"
             name="password"

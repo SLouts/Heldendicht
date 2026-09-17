@@ -3,10 +3,16 @@ import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/dal";
 import { createClient } from "@/lib/supabase/server";
 import { getWorldMediaSignedUrl } from "@/lib/worldMedia";
+import { getWorldMapSignedUrl } from "@/lib/worldmap";
 import { NavMenu } from "@/components/NavMenu";
 import { CollapsibleSection } from "@/components/CollapsibleSection";
 import { NODE_TYPE_LABEL, FALLBACK_NODE_TYPE_ORDER } from "@/lib/nodeTypeLabels";
 import { WorldHero } from "./WorldHero";
+import WorldMapView, {
+  type MapLayer,
+  type MapNode,
+  type UnplacedNode,
+} from "./worldmap/WorldMapView";
 import type { Database } from "@/lib/supabase/database.types";
 
 type ProfileSummary = Pick<
@@ -23,7 +29,17 @@ type CharacterSummary = Pick<
 
 type NodeRow = Pick<
   Database["public"]["Tables"]["nodes"]["Row"],
-  "id" | "title" | "slug" | "node_type" | "status" | "is_placeholder" | "creator_id" | "category_id"
+  | "id"
+  | "title"
+  | "slug"
+  | "node_type"
+  | "status"
+  | "is_placeholder"
+  | "creator_id"
+  | "category_id"
+  | "map_layer_id"
+  | "map_x"
+  | "map_y"
 > & {
   characters: CharacterSummary | CharacterSummary[] | null;
 };
@@ -70,6 +86,7 @@ export default async function WorldDashboardPage({
     { data: nodes },
     { data: relationships },
     { data: categories },
+    { data: layers },
     bannerUrl,
     iconUrl,
   ] = await Promise.all([
@@ -78,7 +95,7 @@ export default async function WorldDashboardPage({
     supabase
       .from("nodes")
       .select(
-        "id, title, slug, node_type, status, is_placeholder, creator_id, category_id, characters(character_type, owner_id, profiles(display_name, username, email))",
+        "id, title, slug, node_type, status, is_placeholder, creator_id, category_id, map_layer_id, map_x, map_y, characters(character_type, owner_id, profiles(display_name, username, email))",
       )
       .eq("world_id", world.id)
       .order("node_type")
@@ -95,6 +112,11 @@ export default async function WorldDashboardPage({
       .select("id, name, description, accepts_submissions")
       .eq("world_id", world.id)
       .order("order_index", { ascending: true }),
+    supabase
+      .from("world_map_layers")
+      .select("id, name, image_path")
+      .eq("world_id", world.id)
+      .order("order_index", { ascending: true }),
     getWorldMediaSignedUrl(world.banner_path),
     getWorldMediaSignedUrl(world.icon_path),
   ]);
@@ -109,6 +131,34 @@ export default async function WorldDashboardPage({
     nodeType,
     nodes: uncategorizedNodes.filter((n) => n.node_type === nodeType),
   })).filter((g) => g.nodes.length > 0);
+
+  const mapLayers: MapLayer[] = await Promise.all(
+    (layers ?? []).map(async (l) => ({
+      id: l.id,
+      name: l.name,
+      imageUrl: await getWorldMapSignedUrl(l.image_path),
+    })),
+  );
+  const placedMapNodes: MapNode[] = [];
+  const unplacedMapNodes: UnplacedNode[] = [];
+  for (const n of nodes ?? []) {
+    const char = Array.isArray(n.characters) ? n.characters[0] : n.characters;
+    const base = {
+      id: n.id,
+      title: n.title,
+      slug: n.slug,
+      nodeType: n.node_type,
+      status: n.status,
+      isPlaceholder: n.is_placeholder,
+      characterType: char?.character_type ?? null,
+    };
+    if (n.map_x != null && n.map_y != null && n.map_layer_id != null) {
+      placedMapNodes.push({ ...base, x: n.map_x, y: n.map_y, layerId: n.map_layer_id });
+    } else {
+      unplacedMapNodes.push(base);
+    }
+  }
+  const hasVisibleMap = mapLayers.some((l) => l.imageUrl);
 
   return (
     <div>
@@ -185,6 +235,24 @@ export default async function WorldDashboardPage({
           </Link>
         )}
       </NavMenu>
+
+      {(hasVisibleMap || isStaff) && (
+        <section className="mt-8">
+          <h2 className="text-xl font-semibold">世界地圖</h2>
+          <WorldMapView
+            layers={mapLayers}
+            nodes={placedMapNodes}
+            unplacedNodes={unplacedMapNodes}
+            isStaff={Boolean(isStaff)}
+            manageLayersHref={
+              isAdmin ? `/dashboard/worlds/${world.slug}/worldmap/layers` : undefined
+            }
+            worldId={world.id}
+            worldSlug={world.slug}
+            basePath={`/dashboard/worlds/${world.slug}/nodes`}
+          />
+        </section>
+      )}
 
       {categoryGroups.length > 0 && (
         <section className="mt-8">

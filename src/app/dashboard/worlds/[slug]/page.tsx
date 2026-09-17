@@ -2,9 +2,11 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/dal";
 import { createClient } from "@/lib/supabase/server";
+import { getWorldMediaSignedUrl } from "@/lib/worldMedia";
 import { NavMenu } from "@/components/NavMenu";
 import { CollapsibleSection } from "@/components/CollapsibleSection";
 import { NODE_TYPE_LABEL, FALLBACK_NODE_TYPE_ORDER } from "@/lib/nodeTypeLabels";
+import { WorldHero } from "./WorldHero";
 import type { Database } from "@/lib/supabase/database.types";
 
 type ProfileSummary = Pick<
@@ -54,7 +56,9 @@ export default async function WorldDashboardPage({
 
   const { data: world } = await supabase
     .from("worlds")
-    .select("id, slug, name, tagline, default_pc_quota, is_public")
+    .select(
+      "id, slug, name, tagline, default_pc_quota, is_public, banner_path, icon_path",
+    )
     .eq("slug", slug)
     .maybeSingle();
 
@@ -66,6 +70,8 @@ export default async function WorldDashboardPage({
     { data: nodes },
     { data: relationships },
     { data: categories },
+    bannerUrl,
+    iconUrl,
   ] = await Promise.all([
     supabase.rpc("is_world_staff", { p_world_id: world.id }),
     supabase.rpc("is_world_admin", { p_world_id: world.id }),
@@ -89,6 +95,8 @@ export default async function WorldDashboardPage({
       .select("id, name, description, accepts_submissions")
       .eq("world_id", world.id)
       .order("order_index", { ascending: true }),
+    getWorldMediaSignedUrl(world.banner_path),
+    getWorldMediaSignedUrl(world.icon_path),
   ]);
 
   const uncategorizedNodes = (nodes ?? []).filter((n) => n.category_id == null);
@@ -108,7 +116,7 @@ export default async function WorldDashboardPage({
         ← 我的世界觀
       </Link>
       <div className="mt-2">
-        <h1 className="text-2xl font-semibold">{world.name}</h1>
+        <WorldHero name={world.name} bannerUrl={bannerUrl} iconUrl={iconUrl} />
       </div>
 
       <NavMenu>

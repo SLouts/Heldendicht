@@ -150,6 +150,8 @@ export type Database = {
           tagline: string | null;
           description: string | null;
           cover_image_url: string | null;
+          banner_path: string | null;
+          icon_path: string | null;
           owner_id: string;
           default_pc_quota: number;
           is_public: boolean;

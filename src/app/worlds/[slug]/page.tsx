@@ -2,10 +2,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getWorldMapSignedUrl } from "@/lib/worldmap";
+import { getWorldMediaSignedUrl } from "@/lib/worldMedia";
 import WorldMapView, {
   type MapLayer,
   type MapNode,
 } from "@/app/dashboard/worlds/[slug]/worldmap/WorldMapView";
+import { WorldHero } from "@/app/dashboard/worlds/[slug]/WorldHero";
 import { NavMenu } from "@/components/NavMenu";
 import { CollapsibleSection } from "@/components/CollapsibleSection";
 import { NODE_TYPE_LABEL, FALLBACK_NODE_TYPE_ORDER } from "@/lib/nodeTypeLabels";
@@ -55,7 +57,9 @@ export default async function WorldPage({
 
   const { data: world } = await supabase
     .from("worlds")
-    .select("id, name, tagline, description, default_pc_quota")
+    .select(
+      "id, name, tagline, description, default_pc_quota, banner_path, icon_path",
+    )
     .eq("slug", slug)
     .maybeSingle();
 
@@ -75,6 +79,8 @@ export default async function WorldPage({
     { data: categories },
     { data: layers },
     { data: mapNodes },
+    bannerUrl,
+    iconUrl,
   ] = await Promise.all([
     supabase
       .from("nodes")
@@ -108,6 +114,8 @@ export default async function WorldPage({
       )
       .eq("world_id", world.id)
       .not("map_x", "is", null),
+    getWorldMediaSignedUrl(world.banner_path),
+    getWorldMediaSignedUrl(world.icon_path),
   ]);
 
   // 有掛分類的節點,顯示交給下面的「分類導覽」區塊;沒掛分類的節點才
@@ -151,9 +159,7 @@ export default async function WorldPage({
 
   return (
     <div className="mx-auto w-full max-w-5xl flex-1 px-6 py-12">
-      <div>
-        <h1 className="text-3xl font-semibold tracking-tight">{world.name}</h1>
-      </div>
+      <WorldHero name={world.name} bannerUrl={bannerUrl} iconUrl={iconUrl} />
 
       <NavMenu>
         <Link

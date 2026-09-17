@@ -2,7 +2,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/dal";
 import { createClient } from "@/lib/supabase/server";
+import { getWorldMediaSignedUrl } from "@/lib/worldMedia";
 import { SettingsForm } from "./SettingsForm";
+import { WorldMediaUpload } from "./WorldMediaUpload";
 
 export default async function WorldSettingsPage({
   params,
@@ -14,7 +16,7 @@ export default async function WorldSettingsPage({
   const { data: world } = await supabase
     .from("worlds")
     .select(
-      "id, slug, name, tagline, description, default_pc_quota, is_public",
+      "id, slug, name, tagline, description, default_pc_quota, is_public, banner_path, icon_path",
     )
     .eq("slug", slug)
     .maybeSingle();
@@ -37,11 +39,36 @@ export default async function WorldSettingsPage({
     );
   }
 
+  const [bannerUrl, iconUrl] = await Promise.all([
+    getWorldMediaSignedUrl(world.banner_path),
+    getWorldMediaSignedUrl(world.icon_path),
+  ]);
+
   return (
     <div>
       <BackLink slug={slug} />
       <h1 className="mt-2 text-2xl font-semibold">世界觀設定</h1>
       <SettingsForm world={world} />
+
+      <h2 className="mt-10 text-lg font-semibold">世界觀首頁橫幅 / Icon</h2>
+      <div className="mt-4 flex flex-wrap gap-6">
+        <WorldMediaUpload
+          kind="banner"
+          label="橫幅"
+          worldId={world.id}
+          worldSlug={world.slug}
+          imageUrl={bannerUrl}
+          previewClassName="h-32 w-full max-w-md rounded-lg border border-border object-cover sm:w-80"
+        />
+        <WorldMediaUpload
+          kind="icon"
+          label="Icon"
+          worldId={world.id}
+          worldSlug={world.slug}
+          imageUrl={iconUrl}
+          previewClassName="h-20 w-20 rounded-full border border-border object-cover"
+        />
+      </div>
 
       <h2 className="mt-10 text-lg font-semibold">世界地圖圖層</h2>
       <p className="mt-1 text-sm text-muted-foreground">

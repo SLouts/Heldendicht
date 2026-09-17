@@ -39,15 +39,24 @@ function describe(n: NotificationItem): { text: string; href: string | null } {
   }
 }
 
+export type ReviewSummary = {
+  pendingNodesCount: number;
+  openReportsCount: number;
+};
+
 export function NotificationBell({
   notifications,
   unreadCount,
+  reviewSummary,
 }: {
   notifications: NotificationItem[];
   unreadCount: number;
+  reviewSummary: ReviewSummary;
 }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+  const reviewCount = reviewSummary.pendingNodesCount + reviewSummary.openReportsCount;
+  const badgeCount = unreadCount + reviewCount;
 
   useEffect(() => {
     if (!open) return;
@@ -69,9 +78,9 @@ export function NotificationBell({
         aria-label="通知"
       >
         通知
-        {unreadCount > 0 && (
+        {badgeCount > 0 && (
           <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-badge-danger-bg px-1 text-[10px] font-medium text-badge-danger-fg">
-            {unreadCount > 99 ? "99+" : unreadCount}
+            {badgeCount > 99 ? "99+" : badgeCount}
           </span>
         )}
       </button>
@@ -89,10 +98,31 @@ export function NotificationBell({
             )}
           </div>
 
+          {reviewCount > 0 && (
+            <Link
+              href="/dashboard"
+              onClick={() => setOpen(false)}
+              className="mt-1 flex flex-col gap-0.5 rounded-md bg-badge-pending-bg px-2 py-2 text-sm text-badge-pending-fg transition hover:opacity-80"
+            >
+              <span className="font-medium">
+                {reviewSummary.pendingNodesCount > 0 &&
+                  `${reviewSummary.pendingNodesCount} 個節點待審核`}
+                {reviewSummary.pendingNodesCount > 0 &&
+                  reviewSummary.openReportsCount > 0 &&
+                  "・"}
+                {reviewSummary.openReportsCount > 0 &&
+                  `${reviewSummary.openReportsCount} 個檢舉未結案`}
+              </span>
+              <span className="text-xs opacity-80">身為主辦/管理需要處理</span>
+            </Link>
+          )}
+
           {notifications.length === 0 ? (
-            <p className="px-2 py-4 text-center text-sm text-muted-foreground">
-              目前沒有通知。
-            </p>
+            reviewCount === 0 && (
+              <p className="px-2 py-4 text-center text-sm text-muted-foreground">
+                目前沒有通知。
+              </p>
+            )
           ) : (
             <ul className="mt-1 flex max-h-96 flex-col gap-0.5 overflow-y-auto">
               {notifications.map((n) => {

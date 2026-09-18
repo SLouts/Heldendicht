@@ -695,19 +695,10 @@ body {
   padding-block: 6px;
 }
 .hero-wuxia-seal {
-  display: flex;
-  align-items: center;
-  justify-content: center;
   width: 44px;
   height: 44px;
   flex-shrink: 0;
-  border-radius: 4px;
-  background: var(--primary);
-  color: var(--primary-foreground);
-  font-family: "Kaiti TC", "BiauKai", "STKaiti", "DFKai-SB", "KaiTi",
-    "Noto Serif TC", serif;
-  font-size: 22px;
-  font-weight: 700;
+  object-fit: contain;
   transform: rotate(-3deg);
 }
 .hero-wuxia-tagline {

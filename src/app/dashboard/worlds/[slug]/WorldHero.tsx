@@ -12,6 +12,19 @@
  * 自己可以清空——劇本手稿跟東方玄幻的標題副文字直接顯示這個真資料,
  * 不是寫死的文案,主辦不填就不顯示那一行。
  */
+
+// 東方玄幻沒有自訂 icon 時的預留印章圖——8 張現成的硃砂印章素材,依
+// 世界觀名稱算一個穩定的雜湊值來挑,同一個世界觀每次看到的印章都一樣,
+// 不同世界觀之間看起來會不一樣,不用另外存欄位、也不用讀 localStorage。
+const WUXIA_SEAL_COUNT = 8;
+function pickWuxiaSeal(name: string): number {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = (hash * 31 + name.charCodeAt(i)) | 0;
+  }
+  return Math.abs(hash) % WUXIA_SEAL_COUNT;
+}
+
 export function WorldHero({
   name,
   tagline,
@@ -156,7 +169,12 @@ export function WorldHero({
                 className="h-11 w-11 shrink-0 rounded-full border border-border object-cover"
               />
             ) : (
-              <span className="hero-wuxia-seal">{name.slice(0, 1)}</span>
+              // eslint-disable-next-line @next/next/no-img-element -- 固定的公開靜態小圖,不需要 next/image 最佳化
+              <img
+                src={`/wuxia-seals/seal-${pickWuxiaSeal(name)}.png`}
+                alt=""
+                className="hero-wuxia-seal"
+              />
             )}
             <div>
               <h1 className="font-display text-3xl">{name}</h1>

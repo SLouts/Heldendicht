@@ -89,6 +89,15 @@
 :root[data-art-theme="wuxia"] {
   --font-display: serif;
 }
+:root[data-art-theme="scroll"] {
+  --font-display: var(--font-scroll);
+}
+:root[data-art-theme="cartographer"] {
+  --font-display: var(--font-cartographer);
+}
+:root[data-art-theme="almanac"] {
+  --font-display: var(--font-almanac);
+}
 
 @media (prefers-color-scheme: dark) {
   :root {
@@ -395,6 +404,204 @@
   }
 }
 
+/* ---------- 羊皮紙卷軸:攤開的卷軸 + 火漆紅 ---------- */
+:root[data-art-theme="scroll"] {
+  --background: #e3dac2;
+  --foreground: #453722;
+  --surface: #f0e9d4;
+  --border: #b8a67e;
+  --muted: #ece2c8;
+  --muted-foreground: #6f6248;
+
+  --primary: #8c3a2b;
+  --primary-hover: #7a3024;
+  --primary-foreground: #f6ecd7;
+
+  --danger: #8f2f1e;
+  --danger-hover: #7a2819;
+  --danger-foreground: #f8ece0;
+
+  --success: #5c6e4f;
+  --success-hover: #4c5c41;
+  --success-foreground: #eef2e6;
+
+  --badge-pending-bg: #ecdcae;
+  --badge-pending-fg: #6b4a1c;
+  --badge-danger-bg: #e9c9bb;
+  --badge-danger-fg: #7a2f1e;
+  --badge-success-bg: #dbe0cd;
+  --badge-success-fg: #445a34;
+  --badge-info-bg: #d6dfe3;
+  --badge-info-fg: #33566c;
+  --badge-neutral-bg: #e0d3ae;
+  --badge-neutral-fg: #6a5936;
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-art-theme="scroll"] {
+    --background: #161409;
+    --foreground: #e4dac1;
+    --surface: #1e1b12;
+    --border: #5c4d31;
+    --muted: #241f14;
+    --muted-foreground: #a89876;
+
+    --primary: #d97654;
+    --primary-hover: #e38f6f;
+    --primary-foreground: #241005;
+
+    --danger: #cc6248;
+    --danger-hover: #d97c62;
+    --danger-foreground: #200a03;
+
+    --success: #8dad80;
+    --success-hover: #a0bd95;
+    --success-foreground: #101a0c;
+
+    --badge-pending-bg: #3a2c14;
+    --badge-pending-fg: #dcb36a;
+    --badge-danger-bg: #3a2419;
+    --badge-danger-fg: #dc9276;
+    --badge-success-bg: #232c1c;
+    --badge-success-fg: #a8c397;
+    --badge-info-bg: #1e2933;
+    --badge-info-fg: #93b7cf;
+    --badge-neutral-bg: #302a19;
+    --badge-neutral-fg: #bfae86;
+  }
+}
+
+/* ---------- 製圖師手記:方格野帳 + 苔綠測量墨 ---------- */
+:root[data-art-theme="cartographer"] {
+  --background: #dcd7c3;
+  --foreground: #242019;
+  --surface: #e9e3cd;
+  --border: #4b3524;
+  --muted: #dcd6c1;
+  --muted-foreground: #5c5646;
+
+  --primary: #9c4a3a;
+  --primary-hover: #843d2f;
+  --primary-foreground: #f3e9d3;
+
+  --danger: #8a3a22;
+  --danger-hover: #73301c;
+  --danger-foreground: #f7e9de;
+
+  --success: #4a6a52;
+  --success-hover: #3d5744;
+  --success-foreground: #eef2ea;
+
+  --badge-pending-bg: #e6d9ae;
+  --badge-pending-fg: #6b4a1c;
+  --badge-danger-bg: #ecd2c2;
+  --badge-danger-fg: #7a3220;
+  --badge-success-bg: #d7e0d4;
+  --badge-success-fg: #33513e;
+  --badge-info-bg: #d4dfe6;
+  --badge-info-fg: #33566c;
+  --badge-neutral-bg: #dcd6c1;
+  --badge-neutral-fg: #5c5646;
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-art-theme="cartographer"] {
+    --background: #14170f;
+    --foreground: #dfe2d0;
+    --surface: #1c2018;
+    --border: #6f8f7a;
+    --muted: #2c2a1c;
+    --muted-foreground: #9ba38c;
+
+    --primary: #d97a63;
+    --primary-hover: #e3907a;
+    --primary-foreground: #1a0f0a;
+
+    --danger: #c96f4a;
+    --danger-hover: #d48761;
+    --danger-foreground: #1f0a03;
+
+    --success: #82ad97;
+    --success-hover: #96bda9;
+    --success-foreground: #0d180f;
+
+    --badge-pending-bg: #39300f;
+    --badge-pending-fg: #d9b36a;
+    --badge-danger-bg: #352218;
+    --badge-danger-fg: #dc9b76;
+    --badge-success-bg: #1e2b21;
+    --badge-success-fg: #a9cdb4;
+    --badge-info-bg: #1c2933;
+    --badge-info-fg: #93b7cf;
+    --badge-neutral-bg: #2c2a1c;
+    --badge-neutral-fg: #bcb692;
+  }
+}
+
+/* ---------- 占星曆書:金線星點 + 深靛主色 ---------- */
+:root[data-art-theme="almanac"] {
+  --background: #e2ddc8;
+  --foreground: #211f2e;
+  --surface: #ece6d2;
+  --border: #8a6d3a;
+  --muted: #dbd6ea;
+  --muted-foreground: #5c5670;
+
+  --primary: #332e5c;
+  --primary-hover: #292550;
+  --primary-foreground: #ece6d2;
+
+  --danger: #8a3a22;
+  --danger-hover: #73301c;
+  --danger-foreground: #f7e9de;
+
+  --success: #3f5a48;
+  --success-hover: #34493b;
+  --success-foreground: #eef2ea;
+
+  --badge-pending-bg: #e9dcab;
+  --badge-pending-fg: #6b4a1c;
+  --badge-danger-bg: #ecd2c2;
+  --badge-danger-fg: #7a3220;
+  --badge-success-bg: #d7e0d4;
+  --badge-success-fg: #33513e;
+  --badge-info-bg: #d8d5e8;
+  --badge-info-fg: #2e2c5c;
+  --badge-neutral-bg: #dbd6ea;
+  --badge-neutral-fg: #5c5670;
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-art-theme="almanac"] {
+    --background: #12101f;
+    --foreground: #e5e1f2;
+    --surface: #1a1730;
+    --border: #4a4470;
+    --muted: #2a2648;
+    --muted-foreground: #a29cc2;
+
+    --primary: #b8923f;
+    --primary-hover: #cca452;
+    --primary-foreground: #1a1400;
+
+    --danger: #c96f4a;
+    --danger-hover: #d48761;
+    --danger-foreground: #1f0a03;
+
+    --success: #82ad97;
+    --success-hover: #96bda9;
+    --success-foreground: #0d180f;
+
+    --badge-pending-bg: #332510;
+    --badge-pending-fg: #d9b36a;
+    --badge-danger-bg: #352218;
+    --badge-danger-fg: #dc9b76;
+    --badge-success-bg: #1e2b21;
+    --badge-success-fg: #a9cdb4;
+    --badge-info-bg: #221e40;
+    --badge-info-fg: #b8acdc;
+    --badge-neutral-bg: #2a2648;
+    --badge-neutral-fg: #c2bce0;
+  }
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
@@ -421,6 +628,15 @@ body {
   display: block;
 }
 :root[data-art-theme="wuxia"] .hero-wuxia {
+  display: block;
+}
+:root[data-art-theme="scroll"] .hero-scroll {
+  display: block;
+}
+:root[data-art-theme="cartographer"] .hero-cartographer {
+  display: block;
+}
+:root[data-art-theme="almanac"] .hero-almanac {
   display: block;
 }
 
@@ -499,6 +715,92 @@ body {
   color: var(--muted-foreground);
 }
 
+/* ---------- 羊皮紙卷軸 hero:攤開的卷軸,兩端露出捲軸木軸 ---------- */
+.hero-scroll-rod {
+  height: 9px;
+  border-radius: 5px;
+  background: var(--border);
+  box-shadow:
+    inset 0 2px 2px rgba(0, 0, 0, 0.15),
+    inset 0 -2px 2px rgba(255, 255, 255, 0.1);
+}
+.hero-scroll-body {
+  background: var(--surface);
+  padding: 28px 24px 26px;
+  text-align: center;
+}
+
+/* ---------- 製圖師手記 hero:方格野帳底 + 羅盤 ---------- */
+.hero-cartographer-grid {
+  background-image: linear-gradient(
+      color-mix(in srgb, var(--border) 35%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--border) 35%, transparent) 1px,
+      transparent 1px
+    );
+  background-size: 24px 24px;
+  background-color: var(--surface);
+}
+.hero-cartographer-compass {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  width: 34px;
+  height: 34px;
+  color: var(--border);
+  opacity: 0.6;
+}
+
+/* ---------- 占星曆書 hero:星點夜色 ---------- */
+.hero-almanac-sky {
+  position: relative;
+  overflow: hidden;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  padding: 20px;
+  background: radial-gradient(1.5px 1.5px at 20% 30%, rgba(216, 187, 110, 0.9), transparent),
+    radial-gradient(1.5px 1.5px at 65% 20%, rgba(216, 187, 110, 0.8), transparent),
+    radial-gradient(1.5px 1.5px at 40% 75%, rgba(216, 187, 110, 0.7), transparent),
+    radial-gradient(1.5px 1.5px at 85% 60%, rgba(216, 187, 110, 0.6), transparent),
+    radial-gradient(1.5px 1.5px at 10% 80%, rgba(216, 187, 110, 0.6), transparent),
+    var(--surface);
+}
+.hero-almanac-banner {
+  display: block;
+  width: 100%;
+  max-height: 200px;
+  object-fit: cover;
+  border-radius: 4px;
+  margin-bottom: 12px;
+}
+.hero-almanac-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.hero-almanac-star {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font-size: 20px;
+}
+.hero-almanac-tagline {
+  margin-top: 4px;
+  font-size: 13px;
+  font-style: italic;
+  color: var(--muted-foreground);
+}
+
 /* ============================================================
    通知鈴鐺依美術方向切換 —— 同 hero,四份一起渲染,CSS 決定哪份可見。
 ============================================================= */
@@ -519,6 +821,15 @@ body {
   display: block;
 }
 :root[data-art-theme="wuxia"] .bell-wuxia {
+  display: block;
+}
+:root[data-art-theme="scroll"] .bell-scroll {
+  display: block;
+}
+:root[data-art-theme="cartographer"] .bell-cartographer {
+  display: block;
+}
+:root[data-art-theme="almanac"] .bell-almanac {
   display: block;
 }
 
@@ -575,6 +886,38 @@ body {
   transform: rotate(-1.5deg);
 }
 
+/* ---------- 製圖師手記通知:探勘日誌條目 ---------- */
+.bell-cartographer-entry {
+  border: 1px dashed var(--border);
+  padding: 8px 10px;
+}
+.bell-cartographer-entry-tag {
+  display: inline-block;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--primary-foreground);
+  background: var(--primary);
+  padding: 1px 7px;
+  border-radius: 2px;
+}
+
+/* ---------- 占星曆書通知:星象紀事(跟東方玄幻的手札同一種左側色條筆記,換配色) ---------- */
+.bell-almanac-note {
+  border-left: 3px solid var(--primary);
+  background: var(--background);
+  padding: 8px 10px 9px 12px;
+}
+.bell-almanac-badge {
+  display: inline-block;
+  border-radius: 3px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font-size: 11px;
+  padding: 1px 7px;
+  margin-bottom: 4px;
+}
+
 /* 標題一律用史詩碑文體(Cinzel),中文字則交給系統襯線字型堆疊接手,
    不額外載入巨大的中文襯線 webfont。稍微拉開字距,加強碑刻感。 */
 h1,
@@ -619,4 +962,27 @@ h3,
   font-family: var(--font-display), "Kaiti TC", "STKaiti", "Noto Serif TC", serif;
   letter-spacing: 0.04em;
   font-weight: 500;
+}
+:root[data-art-theme="scroll"] h1,
+:root[data-art-theme="scroll"] h2,
+:root[data-art-theme="scroll"] h3,
+:root[data-art-theme="scroll"] .font-display {
+  font-family: var(--font-display), "Songti TC", "PMingLiU", serif;
+  letter-spacing: 0.01em;
+}
+:root[data-art-theme="cartographer"] h1,
+:root[data-art-theme="cartographer"] h2,
+:root[data-art-theme="cartographer"] h3,
+:root[data-art-theme="cartographer"] .font-display {
+  font-family: var(--font-display), "Heiti TC", "PMingLiU", serif;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+:root[data-art-theme="almanac"] h1,
+:root[data-art-theme="almanac"] h2,
+:root[data-art-theme="almanac"] h3,
+:root[data-art-theme="almanac"] .font-display {
+  font-family: var(--font-display), "Kaiti TC", "STKaiti", "Songti TC", serif;
+  font-style: italic;
+  letter-spacing: 0.02em;
 }

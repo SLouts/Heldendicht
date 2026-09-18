@@ -165,6 +165,98 @@ export function WorldHero({
           </div>
         </div>
       </div>
+
+      {/* ---------- 06 羊皮紙卷軸:攤開的卷軸 ---------- */}
+      <div className="hero-variant hero-scroll">
+        <div className="hero-scroll-rod" />
+        <div className="hero-scroll-body">
+          <div className="flex items-center justify-center gap-3">
+            {iconUrl && (
+              // eslint-disable-next-line @next/next/no-img-element -- signed URL,無法用 next/image 白名單網域
+              <img
+                src={iconUrl}
+                alt=""
+                className="h-12 w-12 shrink-0 rounded-full border border-border object-cover"
+              />
+            )}
+            <h1 className="font-display text-3xl">{name}</h1>
+          </div>
+          {tagline && <p className="mt-2 text-sm italic text-muted-foreground">{tagline}</p>}
+          {bannerUrl && (
+            // eslint-disable-next-line @next/next/no-img-element -- signed URL,無法用 next/image 白名單網域
+            <img
+              src={bannerUrl}
+              alt=""
+              className="mx-auto mt-5 max-h-56 w-full rounded object-cover"
+            />
+          )}
+        </div>
+        <div className="hero-scroll-rod" />
+      </div>
+
+      {/* ---------- 07 製圖師手記:方格野帳 + 羅盤 ---------- */}
+      <div className="hero-variant hero-cartographer hero-cartographer-grid relative rounded-lg border-2 border-border px-6 py-8">
+        <svg
+          className="hero-cartographer-compass"
+          viewBox="0 0 34 34"
+          fill="none"
+          stroke="currentColor"
+        >
+          <circle cx="17" cy="17" r="14" strokeWidth="1" />
+          <path d="M17 4 L20 17 L17 30 L14 17 Z" fill="currentColor" stroke="none" opacity=".7" />
+          <path d="M4 17 L17 15 L30 17 L17 19 Z" fill="currentColor" stroke="none" opacity=".35" />
+        </svg>
+        <div className="flex items-center gap-4">
+          {iconUrl && (
+            // eslint-disable-next-line @next/next/no-img-element -- signed URL,無法用 next/image 白名單網域
+            <img
+              src={iconUrl}
+              alt=""
+              className="h-12 w-12 shrink-0 rounded-full border border-border object-cover"
+            />
+          )}
+          <h1 className="font-display text-3xl uppercase tracking-wide">{name}</h1>
+        </div>
+        {tagline && (
+          <p className="mt-2 text-xs uppercase tracking-[0.15em] text-muted-foreground">
+            {tagline}
+          </p>
+        )}
+        {bannerUrl && (
+          // eslint-disable-next-line @next/next/no-img-element -- signed URL,無法用 next/image 白名單網域
+          <img
+            src={bannerUrl}
+            alt=""
+            className="mt-5 max-h-52 w-full rounded border border-border object-cover"
+          />
+        )}
+      </div>
+
+      {/* ---------- 08 占星曆書:星圖 ---------- */}
+      <div className="hero-variant hero-almanac">
+        <div className="hero-almanac-sky">
+          {bannerUrl && (
+            // eslint-disable-next-line @next/next/no-img-element -- signed URL,無法用 next/image 白名單網域
+            <img src={bannerUrl} alt="" className="hero-almanac-banner" />
+          )}
+          <div className="hero-almanac-row">
+            {iconUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element -- signed URL,無法用 next/image 白名單網域
+              <img
+                src={iconUrl}
+                alt=""
+                className="h-11 w-11 shrink-0 rounded-full border border-border object-cover"
+              />
+            ) : (
+              <span className="hero-almanac-star">✦</span>
+            )}
+            <div>
+              <h1 className="font-display text-3xl italic">{name}</h1>
+              {tagline && <p className="hero-almanac-tagline">{tagline}</p>}
+            </div>
+          </div>
+        </div>
+      </div>
     </>
   );
 }

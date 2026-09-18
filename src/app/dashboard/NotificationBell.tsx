@@ -446,6 +446,186 @@ export function NotificationBell({
               </div>
             )}
           </div>
+
+          {/* ---------- 羊皮紙卷軸:捲軸紀事 ---------- */}
+          <div className="bell-variant bell-scroll absolute right-0 z-20 mt-2 w-80 border border-border bg-surface p-3 shadow-lg">
+            <div className="flex items-center justify-between border-b border-border pb-2">
+              <span className="font-display text-base italic">捲軸紀事</span>
+              {unreadCount > 0 && (
+                <form action={markAllNotificationsRead}>
+                  <button type="submit" className="text-xs underline">
+                    全部標記已讀
+                  </button>
+                </form>
+              )}
+            </div>
+            {reviewCount === 0 && notifications.length === 0 ? (
+              <p className="mt-4 text-center text-sm text-muted-foreground">目前沒有通知。</p>
+            ) : (
+              <div className="mt-2 flex max-h-96 flex-col divide-y divide-border overflow-y-auto">
+                {reviewSummaries.map((w) => (
+                  <div key={w.worldSlug} className="flex flex-col gap-1 py-2 text-sm">
+                    <span className="text-xs font-semibold text-muted-foreground">{w.worldName}</span>
+                    {w.pendingNodesCount > 0 && (
+                      <Link href={`/dashboard/worlds/${w.worldSlug}`} onClick={close} className="hover:underline">
+                        {w.pendingNodesCount} 個節點待審核
+                      </Link>
+                    )}
+                    {w.openReportsCount > 0 && (
+                      <Link
+                        href={`/dashboard/worlds/${w.worldSlug}/reports`}
+                        onClick={close}
+                        className="hover:underline"
+                      >
+                        {w.openReportsCount} 個檢舉未結案
+                      </Link>
+                    )}
+                  </div>
+                ))}
+                {notifications.map((n) => {
+                  const { text, href } = describe(n);
+                  const inner = (
+                    <div className={"flex flex-col gap-0.5 py-2 text-sm" + (n.isRead ? " text-muted-foreground" : "")}>
+                      <span>{text}</span>
+                      <span className="flex items-center gap-2 text-xs text-muted-foreground">
+                        {new Date(n.createdAt).toLocaleString("zh-TW")}
+                        {n.worldName && <span className="italic">· {n.worldName}</span>}
+                      </span>
+                    </div>
+                  );
+                  return href ? (
+                    <Link key={n.id} href={href} onClick={() => onNotifClick(n)}>
+                      {inner}
+                    </Link>
+                  ) : (
+                    <div key={n.id} role="button" tabIndex={0} onClick={() => onNotifClick(n)}>
+                      {inner}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* ---------- 製圖師手記:探勘日誌 ---------- */}
+          <div className="bell-variant bell-cartographer absolute right-0 z-20 mt-2 w-80 rounded border-2 border-border bg-surface p-3 shadow-lg">
+            <div className="flex items-center justify-between">
+              <span className="font-display text-sm uppercase tracking-wide">探勘日誌</span>
+              {unreadCount > 0 && (
+                <form action={markAllNotificationsRead}>
+                  <button type="submit" className="text-xs underline">
+                    全部標記已讀
+                  </button>
+                </form>
+              )}
+            </div>
+            {reviewCount === 0 && notifications.length === 0 ? (
+              <p className="mt-4 text-center text-sm text-muted-foreground">目前沒有通知。</p>
+            ) : (
+              <div className="mt-3 flex max-h-96 flex-col gap-2 overflow-y-auto">
+                {reviewSummaries.map((w) => (
+                  <div key={w.worldSlug} className="bell-cartographer-entry">
+                    <span className="bell-cartographer-entry-tag">待勘查</span>
+                    <div className="mt-1 text-sm font-semibold">{w.worldName}</div>
+                    {w.pendingNodesCount > 0 && (
+                      <Link
+                        href={`/dashboard/worlds/${w.worldSlug}`}
+                        onClick={close}
+                        className="mt-1 block text-sm hover:underline"
+                      >
+                        {w.pendingNodesCount} 個節點待審核
+                      </Link>
+                    )}
+                    {w.openReportsCount > 0 && (
+                      <Link
+                        href={`/dashboard/worlds/${w.worldSlug}/reports`}
+                        onClick={close}
+                        className="mt-1 block text-sm hover:underline"
+                      >
+                        {w.openReportsCount} 個檢舉未結案
+                      </Link>
+                    )}
+                  </div>
+                ))}
+                {notifications.map((n) => {
+                  const { text, href } = describe(n);
+                  const inner = (
+                    <div className={"bell-cartographer-entry" + (n.isRead ? " opacity-60" : "")}>
+                      <span className="bell-cartographer-entry-tag">動態</span>
+                      <div className="mt-1 text-sm">{text}</div>
+                      {n.worldName && <div className="mt-1 text-xs text-muted-foreground">{n.worldName}</div>}
+                    </div>
+                  );
+                  return href ? (
+                    <Link key={n.id} href={href} onClick={() => onNotifClick(n)}>
+                      {inner}
+                    </Link>
+                  ) : (
+                    <div key={n.id} role="button" tabIndex={0} onClick={() => onNotifClick(n)}>
+                      {inner}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* ---------- 占星曆書:星象紀事 ---------- */}
+          <div className="bell-variant bell-almanac absolute right-0 z-20 mt-2 w-80 rounded border border-border bg-surface p-2 shadow-lg">
+            <div className="flex items-center justify-between px-1 py-1">
+              <span className="font-display text-lg italic">星象紀事</span>
+              {unreadCount > 0 && (
+                <form action={markAllNotificationsRead}>
+                  <button type="submit" className="text-xs underline">
+                    全部標記已讀
+                  </button>
+                </form>
+              )}
+            </div>
+            {reviewCount === 0 && notifications.length === 0 ? (
+              <p className="px-2 py-4 text-center text-sm text-muted-foreground">目前沒有通知。</p>
+            ) : (
+              <div className="mt-1 flex max-h-96 flex-col gap-2 overflow-y-auto">
+                {reviewSummaries.map((w) => (
+                  <div key={w.worldSlug} className="bell-almanac-note">
+                    <span className="bell-almanac-badge">{w.worldName}</span>
+                    {w.pendingNodesCount > 0 && (
+                      <Link href={`/dashboard/worlds/${w.worldSlug}`} onClick={close} className="block text-sm hover:underline">
+                        {w.pendingNodesCount} 個節點待審核
+                      </Link>
+                    )}
+                    {w.openReportsCount > 0 && (
+                      <Link
+                        href={`/dashboard/worlds/${w.worldSlug}/reports`}
+                        onClick={close}
+                        className="block text-sm hover:underline"
+                      >
+                        {w.openReportsCount} 個檢舉未結案
+                      </Link>
+                    )}
+                  </div>
+                ))}
+                {notifications.map((n) => {
+                  const { text, href } = describe(n);
+                  const inner = (
+                    <div className={"bell-almanac-note" + (n.isRead ? " opacity-60" : "")}>
+                      {n.worldName && <span className="bell-almanac-badge">{n.worldName}</span>}
+                      <div className="text-sm">{text}</div>
+                    </div>
+                  );
+                  return href ? (
+                    <Link key={n.id} href={href} onClick={() => onNotifClick(n)}>
+                      {inner}
+                    </Link>
+                  ) : (
+                    <div key={n.id} role="button" tabIndex={0} onClick={() => onNotifClick(n)}>
+                      {inner}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </>
       )}
     </div>

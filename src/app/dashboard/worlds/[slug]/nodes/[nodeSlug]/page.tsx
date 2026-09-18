@@ -11,6 +11,7 @@ import { CharacterPersonaForm } from "./CharacterPersonaForm";
 import { CharacterFieldsForm, CharacterFieldsDisplay } from "./CharacterFieldsForm";
 import { NodeSectionsEditor } from "./NodeSectionsEditor";
 import { NodeMediaUpload } from "./NodeMediaUpload";
+import { NodeIdentityCard } from "./NodeIdentityCard";
 import { ReportForm } from "@/components/ReportForm";
 import { NODE_TYPE_LABEL } from "@/lib/nodeTypeLabels";
 import { getNodeMediaSignedUrl } from "@/lib/nodeMedia";
@@ -192,54 +193,68 @@ export default async function NodeDetailPage({
       >
         ← 返回世界觀
       </Link>
-      <div className="mt-2 flex flex-wrap items-center gap-2">
-        <h1 className="text-2xl font-semibold">{node.title}</h1>
-        {character && (
-          <span
-            className={
-              character.character_type === "pc"
-                ? "rounded-full bg-badge-info-bg px-2 py-0.5 text-xs text-badge-info-fg"
-                : "rounded-full bg-badge-neutral-bg px-2 py-0.5 text-xs text-badge-neutral-fg"
-            }
-          >
-            {character.character_type === "pc" ? "PC" : "NPC"}
-          </span>
-        )}
-        {node.status !== "approved" && (
-          <span
-            className={
-              node.status === "rejected"
-                ? "rounded-full bg-badge-danger-bg px-2 py-0.5 text-xs text-badge-danger-fg"
-                : "rounded-full bg-badge-pending-bg px-2 py-0.5 text-xs text-badge-pending-fg"
-            }
-          >
-            {STATUS_LABEL[node.status]}
-          </span>
-        )}
-        {node.is_placeholder && (
-          <span className="rounded-full bg-badge-neutral-bg px-2 py-0.5 text-xs text-badge-neutral-fg">
-            WikiLink 自動建立的待撰寫節點
-          </span>
-        )}
-      </div>
-      <p className="mt-1 text-sm text-muted-foreground">
-        {NODE_TYPE_LABEL[node.node_type]} ·{" "}
-        {node.edit_mode === "collaborative" ? "開放共筆" : "僅自己可改"}
-        {(() => {
-          const category = categories?.find((c) => c.id === node.category_id);
-          return category ? <> ・分類:{category.name}</> : null;
-        })()}
-        {character?.character_type === "pc" && (
+      {(() => {
+        const category = categories?.find((c) => c.id === node.category_id);
+        const extraBadges =
+          node.status !== "approved" || node.is_placeholder ? (
+            <>
+              {node.status !== "approved" && (
+                <span
+                  className={
+                    node.status === "rejected"
+                      ? "rounded-full bg-badge-danger-bg px-2 py-0.5 text-xs text-badge-danger-fg"
+                      : "rounded-full bg-badge-pending-bg px-2 py-0.5 text-xs text-badge-pending-fg"
+                  }
+                >
+                  {STATUS_LABEL[node.status]}
+                </span>
+              )}
+              {node.is_placeholder && (
+                <span className="rounded-full bg-badge-neutral-bg px-2 py-0.5 text-xs text-badge-neutral-fg">
+                  WikiLink 自動建立的待撰寫節點
+                </span>
+              )}
+            </>
+          ) : undefined;
+
+        if (node.node_type === "character" && character) {
+          return (
+            <div className="mt-2">
+              <NodeIdentityCard
+                name={node.title}
+                characterType={character.character_type}
+                extraBadges={extraBadges}
+                nodeTypeLabel={`${NODE_TYPE_LABEL[node.node_type]} ・${node.edit_mode === "collaborative" ? "開放共筆" : "僅自己可改"}`}
+                categoryName={category?.name ?? null}
+                ownerLabel={
+                  character.character_type === "pc"
+                    ? characterOwner?.display_name ||
+                      characterOwner?.username ||
+                      characterOwner?.email ||
+                      "未知玩家"
+                    : null
+                }
+                avatarUrl={characterAvatarUrl}
+                illustrationUrl={characterIllustrationUrl}
+              />
+            </div>
+          );
+        }
+
+        return (
           <>
-            {" "}
-            ·擁有者:
-            {characterOwner?.display_name ||
-              characterOwner?.username ||
-              characterOwner?.email ||
-              "未知玩家"}
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <h1 className="text-2xl font-semibold">{node.title}</h1>
+              {extraBadges}
+            </div>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {NODE_TYPE_LABEL[node.node_type]} ·{" "}
+              {node.edit_mode === "collaborative" ? "開放共筆" : "僅自己可改"}
+              {category && <> ・分類:{category.name}</>}
+            </p>
           </>
-        )}
-      </p>
+        );
+      })()}
 
       {canEdit ? (
         <div className="mt-4 flex flex-wrap gap-6">
@@ -276,32 +291,17 @@ export default async function NodeDetailPage({
           )}
         </div>
       ) : (
-        <div className="mt-4 flex flex-wrap gap-4">
-          {characterAvatarUrl && (
-            // eslint-disable-next-line @next/next/no-img-element -- signed URL,無法用 next/image 白名單網域
-            <img
-              src={characterAvatarUrl}
-              alt=""
-              className="h-24 w-24 rounded-full border border-border object-cover"
-            />
-          )}
-          {characterIllustrationUrl && (
-            // eslint-disable-next-line @next/next/no-img-element -- signed URL,無法用 next/image 白名單網域
-            <img
-              src={characterIllustrationUrl}
-              alt=""
-              className="h-56 w-auto rounded-lg border border-border object-cover"
-            />
-          )}
-          {nodeImageUrl && (
-            // eslint-disable-next-line @next/next/no-img-element -- signed URL,無法用 next/image 白名單網域
+        node.node_type !== "character" &&
+        nodeImageUrl && (
+          <div className="mt-4">
+            {/* eslint-disable-next-line @next/next/no-img-element -- signed URL,無法用 next/image 白名單網域 */}
             <img
               src={nodeImageUrl}
               alt=""
               className="h-32 w-32 rounded-lg border border-border object-cover"
             />
-          )}
-        </div>
+          </div>
+        )
       )}
 
       {node.node_type === "character" &&

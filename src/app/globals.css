@@ -910,6 +910,69 @@ body {
   margin-bottom: 4px;
 }
 
+/* ============================================================
+   角色節點的「身分卡」(標題/頭貼/立繪)依美術方向切換 —— 同 hero/bell,
+   八份一起渲染,CSS 決定哪份可見。
+============================================================= */
+.node-identity-variant {
+  display: none;
+}
+:root:not([data-art-theme]) .node-identity-illuminated,
+:root[data-art-theme="illuminated"] .node-identity-illuminated {
+  display: block;
+}
+:root[data-art-theme="script"] .node-identity-script {
+  display: block;
+}
+:root[data-art-theme="field"] .node-identity-field {
+  display: block;
+}
+:root[data-art-theme="card"] .node-identity-card {
+  display: block;
+}
+:root[data-art-theme="wuxia"] .node-identity-wuxia {
+  display: block;
+}
+:root[data-art-theme="scroll"] .node-identity-scroll {
+  display: block;
+}
+:root[data-art-theme="cartographer"] .node-identity-cartographer {
+  display: block;
+}
+:root[data-art-theme="almanac"] .node-identity-almanac {
+  display: block;
+}
+
+.node-identity-illuminated-frame {
+  position: relative;
+}
+.node-identity-illuminated-frame::before,
+.node-identity-illuminated-frame::after {
+  content: "❧";
+  position: absolute;
+  font-size: 15px;
+  color: var(--border);
+  line-height: 1;
+}
+.node-identity-illuminated-frame::before {
+  top: 8px;
+  left: 10px;
+}
+.node-identity-illuminated-frame::after {
+  bottom: 8px;
+  right: 10px;
+  transform: rotate(180deg);
+}
+
+.node-identity-script-masthead {
+  background: #1a1917;
+  color: #f8f7f2;
+  padding: 6px 14px;
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
 /* 標題一律用史詩碑文體(Cinzel),中文字則交給系統襯線字型堆疊接手,
    不額外載入巨大的中文襯線 webfont。稍微拉開字距,加強碑刻感。 */
 h1,

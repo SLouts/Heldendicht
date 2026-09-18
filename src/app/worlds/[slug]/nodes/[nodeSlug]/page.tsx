@@ -6,6 +6,7 @@ import { getNodeMediaSignedUrl } from "@/lib/nodeMedia";
 import { WikiLinkContent } from "@/app/dashboard/worlds/[slug]/nodes/[nodeSlug]/WikiLinkContent";
 import { NodeSectionsEditor } from "@/app/dashboard/worlds/[slug]/nodes/[nodeSlug]/NodeSectionsEditor";
 import { CharacterFieldsDisplay } from "@/app/dashboard/worlds/[slug]/nodes/[nodeSlug]/CharacterFieldsForm";
+import { NodeIdentityCard } from "@/app/dashboard/worlds/[slug]/nodes/[nodeSlug]/NodeIdentityCard";
 import { NODE_TYPE_LABEL } from "@/lib/nodeTypeLabels";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -156,64 +157,54 @@ export default async function PublicNodeDetailPage({
       >
         ← 返回世界觀
       </Link>
-      <div className="mt-2 flex flex-wrap items-center gap-2">
-        <h1 className="text-2xl font-semibold">{node.title}</h1>
-        {character && (
-          <span
-            className={
-              character.character_type === "pc"
-                ? "rounded-full bg-badge-info-bg px-2 py-0.5 text-xs text-badge-info-fg"
-                : "rounded-full bg-badge-neutral-bg px-2 py-0.5 text-xs text-badge-neutral-fg"
+      {node.node_type === "character" && character ? (
+        <div className="mt-2">
+          <NodeIdentityCard
+            name={node.title}
+            characterType={character.character_type}
+            extraBadges={
+              STATUS_LABEL[node.status] ? (
+                <span className="rounded-full bg-badge-pending-bg px-2 py-0.5 text-xs text-badge-pending-fg">
+                  {STATUS_LABEL[node.status]}
+                </span>
+              ) : undefined
             }
-          >
-            {character.character_type === "pc" ? "PC" : "NPC"}
-          </span>
-        )}
-        {STATUS_LABEL[node.status] && (
-          <span className="rounded-full bg-badge-pending-bg px-2 py-0.5 text-xs text-badge-pending-fg">
-            {STATUS_LABEL[node.status]}
-          </span>
-        )}
-      </div>
-      <p className="mt-1 text-sm text-muted-foreground">
-        {NODE_TYPE_LABEL[node.node_type]}
-        {category && <> ・分類:{category.name}</>}
-        {character?.character_type === "pc" && (
-          <>
-            {" "}
-            ·擁有者:
-            {characterOwner?.display_name || characterOwner?.username || "未知玩家"}
-          </>
-        )}
-      </p>
-
-      {(characterAvatarUrl || characterIllustrationUrl || nodeImageUrl) && (
-        <div className="mt-4 flex flex-wrap gap-4">
-          {characterAvatarUrl && (
-            // eslint-disable-next-line @next/next/no-img-element -- signed URL,無法用 next/image 白名單網域
-            <img
-              src={characterAvatarUrl}
-              alt=""
-              className="h-24 w-24 rounded-full border border-border object-cover"
-            />
-          )}
-          {characterIllustrationUrl && (
-            // eslint-disable-next-line @next/next/no-img-element -- signed URL,無法用 next/image 白名單網域
-            <img
-              src={characterIllustrationUrl}
-              alt=""
-              className="h-56 w-auto rounded-lg border border-border object-cover"
-            />
-          )}
-          {nodeImageUrl && (
-            // eslint-disable-next-line @next/next/no-img-element -- signed URL,無法用 next/image 白名單網域
-            <img
-              src={nodeImageUrl}
-              alt=""
-              className="h-32 w-32 rounded-lg border border-border object-cover"
-            />
-          )}
+            nodeTypeLabel={NODE_TYPE_LABEL[node.node_type]}
+            categoryName={category?.name ?? null}
+            ownerLabel={
+              character.character_type === "pc"
+                ? characterOwner?.display_name || characterOwner?.username || "未知玩家"
+                : null
+            }
+            avatarUrl={characterAvatarUrl}
+            illustrationUrl={characterIllustrationUrl}
+          />
         </div>
+      ) : (
+        <>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <h1 className="text-2xl font-semibold">{node.title}</h1>
+            {STATUS_LABEL[node.status] && (
+              <span className="rounded-full bg-badge-pending-bg px-2 py-0.5 text-xs text-badge-pending-fg">
+                {STATUS_LABEL[node.status]}
+              </span>
+            )}
+          </div>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {NODE_TYPE_LABEL[node.node_type]}
+            {category && <> ・分類:{category.name}</>}
+          </p>
+          {nodeImageUrl && (
+            <div className="mt-4">
+              {/* eslint-disable-next-line @next/next/no-img-element -- signed URL,無法用 next/image 白名單網域 */}
+              <img
+                src={nodeImageUrl}
+                alt=""
+                className="h-32 w-32 rounded-lg border border-border object-cover"
+              />
+            </div>
+          )}
+        </>
       )}
 
       {node.node_type === "character" && (

@@ -10,6 +10,7 @@ import { AttachmentsSection, type AttachmentItem } from "./AttachmentsSection";
 import { CharacterPersonaForm } from "./CharacterPersonaForm";
 import { CharacterFieldsForm, CharacterFieldsDisplay } from "./CharacterFieldsForm";
 import { NodeSectionsEditor } from "./NodeSectionsEditor";
+import { CharacterTimelineEditor } from "./CharacterTimelineEditor";
 import { NodeMediaUpload } from "./NodeMediaUpload";
 import { NodeIdentityCard } from "./NodeIdentityCard";
 import { ReportForm } from "@/components/ReportForm";
@@ -68,6 +69,7 @@ export default async function NodeDetailPage({
     { data: characterFieldDefs },
     { data: characterFieldValues },
     { data: categories },
+    { data: timelineEvents },
   ] = await Promise.all([
     supabase.rpc("is_world_staff", { p_world_id: world.id }),
     supabase.rpc("is_world_member", { p_world_id: world.id }),
@@ -119,6 +121,13 @@ export default async function NodeDetailPage({
       .select("id, name, accepts_submissions")
       .eq("world_id", world.id)
       .order("order_index", { ascending: true }),
+    node.node_type === "character"
+      ? supabase
+          .from("character_timeline_events")
+          .select("id, label, description")
+          .eq("node_id", node.id)
+          .order("order_index", { ascending: true })
+      : Promise.resolve({ data: null }),
   ]);
 
   // 一般成員只能改選開放投稿的分類,或是節點目前已經掛著的那個分類
@@ -351,6 +360,16 @@ export default async function NodeDetailPage({
         canEdit={canEdit}
         sections={sections ?? []}
       />
+
+      {node.node_type === "character" && (
+        <CharacterTimelineEditor
+          nodeId={node.id}
+          worldSlug={world.slug}
+          nodeSlug={node.slug}
+          canEdit={canEdit}
+          events={timelineEvents ?? []}
+        />
+      )}
 
       {canDelete && (
         <form

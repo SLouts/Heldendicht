@@ -5,6 +5,7 @@ import { getAttachmentSignedUrl } from "@/lib/attachments";
 import { getNodeMediaSignedUrl } from "@/lib/nodeMedia";
 import { WikiLinkContent } from "@/app/dashboard/worlds/[slug]/nodes/[nodeSlug]/WikiLinkContent";
 import { NodeSectionsEditor } from "@/app/dashboard/worlds/[slug]/nodes/[nodeSlug]/NodeSectionsEditor";
+import { CharacterTimelineEditor } from "@/app/dashboard/worlds/[slug]/nodes/[nodeSlug]/CharacterTimelineEditor";
 import { CharacterFieldsDisplay } from "@/app/dashboard/worlds/[slug]/nodes/[nodeSlug]/CharacterFieldsForm";
 import { NodeIdentityCard } from "@/app/dashboard/worlds/[slug]/nodes/[nodeSlug]/NodeIdentityCard";
 import { NODE_TYPE_LABEL } from "@/lib/nodeTypeLabels";
@@ -59,6 +60,7 @@ export default async function PublicNodeDetailPage({
     { data: characterFieldDefs },
     { data: characterFieldValues },
     { data: category },
+    { data: timelineEvents },
   ] = await Promise.all([
     supabase
       .from("wikilinks")
@@ -95,6 +97,13 @@ export default async function PublicNodeDetailPage({
           .select("name")
           .eq("id", node.category_id)
           .maybeSingle()
+      : Promise.resolve({ data: null }),
+    node.node_type === "character"
+      ? supabase
+          .from("character_timeline_events")
+          .select("id, label, description")
+          .eq("node_id", node.id)
+          .order("order_index", { ascending: true })
       : Promise.resolve({ data: null }),
   ]);
 
@@ -220,6 +229,16 @@ export default async function PublicNodeDetailPage({
         canEdit={false}
         sections={sections ?? []}
       />
+
+      {node.node_type === "character" && (
+        <CharacterTimelineEditor
+          nodeId={node.id}
+          worldSlug={world.slug}
+          nodeSlug={node.slug}
+          canEdit={false}
+          events={timelineEvents ?? []}
+        />
+      )}
     </div>
   );
 }

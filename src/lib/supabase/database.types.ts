@@ -469,6 +469,32 @@ export type Database = {
           },
         ];
       };
+      character_timeline_events: {
+        Row: {
+          id: string;
+          node_id: string;
+          label: string;
+          description: string;
+          order_index: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<
+          Database["public"]["Tables"]["character_timeline_events"]["Row"]
+        > & { node_id: string; label: string };
+        Update: Partial<
+          Database["public"]["Tables"]["character_timeline_events"]["Row"]
+        >;
+        Relationships: [
+          {
+            foreignKeyName: "character_timeline_events_node_id_fkey";
+            columns: ["node_id"];
+            isOneToOne: false;
+            referencedRelation: "nodes";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       world_character_fields: {
         Row: {
           id: string;

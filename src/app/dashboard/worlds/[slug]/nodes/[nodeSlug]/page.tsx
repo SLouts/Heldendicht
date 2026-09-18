@@ -10,8 +10,10 @@ import { AttachmentsSection, type AttachmentItem } from "./AttachmentsSection";
 import { CharacterPersonaForm } from "./CharacterPersonaForm";
 import { CharacterFieldsForm, CharacterFieldsDisplay } from "./CharacterFieldsForm";
 import { NodeSectionsEditor } from "./NodeSectionsEditor";
+import { NodeMediaUpload } from "./NodeMediaUpload";
 import { ReportForm } from "@/components/ReportForm";
 import { NODE_TYPE_LABEL } from "@/lib/nodeTypeLabels";
+import { getNodeMediaSignedUrl } from "@/lib/nodeMedia";
 
 const STATUS_LABEL: Record<string, string> = {
   pending: "未正式過審",
@@ -36,7 +38,7 @@ export default async function NodeDetailPage({
   const { data: node } = await supabase
     .from("nodes")
     .select(
-      "id, title, slug, node_type, content, status, edit_mode, is_placeholder, creator_id, category_id, characters(character_type, owner_id, persona_id, profiles(display_name, username, email))",
+      "id, title, slug, node_type, content, status, edit_mode, is_placeholder, creator_id, category_id, image_path, characters(character_type, owner_id, persona_id, avatar_path, illustration_path, profiles(display_name, username, email))",
     )
     .eq("world_id", world.id)
     .eq("slug", nodeSlug)
@@ -176,6 +178,12 @@ export default async function NodeDetailPage({
       .map((a) => [a.id, { url: a.url, fileName: a.fileName }]),
   );
 
+  const [nodeImageUrl, characterAvatarUrl, characterIllustrationUrl] = await Promise.all([
+    getNodeMediaSignedUrl(node.image_path),
+    getNodeMediaSignedUrl(character?.avatar_path ?? null),
+    getNodeMediaSignedUrl(character?.illustration_path ?? null),
+  ]);
+
   return (
     <div className="max-w-2xl">
       <Link
@@ -232,6 +240,69 @@ export default async function NodeDetailPage({
           </>
         )}
       </p>
+
+      {canEdit ? (
+        <div className="mt-4 flex flex-wrap gap-6">
+          <NodeMediaUpload
+            kind="image"
+            label="代表圖"
+            nodeId={node.id}
+            worldSlug={world.slug}
+            nodeSlug={node.slug}
+            imageUrl={nodeImageUrl}
+            previewClassName="h-32 w-32 rounded-lg border border-border object-cover"
+          />
+          {node.node_type === "character" && (
+            <>
+              <NodeMediaUpload
+                kind="avatar"
+                label="頭貼"
+                nodeId={node.id}
+                worldSlug={world.slug}
+                nodeSlug={node.slug}
+                imageUrl={characterAvatarUrl}
+                previewClassName="h-32 w-32 rounded-full border border-border object-cover"
+              />
+              <NodeMediaUpload
+                kind="illustration"
+                label="立繪"
+                nodeId={node.id}
+                worldSlug={world.slug}
+                nodeSlug={node.slug}
+                imageUrl={characterIllustrationUrl}
+                previewClassName="h-56 w-auto rounded-lg border border-border object-cover"
+              />
+            </>
+          )}
+        </div>
+      ) : (
+        <div className="mt-4 flex flex-wrap gap-4">
+          {characterAvatarUrl && (
+            // eslint-disable-next-line @next/next/no-img-element -- signed URL,無法用 next/image 白名單網域
+            <img
+              src={characterAvatarUrl}
+              alt=""
+              className="h-24 w-24 rounded-full border border-border object-cover"
+            />
+          )}
+          {characterIllustrationUrl && (
+            // eslint-disable-next-line @next/next/no-img-element -- signed URL,無法用 next/image 白名單網域
+            <img
+              src={characterIllustrationUrl}
+              alt=""
+              className="h-56 w-auto rounded-lg border border-border object-cover"
+            />
+          )}
+          {nodeImageUrl && (
+            // eslint-disable-next-line @next/next/no-img-element -- signed URL,無法用 next/image 白名單網域
+            <img
+              src={nodeImageUrl}
+              alt=""
+              className="h-32 w-32 rounded-lg border border-border object-cover"
+            />
+          )}
+        </div>
+      )}
 
       {node.node_type === "character" &&
         (canEdit ? (

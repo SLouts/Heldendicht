@@ -222,6 +222,7 @@ export type Database = {
           map_x: number | null;
           map_y: number | null;
           category_id: string | null;
+          image_path: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -388,6 +389,8 @@ export type Database = {
           character_type: CharacterType;
           owner_id: string | null;
           persona_id: string | null;
+          avatar_path: string | null;
+          illustration_path: string | null;
         };
         Insert: Database["public"]["Tables"]["characters"]["Row"];
         Update: Partial<Database["public"]["Tables"]["characters"]["Row"]>;

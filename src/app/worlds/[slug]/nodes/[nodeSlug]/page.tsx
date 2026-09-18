@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getAttachmentSignedUrl } from "@/lib/attachments";
+import { getNodeMediaSignedUrl } from "@/lib/nodeMedia";
 import { WikiLinkContent } from "@/app/dashboard/worlds/[slug]/nodes/[nodeSlug]/WikiLinkContent";
 import { NodeSectionsEditor } from "@/app/dashboard/worlds/[slug]/nodes/[nodeSlug]/NodeSectionsEditor";
 import { CharacterFieldsDisplay } from "@/app/dashboard/worlds/[slug]/nodes/[nodeSlug]/CharacterFieldsForm";
@@ -34,7 +35,7 @@ export default async function PublicNodeDetailPage({
   const { data: node } = await supabase
     .from("nodes")
     .select(
-      "id, title, slug, node_type, content, status, is_placeholder, category_id, characters(character_type, owner_id, profiles(display_name, username))",
+      "id, title, slug, node_type, content, status, is_placeholder, category_id, image_path, characters(character_type, owner_id, avatar_path, illustration_path, profiles(display_name, username))",
     )
     .eq("world_id", world.id)
     .eq("slug", nodeSlug)
@@ -141,6 +142,12 @@ export default async function PublicNodeDetailPage({
   );
   const fileAttachments = attachmentUrls.filter((a) => a.kind === "file");
 
+  const [nodeImageUrl, characterAvatarUrl, characterIllustrationUrl] = await Promise.all([
+    getNodeMediaSignedUrl(node.image_path),
+    getNodeMediaSignedUrl(character?.avatar_path ?? null),
+    getNodeMediaSignedUrl(character?.illustration_path ?? null),
+  ]);
+
   return (
     <div className="mx-auto w-full max-w-2xl flex-1 px-6 py-12">
       <Link
@@ -179,6 +186,35 @@ export default async function PublicNodeDetailPage({
           </>
         )}
       </p>
+
+      {(characterAvatarUrl || characterIllustrationUrl || nodeImageUrl) && (
+        <div className="mt-4 flex flex-wrap gap-4">
+          {characterAvatarUrl && (
+            // eslint-disable-next-line @next/next/no-img-element -- signed URL,無法用 next/image 白名單網域
+            <img
+              src={characterAvatarUrl}
+              alt=""
+              className="h-24 w-24 rounded-full border border-border object-cover"
+            />
+          )}
+          {characterIllustrationUrl && (
+            // eslint-disable-next-line @next/next/no-img-element -- signed URL,無法用 next/image 白名單網域
+            <img
+              src={characterIllustrationUrl}
+              alt=""
+              className="h-56 w-auto rounded-lg border border-border object-cover"
+            />
+          )}
+          {nodeImageUrl && (
+            // eslint-disable-next-line @next/next/no-img-element -- signed URL,無法用 next/image 白名單網域
+            <img
+              src={nodeImageUrl}
+              alt=""
+              className="h-32 w-32 rounded-lg border border-border object-cover"
+            />
+          )}
+        </div>
+      )}
 
       {node.node_type === "character" && (
         <CharacterFieldsDisplay fields={characterFields} />

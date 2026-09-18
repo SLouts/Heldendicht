@@ -704,7 +704,8 @@ body {
   border-radius: 4px;
   background: var(--primary);
   color: var(--primary-foreground);
-  font-family: "Kaiti TC", "STKaiti", "Noto Serif TC", serif;
+  font-family: "Kaiti TC", "BiauKai", "STKaiti", "DFKai-SB", "KaiTi",
+    "Noto Serif TC", serif;
   font-size: 22px;
   font-weight: 700;
   transform: rotate(-3deg);
@@ -959,7 +960,8 @@ h3,
 :root[data-art-theme="wuxia"] h2,
 :root[data-art-theme="wuxia"] h3,
 :root[data-art-theme="wuxia"] .font-display {
-  font-family: var(--font-display), "Kaiti TC", "STKaiti", "Noto Serif TC", serif;
+  font-family: var(--font-display), "Kaiti TC", "BiauKai", "STKaiti",
+    "DFKai-SB", "KaiTi", "Noto Serif TC", serif;
   letter-spacing: 0.04em;
   font-weight: 500;
 }
@@ -982,7 +984,8 @@ h3,
 :root[data-art-theme="almanac"] h2,
 :root[data-art-theme="almanac"] h3,
 :root[data-art-theme="almanac"] .font-display {
-  font-family: var(--font-display), "Kaiti TC", "STKaiti", "Songti TC", serif;
+  font-family: var(--font-display), "Kaiti TC", "BiauKai", "STKaiti",
+    "DFKai-SB", "KaiTi", "Songti TC", serif;
   font-style: italic;
   letter-spacing: 0.02em;
 }

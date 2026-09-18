@@ -1,13 +1,15 @@
 /**
- * 角色節點頁面的「身分卡」——標題、PC/NPC 標籤、狀態標籤、分類/擁有者、
- * 頭貼、立繪,依美術方向切換版型。跟 WorldHero.tsx 同一個慣例:八份
- * <div> 都會渲染,實際顯示哪一份交給 globals.css 依 <html data-art-theme>
- * 用 CSS 切換,不用另外寫 client component 去讀 localStorage。
+ * 節點頁面的「身分卡」——標題、狀態標籤、分類/擁有者、代表圖(一般節點
+ * 是 image_path;角色節點另外多頭貼 avatarUrl,大圖用角色立繪
+ * illustration_path),依美術方向切換版型。所有節點類型共用同一個元件,
+ * 跟 WorldHero.tsx 同一個慣例:八份 <div> 都會渲染,實際顯示哪一份交給
+ * globals.css 依 <html data-art-theme> 用 CSS 切換,不用另外寫 client
+ * component 去讀 localStorage。
  *
- * 只有角色節點會用這個元件——一般節點(地點/物產/勢力……)標題區維持
- * 原本的樣子,只是額外多一顆代表圖(image_path),不用套用美術方向。
+ * characterType 為 null 代表不是角色節點——不顯示 PC/NPC 標籤,也不會有
+ * avatarUrl(一般節點沒有頭貼欄位)。
  *
- * 頭貼/立繪都是選填欄位,沒有上傳就不顯示對應區塊,不留空的佔位框
+ * 頭貼/代表圖都是選填欄位,沒有上傳就不顯示對應區塊,不留空的佔位框
  * (跟世界觀首頁橫幅/Icon「不填就不顯示」同一套邏輯)。
  */
 export function NodeIdentityCard({
@@ -18,19 +20,23 @@ export function NodeIdentityCard({
   categoryName,
   ownerLabel,
   avatarUrl,
-  illustrationUrl,
+  imageUrl,
 }: {
   name: string;
-  characterType: "pc" | "npc";
+  /** null = 不是角色節點,不顯示 PC/NPC 標籤。 */
+  characterType: "pc" | "npc" | null;
   /** 狀態/佔位等其他標籤,樣式由呼叫端決定(跟原本標題列同一套 badge 慣例)。 */
   extraBadges?: React.ReactNode;
   nodeTypeLabel: string;
   categoryName: string | null;
   ownerLabel: string | null;
+  /** 只有角色節點才有頭貼;一般節點一律傳 null。 */
   avatarUrl: string | null;
-  illustrationUrl: string | null;
+  /** 卡片內的代表圖——角色節點是立繪(illustration_path),一般節點是
+   * 代表圖(image_path)。 */
+  imageUrl: string | null;
 }) {
-  const typeBadge = (
+  const typeBadge = characterType && (
     <span
       className={
         characterType === "pc"
@@ -72,10 +78,10 @@ export function NodeIdentityCard({
             <p className="mt-1 text-sm text-muted-foreground italic">{metaLine}</p>
           </div>
         </div>
-        {illustrationUrl && (
+        {imageUrl && (
           // eslint-disable-next-line @next/next/no-img-element -- signed URL,無法用 next/image 白名單網域
           <img
-            src={illustrationUrl}
+            src={imageUrl}
             alt=""
             className="mt-4 max-h-96 w-full rounded border border-border object-cover"
           />
@@ -84,7 +90,9 @@ export function NodeIdentityCard({
 
       {/* ---------- 02 劇本手稿:標題頁 ---------- */}
       <div className="node-identity-variant node-identity-script border border-border bg-surface">
-        <div className="node-identity-script-masthead">Character Sheet</div>
+        <div className="node-identity-script-masthead">
+          {characterType ? "Character Sheet" : "Field Record"}
+        </div>
         <div className="p-4">
           <div className="flex items-center gap-4">
             {avatarUrl && (
@@ -106,10 +114,10 @@ export function NodeIdentityCard({
               </p>
             </div>
           </div>
-          {illustrationUrl && (
+          {imageUrl && (
             // eslint-disable-next-line @next/next/no-img-element -- signed URL,無法用 next/image 白名單網域
             <img
-              src={illustrationUrl}
+              src={imageUrl}
               alt=""
               className="mt-4 max-h-96 w-full border border-border object-cover"
             />
@@ -137,10 +145,10 @@ export function NodeIdentityCard({
             <p className="mt-1 text-sm text-muted-foreground">{metaLine}</p>
           </div>
         </div>
-        {illustrationUrl && (
+        {imageUrl && (
           // eslint-disable-next-line @next/next/no-img-element -- signed URL,無法用 next/image 白名單網域
           <img
-            src={illustrationUrl}
+            src={imageUrl}
             alt=""
             className="mt-4 max-h-96 w-full -rotate-1 rounded border border-border object-cover"
           />
@@ -161,17 +169,19 @@ export function NodeIdentityCard({
             )}
             <b className="font-display flex-grow text-xl uppercase tracking-wide">{name}</b>
           </div>
-          {illustrationUrl && (
+          {imageUrl && (
             <div className="hero-card-art">
               {/* eslint-disable-next-line @next/next/no-img-element -- signed URL,無法用 next/image 白名單網域 */}
-              <img src={illustrationUrl} alt="" />
+              <img src={imageUrl} alt="" />
             </div>
           )}
-          <div className="mt-2.5 flex flex-wrap gap-2 px-1">
-            <span className="rounded border border-[#b6912f] bg-[#241f14] px-2 py-0.5 text-xs text-[#e9dfc4]">
-              {characterType === "pc" ? "PC" : "NPC"}
-            </span>
-          </div>
+          {characterType && (
+            <div className="mt-2.5 flex flex-wrap gap-2 px-1">
+              <span className="rounded border border-[#b6912f] bg-[#241f14] px-2 py-0.5 text-xs text-[#e9dfc4]">
+                {characterType === "pc" ? "PC" : "NPC"}
+              </span>
+            </div>
+          )}
         </div>
         <div className="rounded-b-lg border border-t-0 border-border bg-surface px-4 py-3">
           <p className="text-xs text-muted-foreground">{metaLine}</p>
@@ -195,10 +205,10 @@ export function NodeIdentityCard({
             <p className="mt-1 text-sm text-muted-foreground">{metaLine}</p>
           </div>
         </div>
-        {illustrationUrl && (
+        {imageUrl && (
           // eslint-disable-next-line @next/next/no-img-element -- signed URL,無法用 next/image 白名單網域
           <img
-            src={illustrationUrl}
+            src={imageUrl}
             alt=""
             className="mt-4 max-h-96 w-full object-cover"
           />
@@ -223,10 +233,10 @@ export function NodeIdentityCard({
             {statusBadges}
           </div>
           <p className="mt-1 text-sm text-muted-foreground italic">{metaLine}</p>
-          {illustrationUrl && (
+          {imageUrl && (
             // eslint-disable-next-line @next/next/no-img-element -- signed URL,無法用 next/image 白名單網域
             <img
-              src={illustrationUrl}
+              src={imageUrl}
               alt=""
               className="mx-auto mt-4 max-h-96 w-full max-w-xs rounded border border-border object-cover"
             />
@@ -267,10 +277,10 @@ export function NodeIdentityCard({
             </p>
           </div>
         </div>
-        {illustrationUrl && (
+        {imageUrl && (
           // eslint-disable-next-line @next/next/no-img-element -- signed URL,無法用 next/image 白名單網域
           <img
-            src={illustrationUrl}
+            src={imageUrl}
             alt=""
             className="mt-4 max-h-96 w-full border-2 border-border object-cover"
           />
@@ -308,10 +318,10 @@ export function NodeIdentityCard({
           )}
           {statusBadges && <div className="mt-2 flex flex-wrap gap-2">{statusBadges}</div>}
         </div>
-        {illustrationUrl && (
+        {imageUrl && (
           // eslint-disable-next-line @next/next/no-img-element -- signed URL,無法用 next/image 白名單網域
           <img
-            src={illustrationUrl}
+            src={imageUrl}
             alt=""
             className="mt-4 max-h-96 w-full rounded border border-border object-cover"
           />

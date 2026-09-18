@@ -217,46 +217,31 @@ export default async function NodeDetailPage({
             </>
           ) : undefined;
 
-        if (node.node_type === "character" && character) {
-          return (
-            <div className="mt-2">
-              <NodeIdentityCard
-                name={node.title}
-                characterType={character.character_type}
-                extraBadges={extraBadges}
-                nodeTypeLabel={`${NODE_TYPE_LABEL[node.node_type]} ・${node.edit_mode === "collaborative" ? "開放共筆" : "僅自己可改"}`}
-                categoryName={category?.name ?? null}
-                ownerLabel={
-                  character.character_type === "pc"
-                    ? characterOwner?.display_name ||
-                      characterOwner?.username ||
-                      characterOwner?.email ||
-                      "未知玩家"
-                    : null
-                }
-                avatarUrl={characterAvatarUrl}
-                illustrationUrl={characterIllustrationUrl}
-              />
-            </div>
-          );
-        }
-
+        const isCharacter = node.node_type === "character" && character;
         return (
-          <>
-            <div className="mt-2 flex flex-wrap items-center gap-2">
-              <h1 className="text-2xl font-semibold">{node.title}</h1>
-              {extraBadges}
-            </div>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {NODE_TYPE_LABEL[node.node_type]} ·{" "}
-              {node.edit_mode === "collaborative" ? "開放共筆" : "僅自己可改"}
-              {category && <> ・分類:{category.name}</>}
-            </p>
-          </>
+          <div className="mt-2">
+            <NodeIdentityCard
+              name={node.title}
+              characterType={isCharacter ? character.character_type : null}
+              extraBadges={extraBadges}
+              nodeTypeLabel={`${NODE_TYPE_LABEL[node.node_type]} ・${node.edit_mode === "collaborative" ? "開放共筆" : "僅自己可改"}`}
+              categoryName={category?.name ?? null}
+              ownerLabel={
+                isCharacter && character.character_type === "pc"
+                  ? characterOwner?.display_name ||
+                    characterOwner?.username ||
+                    characterOwner?.email ||
+                    "未知玩家"
+                  : null
+              }
+              avatarUrl={isCharacter ? characterAvatarUrl : null}
+              imageUrl={isCharacter ? characterIllustrationUrl : nodeImageUrl}
+            />
+          </div>
         );
       })()}
 
-      {canEdit ? (
+      {canEdit && (
         <div className="mt-4 flex flex-wrap gap-6">
           <NodeMediaUpload
             kind="image"
@@ -290,18 +275,6 @@ export default async function NodeDetailPage({
             </>
           )}
         </div>
-      ) : (
-        node.node_type !== "character" &&
-        nodeImageUrl && (
-          <div className="mt-4">
-            {/* eslint-disable-next-line @next/next/no-img-element -- signed URL,無法用 next/image 白名單網域 */}
-            <img
-              src={nodeImageUrl}
-              alt=""
-              className="h-32 w-32 rounded-lg border border-border object-cover"
-            />
-          </div>
-        )
       )}
 
       {node.node_type === "character" &&

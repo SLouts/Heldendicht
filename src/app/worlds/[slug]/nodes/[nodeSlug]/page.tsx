@@ -157,55 +157,33 @@ export default async function PublicNodeDetailPage({
       >
         ← 返回世界觀
       </Link>
-      {node.node_type === "character" && character ? (
-        <div className="mt-2">
-          <NodeIdentityCard
-            name={node.title}
-            characterType={character.character_type}
-            extraBadges={
-              STATUS_LABEL[node.status] ? (
-                <span className="rounded-full bg-badge-pending-bg px-2 py-0.5 text-xs text-badge-pending-fg">
-                  {STATUS_LABEL[node.status]}
-                </span>
-              ) : undefined
-            }
-            nodeTypeLabel={NODE_TYPE_LABEL[node.node_type]}
-            categoryName={category?.name ?? null}
-            ownerLabel={
-              character.character_type === "pc"
-                ? characterOwner?.display_name || characterOwner?.username || "未知玩家"
-                : null
-            }
-            avatarUrl={characterAvatarUrl}
-            illustrationUrl={characterIllustrationUrl}
-          />
-        </div>
-      ) : (
-        <>
-          <div className="mt-2 flex flex-wrap items-center gap-2">
-            <h1 className="text-2xl font-semibold">{node.title}</h1>
-            {STATUS_LABEL[node.status] && (
-              <span className="rounded-full bg-badge-pending-bg px-2 py-0.5 text-xs text-badge-pending-fg">
-                {STATUS_LABEL[node.status]}
-              </span>
-            )}
+      {(() => {
+        const isCharacter = node.node_type === "character" && character;
+        return (
+          <div className="mt-2">
+            <NodeIdentityCard
+              name={node.title}
+              characterType={isCharacter ? character.character_type : null}
+              extraBadges={
+                STATUS_LABEL[node.status] ? (
+                  <span className="rounded-full bg-badge-pending-bg px-2 py-0.5 text-xs text-badge-pending-fg">
+                    {STATUS_LABEL[node.status]}
+                  </span>
+                ) : undefined
+              }
+              nodeTypeLabel={NODE_TYPE_LABEL[node.node_type]}
+              categoryName={category?.name ?? null}
+              ownerLabel={
+                isCharacter && character.character_type === "pc"
+                  ? characterOwner?.display_name || characterOwner?.username || "未知玩家"
+                  : null
+              }
+              avatarUrl={isCharacter ? characterAvatarUrl : null}
+              imageUrl={isCharacter ? characterIllustrationUrl : nodeImageUrl}
+            />
           </div>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {NODE_TYPE_LABEL[node.node_type]}
-            {category && <> ・分類:{category.name}</>}
-          </p>
-          {nodeImageUrl && (
-            <div className="mt-4">
-              {/* eslint-disable-next-line @next/next/no-img-element -- signed URL,無法用 next/image 白名單網域 */}
-              <img
-                src={nodeImageUrl}
-                alt=""
-                className="h-32 w-32 rounded-lg border border-border object-cover"
-              />
-            </div>
-          )}
-        </>
-      )}
+        );
+      })()}
 
       {node.node_type === "character" && (
         <CharacterFieldsDisplay fields={characterFields} />

@@ -68,9 +68,13 @@ function HeroFrame({
   return (
     <div className={outerClassName}>
       {coverUrl && (
-        <div className={coverWrapperClassName}>
-          {/* eslint-disable-next-line @next/next/no-img-element -- signed URL,無法用 next/image 白名單網域 */}
-          <img src={coverUrl} alt="" className={coverImgClassName} />
+        // 外層只管定位(沒有 overflow-hidden),頭貼疊在下面才不會被裁掉;
+        // overflow-hidden 收在內層,只裁封面圖本身到 aspect ratio 的框。
+        <div className="relative">
+          <div className={coverWrapperClassName}>
+            {/* eslint-disable-next-line @next/next/no-img-element -- signed URL,無法用 next/image 白名單網域 */}
+            <img src={coverUrl} alt="" className={coverImgClassName} />
+          </div>
           <Avatar url={avatarUrl} className={avatarOverlapClassName} />
         </div>
       )}
@@ -144,7 +148,7 @@ export function NodeHero({
         coverWrapperClassName="relative aspect-[16/5] w-full overflow-hidden"
         coverImgClassName="absolute inset-0 h-full w-full object-cover"
         avatarUrl={avatarUrl}
-        avatarOverlapClassName="absolute -bottom-8 left-6 h-20 w-20 rounded-full border-4 border-surface object-cover shadow-sm"
+        avatarOverlapClassName="absolute z-10 -bottom-8 left-6 h-20 w-20 rounded-full border-4 border-surface object-cover shadow-sm"
         avatarInlineClassName="mb-3 h-16 w-16 rounded-full border-2 border-border object-cover"
         bodyClassName="px-6 py-6"
         bodyWithOverlapClassName="px-6 pb-6 pt-12"
@@ -168,7 +172,7 @@ export function NodeHero({
           coverWrapperClassName="relative aspect-[16/5] w-full overflow-hidden"
           coverImgClassName="absolute inset-0 h-full w-full object-cover"
           avatarUrl={avatarUrl}
-          avatarOverlapClassName="absolute -bottom-8 left-6 h-20 w-20 border-4 border-surface object-cover shadow-sm"
+          avatarOverlapClassName="absolute z-10 -bottom-8 left-6 h-20 w-20 border-4 border-surface object-cover shadow-sm"
           avatarInlineClassName="mb-3 h-16 w-16 border border-border object-cover"
           bodyClassName="px-6 py-6"
           bodyWithOverlapClassName="px-6 pb-6 pt-12"
@@ -189,7 +193,7 @@ export function NodeHero({
         coverWrapperClassName="relative aspect-[16/5] w-full overflow-hidden"
         coverImgClassName="absolute inset-0 h-full w-full -rotate-1 object-cover"
         avatarUrl={avatarUrl}
-        avatarOverlapClassName="absolute -bottom-8 left-6 h-20 w-20 rounded-full border-4 border-background object-cover shadow-sm"
+        avatarOverlapClassName="absolute z-10 -bottom-8 left-6 h-20 w-20 rounded-full border-4 border-background object-cover shadow-sm"
         avatarInlineClassName="mb-3 h-16 w-16 rounded-full border border-border object-cover"
         bodyClassName="px-6 py-6"
         bodyWithOverlapClassName="px-6 pb-6 pt-12"
@@ -241,7 +245,7 @@ export function NodeHero({
         coverWrapperClassName="relative aspect-[16/5] w-full overflow-hidden"
         coverImgClassName="absolute inset-0 h-full w-full object-cover"
         avatarUrl={avatarUrl}
-        avatarOverlapClassName="hero-wuxia-seal absolute -bottom-4 left-6 rounded-full border-2 border-surface object-cover shadow-sm"
+        avatarOverlapClassName="hero-wuxia-seal absolute z-10 -bottom-4 left-6 rounded-full border-2 border-surface object-cover shadow-sm"
         avatarInlineClassName="hero-wuxia-seal mb-3 rounded-full object-cover"
         bodyClassName="px-6 py-6"
         bodyWithOverlapClassName="px-6 pb-6 pt-8"
@@ -263,7 +267,7 @@ export function NodeHero({
           coverWrapperClassName="relative aspect-[16/5] w-full overflow-hidden"
           coverImgClassName="absolute inset-0 h-full w-full object-cover"
           avatarUrl={avatarUrl}
-          avatarOverlapClassName="absolute -bottom-8 left-6 h-20 w-20 rounded-full border-4 border-surface object-cover shadow-sm"
+          avatarOverlapClassName="absolute z-10 -bottom-8 left-6 h-20 w-20 rounded-full border-4 border-surface object-cover shadow-sm"
           avatarInlineClassName="mb-3 h-16 w-16 rounded-full border border-border object-cover"
           bodyClassName="px-6 py-6 text-center"
           bodyWithOverlapClassName="px-6 pb-6 pt-12 text-center"
@@ -296,7 +300,7 @@ export function NodeHero({
           coverWrapperClassName="relative aspect-[16/5] w-full overflow-hidden"
           coverImgClassName="absolute inset-0 h-full w-full object-cover"
           avatarUrl={avatarUrl}
-          avatarOverlapClassName="absolute -bottom-8 left-6 h-20 w-20 border-2 border-background object-cover shadow-sm"
+          avatarOverlapClassName="absolute z-10 -bottom-8 left-6 h-20 w-20 border-2 border-background object-cover shadow-sm"
           avatarInlineClassName="mb-3 h-16 w-16 border-2 border-border object-cover"
           bodyClassName="px-6 py-6"
           bodyWithOverlapClassName="px-6 pb-6 pt-12"
@@ -314,12 +318,18 @@ export function NodeHero({
            邊到邊、不吃 hero-almanac-sky 自己的 padding) ---------- */}
       <div className="node-hero-variant node-hero-almanac overflow-hidden rounded-lg">
         {coverUrl && (
-          <div className="relative aspect-[16/5] w-full overflow-hidden">
-            {/* eslint-disable-next-line @next/next/no-img-element -- signed URL,無法用 next/image 白名單網域 */}
-            <img src={coverUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
+          <div className="relative">
+            <div className="relative aspect-[16/5] w-full overflow-hidden">
+              {/* eslint-disable-next-line @next/next/no-img-element -- signed URL,無法用 next/image 白名單網域 */}
+              <img
+                src={coverUrl}
+                alt=""
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+            </div>
             <Avatar
               url={avatarUrl}
-              className="absolute -bottom-8 left-6 h-20 w-20 rounded-full border-4 border-surface object-cover shadow-sm"
+              className="absolute z-10 -bottom-8 left-6 h-20 w-20 rounded-full border-4 border-surface object-cover shadow-sm"
             />
           </div>
         )}

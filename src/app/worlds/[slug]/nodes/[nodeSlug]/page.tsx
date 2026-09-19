@@ -7,8 +7,7 @@ import { WikiLinkContent } from "@/app/dashboard/worlds/[slug]/nodes/[nodeSlug]/
 import { NodeSectionsEditor } from "@/app/dashboard/worlds/[slug]/nodes/[nodeSlug]/NodeSectionsEditor";
 import { CharacterTimelineDisplay } from "@/app/dashboard/worlds/[slug]/nodes/[nodeSlug]/CharacterTimelineDisplay";
 import { CharacterFieldsDisplay } from "@/app/dashboard/worlds/[slug]/nodes/[nodeSlug]/CharacterFieldsForm";
-import { NodeIdentityCard } from "@/app/dashboard/worlds/[slug]/nodes/[nodeSlug]/NodeIdentityCard";
-import { NodeIdentityCardDesktop } from "@/app/dashboard/worlds/[slug]/nodes/[nodeSlug]/NodeIdentityCardDesktop";
+import { NodeHero } from "@/app/dashboard/worlds/[slug]/nodes/[nodeSlug]/NodeHero";
 import { NODE_TYPE_LABEL } from "@/lib/nodeTypeLabels";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -170,7 +169,7 @@ export default async function PublicNodeDetailPage({
   );
 
   const isCharacter = node.node_type === "character" && character;
-  const identityCardProps = {
+  const heroProps = {
     name: node.title,
     characterType: isCharacter ? character.character_type : null,
     extraBadges: STATUS_LABEL[node.status] ? (
@@ -185,8 +184,17 @@ export default async function PublicNodeDetailPage({
         ? characterOwner?.display_name || characterOwner?.username || "未知玩家"
         : null,
     avatarUrl: isCharacter ? characterAvatarUrl : null,
-    coverUrl: isCharacter ? nodeImageUrl : null,
-    imageUrl: isCharacter ? characterIllustrationUrl : nodeImageUrl,
+    coverUrl: nodeImageUrl,
+    quote: node.content ? (
+      <blockquote className="mt-4 border-l-4 border-border pl-4 text-muted-foreground">
+        <WikiLinkContent
+          content={node.content}
+          basePath={`/worlds/${world.slug}/nodes`}
+          links={wikiLinkMap}
+          images={imageMap}
+        />
+      </blockquote>
+    ) : null,
   };
 
   return (
@@ -198,26 +206,30 @@ export default async function PublicNodeDetailPage({
         ← 返回世界觀
       </Link>
 
-      <div className="mt-2 lg:flex lg:items-start lg:gap-8">
-        <div className="lg:w-72 lg:shrink-0">
-          <NodeIdentityCard {...identityCardProps} />
-          <NodeIdentityCardDesktop {...identityCardProps} />
+      <div className="mt-2">
+        <NodeHero {...heroProps} />
+      </div>
 
+      <div className="mt-6 lg:flex lg:items-start lg:gap-8">
+        <div className="lg:w-72 lg:shrink-0">
           {node.node_type === "character" && (
             <CharacterFieldsDisplay fields={characterFields} />
+          )}
+
+          {node.node_type === "character" && characterIllustrationUrl && (
+            <div className="mt-4 flex flex-col items-center gap-1">
+              <span className="text-xs text-muted-foreground">立繪</span>
+              {/* eslint-disable-next-line @next/next/no-img-element -- signed URL,無法用 next/image 白名單網域 */}
+              <img
+                src={characterIllustrationUrl}
+                alt=""
+                className="w-full rounded-lg border border-border"
+              />
+            </div>
           )}
         </div>
 
         <div className="mt-4 lg:mt-0 lg:min-w-0 lg:flex-1">
-          <div className="mt-6 lg:mt-0">
-            <WikiLinkContent
-              content={node.content}
-              basePath={`/worlds/${world.slug}/nodes`}
-              links={wikiLinkMap}
-              images={imageMap}
-            />
-          </div>
-
           {fileAttachments.length > 0 && (
             <section className="mt-8">
               <h2 className="text-lg font-semibold">附件</h2>

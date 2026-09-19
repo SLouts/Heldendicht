@@ -13,8 +13,7 @@ import { NodeSectionsEditor } from "./NodeSectionsEditor";
 import { CharacterTimelineEditor } from "./CharacterTimelineEditor";
 import { CharacterTimelineDisplay } from "./CharacterTimelineDisplay";
 import { NodeMediaUpload } from "./NodeMediaUpload";
-import { NodeIdentityCard } from "./NodeIdentityCard";
-import { NodeIdentityCardDesktop } from "./NodeIdentityCardDesktop";
+import { NodeHero } from "./NodeHero";
 import { ReportForm } from "@/components/ReportForm";
 import { NODE_TYPE_LABEL } from "@/lib/nodeTypeLabels";
 import { getNodeMediaSignedUrl } from "@/lib/nodeMedia";
@@ -230,7 +229,7 @@ export default async function NodeDetailPage({
     ) : undefined;
 
   const isCharacter = node.node_type === "character" && character;
-  const identityCardProps = {
+  const heroProps = {
     name: node.title,
     characterType: isCharacter ? character.character_type : null,
     extraBadges,
@@ -244,8 +243,18 @@ export default async function NodeDetailPage({
           "未知玩家"
         : null,
     avatarUrl: isCharacter ? characterAvatarUrl : null,
-    coverUrl: isCharacter ? nodeImageUrl : null,
-    imageUrl: isCharacter ? characterIllustrationUrl : nodeImageUrl,
+    coverUrl: nodeImageUrl,
+    // 編輯者在下面的表單就看得到內文,橫幅不用重複顯示引言。
+    quote: !canEdit && node.content ? (
+      <blockquote className="mt-4 border-l-4 border-border pl-4 text-muted-foreground">
+        <WikiLinkContent
+          content={node.content}
+          basePath={`/dashboard/worlds/${world.slug}/nodes`}
+          links={wikiLinkMap}
+          images={imageMap}
+        />
+      </blockquote>
+    ) : null,
   };
 
   return (
@@ -257,11 +266,12 @@ export default async function NodeDetailPage({
         ← 返回世界觀
       </Link>
 
-      <div className="mt-2 lg:flex lg:items-start lg:gap-8">
-        <div className="lg:w-72 lg:shrink-0">
-          <NodeIdentityCard {...identityCardProps} />
-          <NodeIdentityCardDesktop {...identityCardProps} />
+      <div className="mt-2">
+        <NodeHero {...heroProps} />
+      </div>
 
+      <div className="mt-6 lg:flex lg:items-start lg:gap-8">
+        <div className="lg:w-72 lg:shrink-0">
           {canEdit && (
             <div className="mt-4 flex flex-wrap gap-6 lg:flex-col lg:items-center">
               <NodeMediaUpload
@@ -308,6 +318,18 @@ export default async function NodeDetailPage({
             ) : (
               <CharacterFieldsDisplay fields={characterFields} />
             ))}
+
+          {node.node_type === "character" && characterIllustrationUrl && (
+            <div className="mt-4 flex flex-col items-center gap-1">
+              <span className="text-xs text-muted-foreground">立繪</span>
+              {/* eslint-disable-next-line @next/next/no-img-element -- signed URL,無法用 next/image 白名單網域 */}
+              <img
+                src={characterIllustrationUrl}
+                alt=""
+                className="w-full rounded-lg border border-border"
+              />
+            </div>
+          )}
         </div>
 
         <div className="mt-4 lg:mt-0 lg:min-w-0 lg:flex-1">
@@ -336,8 +358,8 @@ export default async function NodeDetailPage({
             </div>
           )}
 
-          <div className="mt-6">
-            {canEdit ? (
+          {canEdit && (
+            <div className="mt-6">
               <EditNodeForm
                 nodeId={node.id}
                 worldSlug={world.slug}
@@ -349,15 +371,8 @@ export default async function NodeDetailPage({
                 categories={selectableCategories}
                 currentCategoryId={node.category_id}
               />
-            ) : (
-              <WikiLinkContent
-                content={node.content}
-                basePath={`/dashboard/worlds/${world.slug}/nodes`}
-                links={wikiLinkMap}
-                images={imageMap}
-              />
-            )}
-          </div>
+            </div>
+          )}
 
           <AttachmentsSection
             nodeId={node.id}

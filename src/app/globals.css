@@ -911,122 +911,40 @@ body {
 }
 
 /* ============================================================
-   角色節點的「身分卡」(標題/頭貼/立繪)依美術方向切換 —— 同 hero/bell,
-   八份一起渲染,CSS 決定哪份可見。
+   節點頁面最上方的「身分橫幅」(封面橫跨全寬、頭貼疊在橫幅底部、
+   標題+引言在下面)依美術方向切換 —— 同 hero/bell,八份一起渲染,
+   CSS 決定哪份可見。手機/PC 共用同一份 DOM,不用另外切兩組。
 ============================================================= */
-.node-identity-variant {
+.node-hero-variant {
   display: none;
 }
-:root:not([data-art-theme]) .node-identity-illuminated,
-:root[data-art-theme="illuminated"] .node-identity-illuminated {
+:root:not([data-art-theme]) .node-hero-illuminated,
+:root[data-art-theme="illuminated"] .node-hero-illuminated {
   display: block;
 }
-:root[data-art-theme="script"] .node-identity-script {
+:root[data-art-theme="script"] .node-hero-script {
   display: block;
 }
-:root[data-art-theme="field"] .node-identity-field {
+:root[data-art-theme="field"] .node-hero-field {
   display: block;
 }
-:root[data-art-theme="card"] .node-identity-card {
+:root[data-art-theme="card"] .node-hero-card {
   display: block;
 }
-:root[data-art-theme="wuxia"] .node-identity-wuxia {
+:root[data-art-theme="wuxia"] .node-hero-wuxia {
   display: block;
 }
-:root[data-art-theme="scroll"] .node-identity-scroll {
+:root[data-art-theme="scroll"] .node-hero-scroll {
   display: block;
 }
-:root[data-art-theme="cartographer"] .node-identity-cartographer {
+:root[data-art-theme="cartographer"] .node-hero-cartographer {
   display: block;
 }
-:root[data-art-theme="almanac"] .node-identity-almanac {
+:root[data-art-theme="almanac"] .node-hero-almanac {
   display: block;
 }
 
-/* PC 寬螢幕(lg, 1024px+)改顯示 NodeIdentityCardDesktop 那八份側欄版型,
-   手機版八份要在同一個斷點下隱藏——用跟上面一樣的選擇器+display:none,
-   靠「同specificity、後寫的贏」壓過上面幾條規則,而不是疊 lg:hidden。 */
-@media (min-width: 1024px) {
-  :root:not([data-art-theme]) .node-identity-illuminated,
-  :root[data-art-theme="illuminated"] .node-identity-illuminated {
-    display: none;
-  }
-  :root[data-art-theme="script"] .node-identity-script {
-    display: none;
-  }
-  :root[data-art-theme="field"] .node-identity-field {
-    display: none;
-  }
-  :root[data-art-theme="card"] .node-identity-card {
-    display: none;
-  }
-  :root[data-art-theme="wuxia"] .node-identity-wuxia {
-    display: none;
-  }
-  :root[data-art-theme="scroll"] .node-identity-scroll {
-    display: none;
-  }
-  :root[data-art-theme="cartographer"] .node-identity-cartographer {
-    display: none;
-  }
-  :root[data-art-theme="almanac"] .node-identity-almanac {
-    display: none;
-  }
-}
-
-.node-identity-desktop-variant {
-  display: none;
-}
-@media (min-width: 1024px) {
-  :root:not([data-art-theme]) .node-identity-desktop-illuminated,
-  :root[data-art-theme="illuminated"] .node-identity-desktop-illuminated {
-    display: block;
-  }
-  :root[data-art-theme="script"] .node-identity-desktop-script {
-    display: block;
-  }
-  :root[data-art-theme="field"] .node-identity-desktop-field {
-    display: block;
-  }
-  :root[data-art-theme="card"] .node-identity-desktop-card {
-    display: block;
-  }
-  :root[data-art-theme="wuxia"] .node-identity-desktop-wuxia {
-    display: block;
-  }
-  :root[data-art-theme="scroll"] .node-identity-desktop-scroll {
-    display: block;
-  }
-  :root[data-art-theme="cartographer"] .node-identity-desktop-cartographer {
-    display: block;
-  }
-  :root[data-art-theme="almanac"] .node-identity-desktop-almanac {
-    display: block;
-  }
-}
-
-.node-identity-illuminated-frame {
-  position: relative;
-}
-.node-identity-illuminated-frame::before,
-.node-identity-illuminated-frame::after {
-  content: "❧";
-  position: absolute;
-  font-size: 15px;
-  color: var(--border);
-  line-height: 1;
-}
-.node-identity-illuminated-frame::before {
-  top: 8px;
-  left: 10px;
-}
-.node-identity-illuminated-frame::after {
-  bottom: 8px;
-  right: 10px;
-  transform: rotate(180deg);
-}
-
-.node-identity-script-masthead {
+.node-hero-script-masthead {
   background: #1a1917;
   color: #f8f7f2;
   padding: 6px 14px;

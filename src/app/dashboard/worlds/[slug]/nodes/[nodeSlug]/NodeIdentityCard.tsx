@@ -18,15 +18,22 @@
  * 製圖師的羅盤、卷軸的滾棒、卡牌的分層卡框、曆書的有無頭貼排版)才留在
  * 各自版型裡手寫。之後要調整頭貼/大圖/標題列的渲染方式只需要改一個
  * 地方,不用同步改八份。
+ *
+ * 這是手機/窄螢幕版(頭貼在左、標題在右的橫向列)。PC 寬螢幕版是另一個
+ * 元件 NodeIdentityCardDesktop.tsx(置中直向堆疊的側欄版型),兩邊各自
+ * 渲染、用 lg: 斷點切換顯示,不是同一份 JSX 用 CSS reflow——排版差異
+ * 太大,硬要共用同一棵樹會犧牲兩邊的版面精細度。
  */
 
-function Avatar({ url, className }: { url: string | null; className: string }) {
+/** 跟 NodeIdentityCardDesktop.tsx 共用——那邊是 PC 版側欄,結構不同但
+ * 頭貼/大圖的渲染規則(選填、沒有就不顯示)完全一樣。 */
+export function Avatar({ url, className }: { url: string | null; className: string }) {
   if (!url) return null;
   // eslint-disable-next-line @next/next/no-img-element -- signed URL,無法用 next/image 白名單網域
   return <img src={url} alt="" className={className} />;
 }
 
-function BigImage({
+export function BigImage({
   url,
   className,
   wrapperClassName,

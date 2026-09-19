@@ -8,6 +8,7 @@ import { NodeSectionsEditor } from "@/app/dashboard/worlds/[slug]/nodes/[nodeSlu
 import { CharacterTimelineDisplay } from "@/app/dashboard/worlds/[slug]/nodes/[nodeSlug]/CharacterTimelineDisplay";
 import { CharacterFieldsDisplay } from "@/app/dashboard/worlds/[slug]/nodes/[nodeSlug]/CharacterFieldsForm";
 import { NodeIdentityCard } from "@/app/dashboard/worlds/[slug]/nodes/[nodeSlug]/NodeIdentityCard";
+import { NodeIdentityCardDesktop } from "@/app/dashboard/worlds/[slug]/nodes/[nodeSlug]/NodeIdentityCardDesktop";
 import { NODE_TYPE_LABEL } from "@/lib/nodeTypeLabels";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -168,83 +169,84 @@ export default async function PublicNodeDetailPage({
     })),
   );
 
+  const isCharacter = node.node_type === "character" && character;
+  const identityCardProps = {
+    name: node.title,
+    characterType: isCharacter ? character.character_type : null,
+    extraBadges: STATUS_LABEL[node.status] ? (
+      <span className="rounded-full bg-badge-pending-bg px-2 py-0.5 text-xs text-badge-pending-fg">
+        {STATUS_LABEL[node.status]}
+      </span>
+    ) : undefined,
+    nodeTypeLabel: NODE_TYPE_LABEL[node.node_type],
+    categoryName: category?.name ?? null,
+    ownerLabel:
+      isCharacter && character.character_type === "pc"
+        ? characterOwner?.display_name || characterOwner?.username || "未知玩家"
+        : null,
+    avatarUrl: isCharacter ? characterAvatarUrl : null,
+    imageUrl: isCharacter ? characterIllustrationUrl : nodeImageUrl,
+  };
+
   return (
-    <div className="mx-auto w-full max-w-2xl flex-1 px-6 py-12">
+    <div className="mx-auto w-full max-w-2xl flex-1 px-6 py-12 lg:max-w-5xl">
       <Link
         href={`/worlds/${world.slug}`}
         className="text-sm text-muted-foreground hover:underline"
       >
         ← 返回世界觀
       </Link>
-      {(() => {
-        const isCharacter = node.node_type === "character" && character;
-        return (
-          <div className="mt-2">
-            <NodeIdentityCard
-              name={node.title}
-              characterType={isCharacter ? character.character_type : null}
-              extraBadges={
-                STATUS_LABEL[node.status] ? (
-                  <span className="rounded-full bg-badge-pending-bg px-2 py-0.5 text-xs text-badge-pending-fg">
-                    {STATUS_LABEL[node.status]}
-                  </span>
-                ) : undefined
-              }
-              nodeTypeLabel={NODE_TYPE_LABEL[node.node_type]}
-              categoryName={category?.name ?? null}
-              ownerLabel={
-                isCharacter && character.character_type === "pc"
-                  ? characterOwner?.display_name || characterOwner?.username || "未知玩家"
-                  : null
-              }
-              avatarUrl={isCharacter ? characterAvatarUrl : null}
-              imageUrl={isCharacter ? characterIllustrationUrl : nodeImageUrl}
+
+      <div className="mt-2 lg:flex lg:items-start lg:gap-8">
+        <div className="lg:w-72 lg:shrink-0">
+          <NodeIdentityCard {...identityCardProps} />
+          <NodeIdentityCardDesktop {...identityCardProps} />
+
+          {node.node_type === "character" && (
+            <CharacterFieldsDisplay fields={characterFields} />
+          )}
+        </div>
+
+        <div className="mt-4 lg:mt-0 lg:min-w-0 lg:flex-1">
+          <div className="mt-6 lg:mt-0">
+            <WikiLinkContent
+              content={node.content}
+              basePath={`/worlds/${world.slug}/nodes`}
+              links={wikiLinkMap}
+              images={imageMap}
             />
           </div>
-        );
-      })()}
 
-      {node.node_type === "character" && (
-        <CharacterFieldsDisplay fields={characterFields} />
-      )}
+          {fileAttachments.length > 0 && (
+            <section className="mt-8">
+              <h2 className="text-lg font-semibold">附件</h2>
+              <ul className="mt-3 flex flex-col gap-2">
+                {fileAttachments.map((a) => (
+                  <li key={a.id} className="text-sm">
+                    <a href={a.url} className="underline">
+                      {a.file_name}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
 
-      <div className="mt-6">
-        <WikiLinkContent
-          content={node.content}
-          basePath={`/worlds/${world.slug}/nodes`}
-          links={wikiLinkMap}
-          images={imageMap}
-        />
-      </div>
+          <NodeSectionsEditor
+            nodeId={node.id}
+            worldSlug={world.slug}
+            nodeSlug={node.slug}
+            canEdit={false}
+            sections={sections ?? []}
+          />
 
-      {fileAttachments.length > 0 && (
-        <section className="mt-8">
-          <h2 className="text-lg font-semibold">附件</h2>
-          <ul className="mt-3 flex flex-col gap-2">
-            {fileAttachments.map((a) => (
-              <li key={a.id} className="text-sm">
-                <a href={a.url} className="underline">
-                  {a.file_name}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      <NodeSectionsEditor
-        nodeId={node.id}
-        worldSlug={world.slug}
-        nodeSlug={node.slug}
-        canEdit={false}
-        sections={sections ?? []}
-      />
-
-      {node.node_type === "character" && (
-        <div className="mt-10">
-          <CharacterTimelineDisplay events={timelineEventItems} />
+          {node.node_type === "character" && (
+            <div className="mt-10">
+              <CharacterTimelineDisplay events={timelineEventItems} />
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }

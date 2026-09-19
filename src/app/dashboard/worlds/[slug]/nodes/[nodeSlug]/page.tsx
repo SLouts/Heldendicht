@@ -14,6 +14,7 @@ import { CharacterTimelineEditor } from "./CharacterTimelineEditor";
 import { CharacterTimelineDisplay } from "./CharacterTimelineDisplay";
 import { NodeMediaUpload } from "./NodeMediaUpload";
 import { NodeIdentityCard } from "./NodeIdentityCard";
+import { NodeIdentityCardDesktop } from "./NodeIdentityCardDesktop";
 import { ReportForm } from "@/components/ReportForm";
 import { NODE_TYPE_LABEL } from "@/lib/nodeTypeLabels";
 import { getNodeMediaSignedUrl } from "@/lib/nodeMedia";
@@ -205,188 +206,191 @@ export default async function NodeDetailPage({
     })),
   );
 
+  const category = categories?.find((c) => c.id === node.category_id);
+  const extraBadges =
+    node.status !== "approved" || node.is_placeholder ? (
+      <>
+        {node.status !== "approved" && (
+          <span
+            className={
+              node.status === "rejected"
+                ? "rounded-full bg-badge-danger-bg px-2 py-0.5 text-xs text-badge-danger-fg"
+                : "rounded-full bg-badge-pending-bg px-2 py-0.5 text-xs text-badge-pending-fg"
+            }
+          >
+            {STATUS_LABEL[node.status]}
+          </span>
+        )}
+        {node.is_placeholder && (
+          <span className="rounded-full bg-badge-neutral-bg px-2 py-0.5 text-xs text-badge-neutral-fg">
+            WikiLink 自動建立的待撰寫節點
+          </span>
+        )}
+      </>
+    ) : undefined;
+
+  const isCharacter = node.node_type === "character" && character;
+  const identityCardProps = {
+    name: node.title,
+    characterType: isCharacter ? character.character_type : null,
+    extraBadges,
+    nodeTypeLabel: `${NODE_TYPE_LABEL[node.node_type]} ・${node.edit_mode === "collaborative" ? "開放共筆" : "僅自己可改"}`,
+    categoryName: category?.name ?? null,
+    ownerLabel:
+      isCharacter && character.character_type === "pc"
+        ? characterOwner?.display_name ||
+          characterOwner?.username ||
+          characterOwner?.email ||
+          "未知玩家"
+        : null,
+    avatarUrl: isCharacter ? characterAvatarUrl : null,
+    imageUrl: isCharacter ? characterIllustrationUrl : nodeImageUrl,
+  };
+
   return (
-    <div className="max-w-2xl">
+    <div className="max-w-2xl lg:max-w-5xl">
       <Link
         href={`/dashboard/worlds/${world.slug}`}
         className="text-sm text-muted-foreground hover:underline"
       >
         ← 返回世界觀
       </Link>
-      {(() => {
-        const category = categories?.find((c) => c.id === node.category_id);
-        const extraBadges =
-          node.status !== "approved" || node.is_placeholder ? (
-            <>
-              {node.status !== "approved" && (
-                <span
-                  className={
-                    node.status === "rejected"
-                      ? "rounded-full bg-badge-danger-bg px-2 py-0.5 text-xs text-badge-danger-fg"
-                      : "rounded-full bg-badge-pending-bg px-2 py-0.5 text-xs text-badge-pending-fg"
-                  }
-                >
-                  {STATUS_LABEL[node.status]}
-                </span>
-              )}
-              {node.is_placeholder && (
-                <span className="rounded-full bg-badge-neutral-bg px-2 py-0.5 text-xs text-badge-neutral-fg">
-                  WikiLink 自動建立的待撰寫節點
-                </span>
-              )}
-            </>
-          ) : undefined;
 
-        const isCharacter = node.node_type === "character" && character;
-        return (
-          <div className="mt-2">
-            <NodeIdentityCard
-              name={node.title}
-              characterType={isCharacter ? character.character_type : null}
-              extraBadges={extraBadges}
-              nodeTypeLabel={`${NODE_TYPE_LABEL[node.node_type]} ・${node.edit_mode === "collaborative" ? "開放共筆" : "僅自己可改"}`}
-              categoryName={category?.name ?? null}
-              ownerLabel={
-                isCharacter && character.character_type === "pc"
-                  ? characterOwner?.display_name ||
-                    characterOwner?.username ||
-                    characterOwner?.email ||
-                    "未知玩家"
-                  : null
-              }
-              avatarUrl={isCharacter ? characterAvatarUrl : null}
-              imageUrl={isCharacter ? characterIllustrationUrl : nodeImageUrl}
+      <div className="mt-2 lg:flex lg:items-start lg:gap-8">
+        <div className="lg:w-72 lg:shrink-0">
+          <NodeIdentityCard {...identityCardProps} />
+          <NodeIdentityCardDesktop {...identityCardProps} />
+
+          {canEdit && (
+            <div className="mt-4 flex flex-wrap gap-6 lg:flex-col lg:items-center">
+              <NodeMediaUpload
+                kind="image"
+                label="代表圖"
+                nodeId={node.id}
+                worldSlug={world.slug}
+                nodeSlug={node.slug}
+                imageUrl={nodeImageUrl}
+                previewClassName="h-32 w-32 rounded-lg border border-border object-cover"
+              />
+              {node.node_type === "character" && (
+                <>
+                  <NodeMediaUpload
+                    kind="avatar"
+                    label="頭貼"
+                    nodeId={node.id}
+                    worldSlug={world.slug}
+                    nodeSlug={node.slug}
+                    imageUrl={characterAvatarUrl}
+                    previewClassName="h-32 w-32 rounded-full border border-border object-cover"
+                  />
+                  <NodeMediaUpload
+                    kind="illustration"
+                    label="立繪"
+                    nodeId={node.id}
+                    worldSlug={world.slug}
+                    nodeSlug={node.slug}
+                    imageUrl={characterIllustrationUrl}
+                    previewClassName="h-56 w-auto rounded-lg border border-border object-cover"
+                  />
+                </>
+              )}
+            </div>
+          )}
+
+          {node.node_type === "character" &&
+            (canEdit ? (
+              <CharacterFieldsForm
+                nodeId={node.id}
+                worldSlug={world.slug}
+                fields={characterFields}
+              />
+            ) : (
+              <CharacterFieldsDisplay fields={characterFields} />
+            ))}
+        </div>
+
+        <div className="mt-4 lg:mt-0 lg:min-w-0 lg:flex-1">
+          {isPersonaOwner && (
+            <CharacterPersonaForm
+              nodeId={node.id}
+              worldSlug={world.slug}
+              nodeSlug={node.slug}
+              currentPersonaId={character?.persona_id ?? null}
+              personas={personas ?? []}
             />
-          </div>
-        );
-      })()}
+          )}
 
-      {canEdit && (
-        <div className="mt-4 flex flex-wrap gap-6">
-          <NodeMediaUpload
-            kind="image"
-            label="代表圖"
+          {isStaff && node.status === "pending" && (
+            <div className="mt-4 flex gap-2">
+              <form action={reviewNode.bind(null, node.id, world.slug, node.slug, "approved")}>
+                <button className="rounded-lg bg-success px-3 py-1.5 text-sm text-success-foreground transition hover:bg-success-hover">
+                  核准
+                </button>
+              </form>
+              <form action={reviewNode.bind(null, node.id, world.slug, node.slug, "rejected")}>
+                <button className="rounded-lg bg-danger px-3 py-1.5 text-sm text-danger-foreground transition hover:bg-danger-hover">
+                  駁回
+                </button>
+              </form>
+            </div>
+          )}
+
+          <div className="mt-6">
+            {canEdit ? (
+              <EditNodeForm
+                nodeId={node.id}
+                worldSlug={world.slug}
+                nodeSlug={node.slug}
+                title={node.title}
+                content={node.content}
+                isPlaceholder={node.is_placeholder}
+                nodeType={node.node_type}
+                categories={selectableCategories}
+                currentCategoryId={node.category_id}
+              />
+            ) : (
+              <WikiLinkContent
+                content={node.content}
+                basePath={`/dashboard/worlds/${world.slug}/nodes`}
+                links={wikiLinkMap}
+                images={imageMap}
+              />
+            )}
+          </div>
+
+          <AttachmentsSection
             nodeId={node.id}
             worldSlug={world.slug}
             nodeSlug={node.slug}
-            imageUrl={nodeImageUrl}
-            previewClassName="h-32 w-32 rounded-lg border border-border object-cover"
+            canEdit={canEdit}
+            attachments={attachmentItems}
           />
+
+          <NodeSectionsEditor
+            nodeId={node.id}
+            worldSlug={world.slug}
+            nodeSlug={node.slug}
+            canEdit={canEdit}
+            sections={sections ?? []}
+          />
+
           {node.node_type === "character" && (
-            <>
-              <NodeMediaUpload
-                kind="avatar"
-                label="頭貼"
-                nodeId={node.id}
-                worldSlug={world.slug}
-                nodeSlug={node.slug}
-                imageUrl={characterAvatarUrl}
-                previewClassName="h-32 w-32 rounded-full border border-border object-cover"
-              />
-              <NodeMediaUpload
-                kind="illustration"
-                label="立繪"
-                nodeId={node.id}
-                worldSlug={world.slug}
-                nodeSlug={node.slug}
-                imageUrl={characterIllustrationUrl}
-                previewClassName="h-56 w-auto rounded-lg border border-border object-cover"
-              />
-            </>
+            <div className="mt-10">
+              <CharacterTimelineDisplay events={timelineEventItems} />
+            </div>
+          )}
+
+          {node.node_type === "character" && (
+            <CharacterTimelineEditor
+              nodeId={node.id}
+              worldSlug={world.slug}
+              nodeSlug={node.slug}
+              canEdit={canEdit}
+              events={timelineEventItems}
+            />
           )}
         </div>
-      )}
-
-      {node.node_type === "character" &&
-        (canEdit ? (
-          <CharacterFieldsForm
-            nodeId={node.id}
-            worldSlug={world.slug}
-            fields={characterFields}
-          />
-        ) : (
-          <CharacterFieldsDisplay fields={characterFields} />
-        ))}
-
-      {isPersonaOwner && (
-        <CharacterPersonaForm
-          nodeId={node.id}
-          worldSlug={world.slug}
-          nodeSlug={node.slug}
-          currentPersonaId={character?.persona_id ?? null}
-          personas={personas ?? []}
-        />
-      )}
-
-      {isStaff && node.status === "pending" && (
-        <div className="mt-4 flex gap-2">
-          <form action={reviewNode.bind(null, node.id, world.slug, node.slug, "approved")}>
-            <button className="rounded-lg bg-success px-3 py-1.5 text-sm text-success-foreground transition hover:bg-success-hover">
-              核准
-            </button>
-          </form>
-          <form action={reviewNode.bind(null, node.id, world.slug, node.slug, "rejected")}>
-            <button className="rounded-lg bg-danger px-3 py-1.5 text-sm text-danger-foreground transition hover:bg-danger-hover">
-              駁回
-            </button>
-          </form>
-        </div>
-      )}
-
-      <div className="mt-6">
-        {canEdit ? (
-          <EditNodeForm
-            nodeId={node.id}
-            worldSlug={world.slug}
-            nodeSlug={node.slug}
-            title={node.title}
-            content={node.content}
-            isPlaceholder={node.is_placeholder}
-            nodeType={node.node_type}
-            categories={selectableCategories}
-            currentCategoryId={node.category_id}
-          />
-        ) : (
-          <WikiLinkContent
-            content={node.content}
-            basePath={`/dashboard/worlds/${world.slug}/nodes`}
-            links={wikiLinkMap}
-            images={imageMap}
-          />
-        )}
       </div>
-
-      <AttachmentsSection
-        nodeId={node.id}
-        worldSlug={world.slug}
-        nodeSlug={node.slug}
-        canEdit={canEdit}
-        attachments={attachmentItems}
-      />
-
-      <NodeSectionsEditor
-        nodeId={node.id}
-        worldSlug={world.slug}
-        nodeSlug={node.slug}
-        canEdit={canEdit}
-        sections={sections ?? []}
-      />
-
-      {node.node_type === "character" && (
-        <div className="mt-10">
-          <CharacterTimelineDisplay events={timelineEventItems} />
-        </div>
-      )}
-
-      {node.node_type === "character" && (
-        <CharacterTimelineEditor
-          nodeId={node.id}
-          worldSlug={world.slug}
-          nodeSlug={node.slug}
-          canEdit={canEdit}
-          events={timelineEventItems}
-        />
-      )}
 
       {canDelete && (
         <form

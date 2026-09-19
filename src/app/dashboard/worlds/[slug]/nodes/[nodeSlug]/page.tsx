@@ -11,6 +11,7 @@ import { CharacterPersonaForm } from "./CharacterPersonaForm";
 import { CharacterFieldsForm, CharacterFieldsDisplay } from "./CharacterFieldsForm";
 import { NodeSectionsEditor } from "./NodeSectionsEditor";
 import { CharacterTimelineEditor } from "./CharacterTimelineEditor";
+import { CharacterTimelineDisplay } from "./CharacterTimelineDisplay";
 import { NodeMediaUpload } from "./NodeMediaUpload";
 import { NodeIdentityCard } from "./NodeIdentityCard";
 import { ReportForm } from "@/components/ReportForm";
@@ -360,6 +361,12 @@ export default async function NodeDetailPage({
         canEdit={canEdit}
         sections={sections ?? []}
       />
+
+      {node.node_type === "character" && (
+        <div className="mt-10">
+          <CharacterTimelineDisplay events={timelineEvents ?? []} />
+        </div>
+      )}
 
       {node.node_type === "character" && (
         <CharacterTimelineEditor

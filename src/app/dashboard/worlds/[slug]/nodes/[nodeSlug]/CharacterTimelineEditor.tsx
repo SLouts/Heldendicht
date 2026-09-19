@@ -172,13 +172,15 @@ export function CharacterTimelineEditor({
   );
   const createFormRef = useRef<HTMLFormElement>(null);
 
-  if (events.length === 0 && !canEdit) return null;
+  // 唯讀時交給 CharacterTimelineDisplay(八主題正式版型)顯示,這裡只負責
+  // 編輯用的管理清單,不重複渲染同一批內容。
+  if (!canEdit) return null;
 
   return (
-    <section className="mt-10">
-      <h2 className="text-lg font-semibold">生平時間線</h2>
+    <section className="mt-4">
+      <h2 className="text-lg font-semibold">時間軸管理</h2>
       <p className="mt-1 text-sm text-muted-foreground">
-        角色生平的重要時間點,依序排列。
+        新增/編輯/排序這裡的時間點,會同步反映在上面的生平時間線。
       </p>
 
       <ol className="mt-3 flex flex-col gap-2">

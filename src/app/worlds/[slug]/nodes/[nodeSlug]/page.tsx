@@ -6,6 +6,7 @@ import { getNodeMediaSignedUrl } from "@/lib/nodeMedia";
 import { WikiLinkContent } from "@/app/dashboard/worlds/[slug]/nodes/[nodeSlug]/WikiLinkContent";
 import { NodeSectionsEditor } from "@/app/dashboard/worlds/[slug]/nodes/[nodeSlug]/NodeSectionsEditor";
 import { CharacterTimelineEditor } from "@/app/dashboard/worlds/[slug]/nodes/[nodeSlug]/CharacterTimelineEditor";
+import { CharacterTimelineDisplay } from "@/app/dashboard/worlds/[slug]/nodes/[nodeSlug]/CharacterTimelineDisplay";
 import { CharacterFieldsDisplay } from "@/app/dashboard/worlds/[slug]/nodes/[nodeSlug]/CharacterFieldsForm";
 import { NodeIdentityCard } from "@/app/dashboard/worlds/[slug]/nodes/[nodeSlug]/NodeIdentityCard";
 import { NODE_TYPE_LABEL } from "@/lib/nodeTypeLabels";
@@ -229,6 +230,12 @@ export default async function PublicNodeDetailPage({
         canEdit={false}
         sections={sections ?? []}
       />
+
+      {node.node_type === "character" && (
+        <div className="mt-10">
+          <CharacterTimelineDisplay events={timelineEvents ?? []} />
+        </div>
+      )}
 
       {node.node_type === "character" && (
         <CharacterTimelineEditor

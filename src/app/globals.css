@@ -973,6 +973,39 @@ body {
   text-transform: uppercase;
 }
 
+/* ============================================================
+   角色節點的「生平時間線」依美術方向切換 —— 同上面 node-identity 那組,
+   八份一起渲染,CSS 決定哪份可見。
+============================================================= */
+.char-timeline-variant {
+  display: none;
+}
+:root:not([data-art-theme]) .char-timeline-illuminated,
+:root[data-art-theme="illuminated"] .char-timeline-illuminated {
+  display: block;
+}
+:root[data-art-theme="script"] .char-timeline-script {
+  display: block;
+}
+:root[data-art-theme="field"] .char-timeline-field {
+  display: block;
+}
+:root[data-art-theme="card"] .char-timeline-card {
+  display: block;
+}
+:root[data-art-theme="wuxia"] .char-timeline-wuxia {
+  display: block;
+}
+:root[data-art-theme="scroll"] .char-timeline-scroll {
+  display: block;
+}
+:root[data-art-theme="cartographer"] .char-timeline-cartographer {
+  display: block;
+}
+:root[data-art-theme="almanac"] .char-timeline-almanac {
+  display: block;
+}
+
 /* 標題一律用史詩碑文體(Cinzel),中文字則交給系統襯線字型堆疊接手,
    不額外載入巨大的中文襯線 webfont。稍微拉開字距,加強碑刻感。 */
 h1,

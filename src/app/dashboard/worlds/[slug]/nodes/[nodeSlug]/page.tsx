@@ -244,6 +244,7 @@ export default async function NodeDetailPage({
           "未知玩家"
         : null,
     avatarUrl: isCharacter ? characterAvatarUrl : null,
+    coverUrl: isCharacter ? nodeImageUrl : null,
     imageUrl: isCharacter ? characterIllustrationUrl : nodeImageUrl,
   };
 
@@ -261,23 +262,11 @@ export default async function NodeDetailPage({
           <NodeIdentityCard {...identityCardProps} />
           <NodeIdentityCardDesktop {...identityCardProps} />
 
-          {node.node_type === "character" && nodeImageUrl && (
-            <div className="mt-4 flex flex-col items-center gap-1">
-              <span className="text-xs text-muted-foreground">代表圖</span>
-              {/* eslint-disable-next-line @next/next/no-img-element -- signed URL,無法用 next/image 白名單網域 */}
-              <img
-                src={nodeImageUrl}
-                alt=""
-                className="w-full max-w-[220px] rounded-lg border border-border object-cover"
-              />
-            </div>
-          )}
-
           {canEdit && (
             <div className="mt-4 flex flex-wrap gap-6 lg:flex-col lg:items-center">
               <NodeMediaUpload
                 kind="image"
-                label="代表圖"
+                label={node.node_type === "character" ? "封面" : "代表圖"}
                 nodeId={node.id}
                 worldSlug={world.slug}
                 nodeSlug={node.slug}

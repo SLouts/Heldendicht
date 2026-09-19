@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { StepContent } from "@/app/dashboard/worlds/[slug]/story/chapters/[chapterId]/StepContent";
 
 /**
  * 公開版章節詳細頁,唯讀——沒有編輯/刪除/新增段落,可見度交給
@@ -33,13 +34,19 @@ export default async function PublicChapterDetailPage({
     ? chapter.character[0]
     : chapter.character;
 
-  const { data: steps } = await supabase
-    .from("story_steps")
-    .select(
-      "id, order_index, custom_text, node:nodes!story_steps_node_id_fkey(title, slug), pov:nodes!story_steps_pov_character_id_fkey(title)",
-    )
-    .eq("chapter_id", chapterId)
-    .order("order_index");
+  const [{ data: steps }, { data: worldNodes }] = await Promise.all([
+    supabase
+      .from("story_steps")
+      .select(
+        "id, order_index, custom_text, node:nodes!story_steps_node_id_fkey(title, slug), pov:nodes!story_steps_pov_character_id_fkey(title)",
+      )
+      .eq("chapter_id", chapterId)
+      .order("order_index"),
+    supabase.from("nodes").select("title, slug, is_placeholder").eq("world_id", world.id),
+  ]);
+  const stepLinkMap = new Map(
+    (worldNodes ?? []).map((n) => [n.title, { slug: n.slug, isPlaceholder: n.is_placeholder }]),
+  );
 
   const backHref = `/worlds/${world.slug}/story?tab=${chapter.scope}${
     chapter.scope === "character" ? `&characterId=${chapter.character_id}` : ""
@@ -87,7 +94,11 @@ export default async function PublicChapterDetailPage({
                 )}
               </div>
               {step.custom_text && (
-                <p className="mt-1 whitespace-pre-wrap">{step.custom_text}</p>
+                <StepContent
+                  content={step.custom_text}
+                  basePath={`/worlds/${world.slug}/nodes`}
+                  links={stepLinkMap}
+                />
               )}
             </div>
           );

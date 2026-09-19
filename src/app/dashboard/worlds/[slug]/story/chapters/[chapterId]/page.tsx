@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { deleteChapter } from "@/lib/actions/story";
 import { EditChapterForm } from "./EditChapterForm";
 import { StepEditForm } from "./StepEditForm";
+import { StepContent } from "./StepContent";
 
 export default async function ChapterDetailPage({
   params,
@@ -34,28 +35,42 @@ export default async function ChapterDetailPage({
     ? chapter.character[0]
     : chapter.character;
 
-  const [{ data: isStaff }, { data: owns }, { data: steps }, { data: characterNodes }] =
-    await Promise.all([
-      supabase.rpc("is_world_staff", { p_world_id: world.id }),
-      chapter.scope === "character" && chapter.character_id
-        ? supabase.rpc("owns_character", { p_character_node_id: chapter.character_id })
-        : Promise.resolve({ data: false }),
-      supabase
-        .from("story_steps")
-        .select(
-          "id, order_index, custom_text, pov_character_id, node:nodes!story_steps_node_id_fkey(id, title, slug), pov:nodes!story_steps_pov_character_id_fkey(title)",
-        )
-        .eq("chapter_id", chapterId)
-        .order("order_index"),
-      supabase
-        .from("nodes")
-        .select("id, title")
-        .eq("world_id", world.id)
-        .eq("node_type", "character")
-        .order("title"),
-    ]);
+  const [
+    { data: isStaff },
+    { data: owns },
+    { data: steps },
+    { data: characterNodes },
+    { data: worldNodes },
+  ] = await Promise.all([
+    supabase.rpc("is_world_staff", { p_world_id: world.id }),
+    chapter.scope === "character" && chapter.character_id
+      ? supabase.rpc("owns_character", { p_character_node_id: chapter.character_id })
+      : Promise.resolve({ data: false }),
+    supabase
+      .from("story_steps")
+      .select(
+        "id, order_index, custom_text, pov_character_id, node:nodes!story_steps_node_id_fkey(id, title, slug), pov:nodes!story_steps_pov_character_id_fkey(title)",
+      )
+      .eq("chapter_id", chapterId)
+      .order("order_index"),
+    supabase
+      .from("nodes")
+      .select("id, title")
+      .eq("world_id", world.id)
+      .eq("node_type", "character")
+      .order("title"),
+    supabase
+      .from("nodes")
+      .select("title, slug, is_placeholder")
+      .eq("world_id", world.id),
+  ]);
 
   const canManage = Boolean(isStaff) || Boolean(owns);
+  // [[節點名稱]] 用世界觀內所有節點的標題比對,查不到就原樣顯示——段落
+  // 文字比較隨手,不像 nodes.content 那樣自動建立佔位節點。
+  const stepLinkMap = new Map(
+    (worldNodes ?? []).map((n) => [n.title, { slug: n.slug, isPlaceholder: n.is_placeholder }]),
+  );
   const backHref = `/dashboard/worlds/${world.slug}/story?tab=${chapter.scope}${
     chapter.scope === "character" ? `&characterId=${chapter.character_id}` : ""
   }`;
@@ -136,7 +151,11 @@ export default async function ChapterDetailPage({
                   )}
                 </div>
                 {step.custom_text && (
-                  <p className="mt-1 whitespace-pre-wrap">{step.custom_text}</p>
+                  <StepContent
+                    content={step.custom_text}
+                    basePath={`/dashboard/worlds/${world.slug}/nodes`}
+                    links={stepLinkMap}
+                  />
                 )}
               </div>
             );

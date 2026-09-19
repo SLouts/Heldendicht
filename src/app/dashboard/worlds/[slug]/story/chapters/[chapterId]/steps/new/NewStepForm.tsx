@@ -6,12 +6,10 @@ import { createStep } from "@/lib/actions/story";
 export function NewStepForm({
   chapterId,
   worldSlug,
-  nodeOptions,
   characterOptions,
 }: {
   chapterId: string;
   worldSlug: string;
-  nodeOptions: { id: string; title: string; node_type: string }[];
   characterOptions: { id: string; title: string }[];
 }) {
   const [state, formAction, pending] = useActionState(createStep, undefined);
@@ -20,31 +18,6 @@ export function NewStepForm({
     <form action={formAction} className="mt-6 flex max-w-xl flex-col gap-4">
       <input type="hidden" name="chapterId" value={chapterId} />
       <input type="hidden" name="worldSlug" value={worldSlug} />
-
-      <div className="flex flex-col gap-1">
-        <label htmlFor="nodeId" className="text-sm font-medium">
-          這段登場的節點
-        </label>
-        <select
-          id="nodeId"
-          name="nodeId"
-          required
-          defaultValue=""
-          className="rounded-lg border border-border bg-surface px-3 py-2"
-        >
-          <option value="" disabled>
-            選擇節點
-          </option>
-          {nodeOptions.map((node) => (
-            <option key={node.id} value={node.id}>
-              {node.title}({node.node_type})
-            </option>
-          ))}
-        </select>
-        {state && "fieldErrors" in state && state.fieldErrors.nodeId && (
-          <p className="text-sm text-danger">{state.fieldErrors.nodeId[0]}</p>
-        )}
-      </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-1">
@@ -90,6 +63,9 @@ export function NewStepForm({
           rows={5}
           className="rounded-lg border border-border bg-surface px-3 py-2"
         />
+        <p className="text-xs text-muted-foreground">
+          用 [[節點名稱]] 或 [顯示文字](網址) 就能連結到任何節點,不用另外選。
+        </p>
       </div>
 
       {state && "error" in state && (

@@ -704,7 +704,7 @@ export type Database = {
         Row: {
           id: string;
           chapter_id: string;
-          node_id: string;
+          node_id: string | null;
           order_index: number;
           custom_text: string | null;
           pov_character_id: string | null;
@@ -712,7 +712,6 @@ export type Database = {
         };
         Insert: Partial<Database["public"]["Tables"]["story_steps"]["Row"]> & {
           chapter_id: string;
-          node_id: string;
           order_index: number;
         };
         Update: Partial<Database["public"]["Tables"]["story_steps"]["Row"]>;

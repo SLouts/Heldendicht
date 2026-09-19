@@ -154,12 +154,16 @@ export async function deleteChapter(
 const CreateStepSchema = z.object({
   chapterId: z.uuid(),
   worldSlug: z.string().min(1),
-  nodeId: z.uuid({ error: "請選擇這段登場的地點/節點" }),
   orderIndex: z.coerce.number().int(),
   customText: z.string(),
   povCharacterId: z.string(),
 });
 
+/**
+ * 段落不再強制綁節點——以前這裡一定要求 nodeId 是合法 uuid,現在完全
+ * 交給作者自己在 customText 裡用 [[節點名稱]] 或 [文字](網址) 連結,
+ * 不用另外選。node_id 欄位保留給舊資料,新段落一律不設定它。
+ */
 export async function createStep(
   _prevState: StoryFormState,
   formData: FormData,
@@ -169,7 +173,6 @@ export async function createStep(
   const parsed = CreateStepSchema.safeParse({
     chapterId: formData.get("chapterId"),
     worldSlug: formData.get("worldSlug"),
-    nodeId: formData.get("nodeId"),
     orderIndex: formData.get("orderIndex") || 1,
     customText: formData.get("customText") ?? "",
     povCharacterId: formData.get("povCharacterId") ?? "",
@@ -181,7 +184,6 @@ export async function createStep(
   const supabase = await createClient();
   const { error } = await supabase.from("story_steps").insert({
     chapter_id: parsed.data.chapterId,
-    node_id: parsed.data.nodeId,
     order_index: parsed.data.orderIndex,
     custom_text: parsed.data.customText || null,
     pov_character_id: parsed.data.povCharacterId || null,

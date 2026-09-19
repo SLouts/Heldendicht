@@ -26,20 +26,12 @@ export default async function NewStepPage({
     .maybeSingle();
   if (!chapter) notFound();
 
-  const [{ data: nodes }, { data: characterNodes }] = await Promise.all([
-    supabase
-      .from("nodes")
-      .select("id, title, node_type")
-      .eq("world_id", world.id)
-      .order("node_type")
-      .order("title"),
-    supabase
-      .from("nodes")
-      .select("id, title")
-      .eq("world_id", world.id)
-      .eq("node_type", "character")
-      .order("title"),
-  ]);
+  const { data: characterNodes } = await supabase
+    .from("nodes")
+    .select("id, title")
+    .eq("world_id", world.id)
+    .eq("node_type", "character")
+    .order("title");
 
   return (
     <div>
@@ -53,7 +45,6 @@ export default async function NewStepPage({
       <NewStepForm
         chapterId={chapter.id}
         worldSlug={world.slug}
-        nodeOptions={nodes ?? []}
         characterOptions={characterNodes ?? []}
       />
     </div>

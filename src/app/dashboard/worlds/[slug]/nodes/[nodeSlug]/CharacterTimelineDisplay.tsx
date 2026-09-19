@@ -7,11 +7,45 @@ import type { TimelineEventItem } from "./CharacterTimelineEditor";
  *
  * 沒有任何時間點就整塊不顯示(跟頭貼/立繪「不填就不顯示」同一套邏輯)。
  *
+ * description(簡短描述/標題)一律常駐顯示;content(內文)/imageUrl(配圖)
+ * 都選填,有填才會用 <details>/<summary> 包成可展開——跟 node_sections
+ * 補充區塊同一套原生 disclosure 元件,不用另外管理彈窗的開關/焦點邏輯。
+ * 兩個都沒填就是純文字,不用假裝可以點開。
+ *
  * 「目前」(最後一筆)一律用 text-primary/bg-primary 標示——這兩個
  * Tailwind class 底層對應的 CSS 變數本來就會依主題換色(globals.css
  * 裡 :root[data-art-theme="x"] { --primary: ... }),不用每個主題各自
  * 指定一次強調色。
  */
+
+/** 常駐顯示 description,有 content/imageUrl 才包成可展開。八個版型共用。 */
+function ExpandableDescription({
+  event,
+  className,
+}: {
+  event: TimelineEventItem;
+  className: string;
+}) {
+  if (!event.content && !event.imageUrl) {
+    return <p className={className}>{event.description}</p>;
+  }
+  return (
+    <details>
+      <summary className={className + " cursor-pointer"}>{event.description}</summary>
+      <div className="mt-2 text-sm">
+        {event.content && <p className="whitespace-pre-wrap">{event.content}</p>}
+        {event.imageUrl && (
+          // eslint-disable-next-line @next/next/no-img-element -- signed URL,無法用 next/image 白名單網域
+          <img
+            src={event.imageUrl}
+            alt=""
+            className="mt-2 max-h-64 w-full rounded border border-border object-cover"
+          />
+        )}
+      </div>
+    </details>
+  );
+}
 
 /** 五個版型共用的「直線+圓點」時間軸,只有 dot 形狀跟文字排版是可調的。 */
 function DotTimeline({
@@ -58,9 +92,12 @@ function DotTimeline({
             <div className={isCurrent ? currentLabelClassName : labelClassName}>
               {event.label}
             </div>
-            <p className={isCurrent ? currentDescriptionClassName : descriptionClassName}>
-              {event.description}
-            </p>
+            <ExpandableDescription
+              event={event}
+              className={
+                "mt-0.5 " + (isCurrent ? currentDescriptionClassName : descriptionClassName)
+              }
+            />
           </div>
         );
       })}
@@ -80,8 +117,8 @@ export function CharacterTimelineDisplay({ events }: { events: TimelineEventItem
           events={events}
           labelClassName="text-sm italic text-muted-foreground"
           currentLabelClassName="text-sm italic text-primary"
-          descriptionClassName="mt-0.5 text-sm"
-          currentDescriptionClassName="mt-0.5 text-sm text-primary"
+          descriptionClassName="text-sm"
+          currentDescriptionClassName="text-sm text-primary"
         />
       </div>
 
@@ -102,8 +139,11 @@ export function CharacterTimelineDisplay({ events }: { events: TimelineEventItem
                   >
                     {event.label}
                   </td>
-                  <td className={"py-2 leading-relaxed " + (isCurrent ? "text-primary" : "")}>
-                    {event.description}
+                  <td className="py-2 leading-relaxed align-top">
+                    <ExpandableDescription
+                      event={event}
+                      className={isCurrent ? "text-primary" : ""}
+                    />
                   </td>
                 </tr>
               );
@@ -119,8 +159,8 @@ export function CharacterTimelineDisplay({ events }: { events: TimelineEventItem
           events={events}
           labelClassName="text-xs uppercase tracking-wide text-muted-foreground"
           currentLabelClassName="text-xs uppercase tracking-wide text-primary"
-          descriptionClassName="mt-0.5 text-sm"
-          currentDescriptionClassName="mt-0.5 text-sm text-primary"
+          descriptionClassName="text-sm"
+          currentDescriptionClassName="text-sm text-primary"
         />
       </div>
 
@@ -140,9 +180,12 @@ export function CharacterTimelineDisplay({ events }: { events: TimelineEventItem
                 >
                   {event.label}
                 </b>
-                <span className={isCurrent ? "text-primary" : undefined}>
-                  {event.description}
-                </span>
+                <div className="flex-1">
+                  <ExpandableDescription
+                    event={event}
+                    className={isCurrent ? "text-primary" : ""}
+                  />
+                </div>
               </div>
             );
           })}
@@ -156,8 +199,8 @@ export function CharacterTimelineDisplay({ events }: { events: TimelineEventItem
           events={events}
           labelClassName="text-sm text-muted-foreground"
           currentLabelClassName="text-sm text-primary"
-          descriptionClassName="mt-0.5 text-sm"
-          currentDescriptionClassName="mt-0.5 text-sm text-primary"
+          descriptionClassName="text-sm"
+          currentDescriptionClassName="text-sm text-primary"
         />
       </div>
 
@@ -179,9 +222,10 @@ export function CharacterTimelineDisplay({ events }: { events: TimelineEventItem
                   >
                     {event.label}
                   </div>
-                  <p className={"mt-0.5 text-sm " + (isCurrent ? "text-primary" : "")}>
-                    {event.description}
-                  </p>
+                  <ExpandableDescription
+                    event={event}
+                    className={"mt-0.5 text-sm " + (isCurrent ? "text-primary" : "")}
+                  />
                 </div>
               );
             })}
@@ -212,9 +256,10 @@ export function CharacterTimelineDisplay({ events }: { events: TimelineEventItem
                 >
                   {event.label}
                 </div>
-                <div className={"text-sm " + (isCurrent ? "text-primary" : "")}>
-                  {event.description}
-                </div>
+                <ExpandableDescription
+                  event={event}
+                  className={"text-sm " + (isCurrent ? "text-primary" : "")}
+                />
               </div>
             );
           })}
@@ -229,8 +274,8 @@ export function CharacterTimelineDisplay({ events }: { events: TimelineEventItem
           dotStyle="star"
           labelClassName="text-sm italic text-muted-foreground"
           currentLabelClassName="text-sm italic text-primary"
-          descriptionClassName="mt-0.5 text-sm"
-          currentDescriptionClassName="mt-0.5 text-sm text-primary"
+          descriptionClassName="text-sm"
+          currentDescriptionClassName="text-sm text-primary"
         />
       </div>
     </>

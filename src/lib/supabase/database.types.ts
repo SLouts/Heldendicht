@@ -475,6 +475,8 @@ export type Database = {
           node_id: string;
           label: string;
           description: string;
+          content: string;
+          image_path: string | null;
           order_index: number;
           created_at: string;
           updated_at: string;

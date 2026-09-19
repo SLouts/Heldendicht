@@ -5,7 +5,6 @@ import { getAttachmentSignedUrl } from "@/lib/attachments";
 import { getNodeMediaSignedUrl } from "@/lib/nodeMedia";
 import { WikiLinkContent } from "@/app/dashboard/worlds/[slug]/nodes/[nodeSlug]/WikiLinkContent";
 import { NodeSectionsEditor } from "@/app/dashboard/worlds/[slug]/nodes/[nodeSlug]/NodeSectionsEditor";
-import { CharacterTimelineEditor } from "@/app/dashboard/worlds/[slug]/nodes/[nodeSlug]/CharacterTimelineEditor";
 import { CharacterTimelineDisplay } from "@/app/dashboard/worlds/[slug]/nodes/[nodeSlug]/CharacterTimelineDisplay";
 import { CharacterFieldsDisplay } from "@/app/dashboard/worlds/[slug]/nodes/[nodeSlug]/CharacterFieldsForm";
 import { NodeIdentityCard } from "@/app/dashboard/worlds/[slug]/nodes/[nodeSlug]/NodeIdentityCard";
@@ -102,7 +101,7 @@ export default async function PublicNodeDetailPage({
     node.node_type === "character"
       ? supabase
           .from("character_timeline_events")
-          .select("id, label, description")
+          .select("id, label, description, content, image_path")
           .eq("node_id", node.id)
           .order("order_index", { ascending: true })
       : Promise.resolve({ data: null }),
@@ -158,6 +157,16 @@ export default async function PublicNodeDetailPage({
     getNodeMediaSignedUrl(character?.avatar_path ?? null),
     getNodeMediaSignedUrl(character?.illustration_path ?? null),
   ]);
+
+  const timelineEventItems = await Promise.all(
+    (timelineEvents ?? []).map(async (e) => ({
+      id: e.id,
+      label: e.label,
+      description: e.description,
+      content: e.content,
+      imageUrl: await getNodeMediaSignedUrl(e.image_path),
+    })),
+  );
 
   return (
     <div className="mx-auto w-full max-w-2xl flex-1 px-6 py-12">
@@ -233,18 +242,8 @@ export default async function PublicNodeDetailPage({
 
       {node.node_type === "character" && (
         <div className="mt-10">
-          <CharacterTimelineDisplay events={timelineEvents ?? []} />
+          <CharacterTimelineDisplay events={timelineEventItems} />
         </div>
-      )}
-
-      {node.node_type === "character" && (
-        <CharacterTimelineEditor
-          nodeId={node.id}
-          worldSlug={world.slug}
-          nodeSlug={node.slug}
-          canEdit={false}
-          events={timelineEvents ?? []}
-        />
       )}
     </div>
   );

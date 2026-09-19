@@ -5,6 +5,7 @@ export const NODE_MEDIA_BUCKET = "node-media";
 export const NODE_ILLUSTRATION_MAX_BYTES = 8 * 1024 * 1024;
 export const NODE_AVATAR_MAX_BYTES = 3 * 1024 * 1024;
 export const NODE_IMAGE_MAX_BYTES = 8 * 1024 * 1024;
+export const NODE_TIMELINE_IMAGE_MAX_BYTES = 8 * 1024 * 1024;
 export const NODE_MEDIA_ALLOWED_TYPES: Record<string, string> = {
   "image/png": "png",
   "image/jpeg": "jpg",

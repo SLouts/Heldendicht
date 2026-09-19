@@ -3,12 +3,21 @@
 import { revalidatePath } from "next/cache";
 import * as z from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { requireUser } from "@/lib/dal";
+import {
+  NODE_MEDIA_BUCKET,
+  NODE_TIMELINE_IMAGE_MAX_BYTES,
+  NODE_MEDIA_ALLOWED_TYPES,
+} from "@/lib/nodeMedia";
 
 export type TimelineEventFormState =
   | { error: string }
   | { fieldErrors: Record<string, string[]> }
   | undefined;
+export type UploadTicketResult =
+  | { error: string }
+  | { path: string; token: string };
 
 const TimelineEventSchema = z.object({
   label: z
@@ -21,6 +30,7 @@ const TimelineEventSchema = z.object({
     .trim()
     .min(1, { error: "請輸入這個時間點發生的事" })
     .max(500, { error: "描述最多 500 字" }),
+  content: z.string().trim().max(3000, { error: "內文最多 3000 字" }),
 });
 
 /**
@@ -49,6 +59,7 @@ export async function createTimelineEvent(
   const parsed = TimelineEventSchema.safeParse({
     label: formData.get("label") ?? "",
     description: formData.get("description") ?? "",
+    content: formData.get("content") ?? "",
   });
   if (!parsed.success) {
     return { fieldErrors: parsed.error.flatten().fieldErrors };
@@ -77,6 +88,7 @@ export async function createTimelineEvent(
     node_id: nodeId,
     label: parsed.data.label,
     description: parsed.data.description,
+    content: parsed.data.content,
     order_index: (last?.order_index ?? -1) + 1,
   });
   if (error) {
@@ -108,6 +120,7 @@ export async function updateTimelineEvent(
   const parsed = TimelineEventSchema.safeParse({
     label: formData.get("label") ?? "",
     description: formData.get("description") ?? "",
+    content: formData.get("content") ?? "",
   });
   if (!parsed.success) {
     return { fieldErrors: parsed.error.flatten().fieldErrors };
@@ -120,6 +133,7 @@ export async function updateTimelineEvent(
       {
         label: parsed.data.label,
         description: parsed.data.description,
+        content: parsed.data.content,
         updated_at: new Date().toISOString(),
       },
       { count: "exact" },
@@ -191,6 +205,125 @@ export async function moveTimelineEvent(
   ]);
   if (e1 || e2) {
     throw new Error("排序失敗,請稍後再試");
+  }
+
+  revalidatePath(`/dashboard/worlds/${worldSlug}/nodes/${nodeSlug}`);
+  revalidatePath(`/worlds/${worldSlug}/nodes/${nodeSlug}`);
+}
+
+/**
+ * 時間點的配圖——跟頭貼/立繪同一個 node-media bucket(private + signed
+ * URL),路徑用 `${node_id}/timeline-${event_id}-...` 區分,不會跟其他
+ * 時間點或頭貼/立繪互相覆蓋。權限用時間點自己的 node_id 查
+ * can_edit_node,不额外查 node_type(能新增時間點就代表已經是角色節點)。
+ */
+async function requireTimelineEventEditAccess(eventId: string) {
+  const supabase = await createClient();
+  const { data: event } = await supabase
+    .from("character_timeline_events")
+    .select("node_id, image_path")
+    .eq("id", eventId)
+    .maybeSingle();
+  if (!event) {
+    return { supabase, ok: false as const, error: "找不到這個時間點" };
+  }
+  const { data: canEdit } = await supabase.rpc("can_edit_node", {
+    p_node_id: event.node_id,
+  });
+  if (!canEdit) {
+    return { supabase, ok: false as const, error: "沒有編輯這個節點的權限" };
+  }
+  return {
+    supabase,
+    ok: true as const,
+    nodeId: event.node_id,
+    oldImagePath: event.image_path,
+  };
+}
+
+export async function createTimelineEventImageUploadTicket(
+  eventId: string,
+  contentType: string,
+  fileSize: number,
+): Promise<UploadTicketResult> {
+  await requireUser();
+
+  if (fileSize <= 0) {
+    return { error: "請選擇一張圖片" };
+  }
+  if (fileSize > NODE_TIMELINE_IMAGE_MAX_BYTES) {
+    return { error: `圖片不能超過 ${Math.round(NODE_TIMELINE_IMAGE_MAX_BYTES / (1024 * 1024))}MB` };
+  }
+  const ext = NODE_MEDIA_ALLOWED_TYPES[contentType];
+  if (!ext) {
+    return { error: "只接受 PNG / JPEG / WebP 圖片" };
+  }
+
+  const { ok, error, nodeId } = await requireTimelineEventEditAccess(eventId);
+  if (!ok || !nodeId) return { error: error ?? "沒有編輯權限" };
+
+  const admin = createAdminClient();
+  const path = `${nodeId}/timeline-${eventId}-${Date.now()}.${ext}`;
+  const { data, error: signError } = await admin.storage
+    .from(NODE_MEDIA_BUCKET)
+    .createSignedUploadUrl(path);
+  if (signError || !data) {
+    return { error: "無法建立上傳票券,請稍後再試" };
+  }
+
+  return { path: data.path, token: data.token };
+}
+
+export async function finalizeTimelineEventImage(
+  eventId: string,
+  worldSlug: string,
+  nodeSlug: string,
+  path: string,
+): Promise<TimelineEventFormState> {
+  const { supabase, ok, error, oldImagePath } =
+    await requireTimelineEventEditAccess(eventId);
+  if (!ok) return { error: error ?? "沒有編輯權限" };
+
+  const { error: updateError, count } = await supabase
+    .from("character_timeline_events")
+    .update({ image_path: path }, { count: "exact" })
+    .eq("id", eventId);
+  if (updateError || count === 0) {
+    const admin = createAdminClient();
+    await admin.storage.from(NODE_MEDIA_BUCKET).remove([path]);
+    return { error: "更新失敗,請稍後再試" };
+  }
+
+  if (oldImagePath) {
+    const admin = createAdminClient();
+    await admin.storage.from(NODE_MEDIA_BUCKET).remove([oldImagePath]);
+  }
+
+  revalidatePath(`/dashboard/worlds/${worldSlug}/nodes/${nodeSlug}`);
+  revalidatePath(`/worlds/${worldSlug}/nodes/${nodeSlug}`);
+  return undefined;
+}
+
+export async function removeTimelineEventImage(
+  eventId: string,
+  worldSlug: string,
+  nodeSlug: string,
+): Promise<void> {
+  const { supabase, ok, error, oldImagePath } =
+    await requireTimelineEventEditAccess(eventId);
+  if (!ok) throw new Error(error ?? "沒有編輯權限");
+
+  const { error: updateError, count } = await supabase
+    .from("character_timeline_events")
+    .update({ image_path: null }, { count: "exact" })
+    .eq("id", eventId);
+  if (updateError || count === 0) {
+    throw new Error("移除失敗,請稍後再試");
+  }
+
+  if (oldImagePath) {
+    const admin = createAdminClient();
+    await admin.storage.from(NODE_MEDIA_BUCKET).remove([oldImagePath]);
   }
 
   revalidatePath(`/dashboard/worlds/${worldSlug}/nodes/${nodeSlug}`);

@@ -125,7 +125,7 @@ export default async function NodeDetailPage({
     node.node_type === "character"
       ? supabase
           .from("character_timeline_events")
-          .select("id, label, description")
+          .select("id, label, description, content, image_path")
           .eq("node_id", node.id)
           .order("order_index", { ascending: true })
       : Promise.resolve({ data: null }),
@@ -194,6 +194,16 @@ export default async function NodeDetailPage({
     getNodeMediaSignedUrl(character?.avatar_path ?? null),
     getNodeMediaSignedUrl(character?.illustration_path ?? null),
   ]);
+
+  const timelineEventItems = await Promise.all(
+    (timelineEvents ?? []).map(async (e) => ({
+      id: e.id,
+      label: e.label,
+      description: e.description,
+      content: e.content,
+      imageUrl: await getNodeMediaSignedUrl(e.image_path),
+    })),
+  );
 
   return (
     <div className="max-w-2xl">
@@ -364,7 +374,7 @@ export default async function NodeDetailPage({
 
       {node.node_type === "character" && (
         <div className="mt-10">
-          <CharacterTimelineDisplay events={timelineEvents ?? []} />
+          <CharacterTimelineDisplay events={timelineEventItems} />
         </div>
       )}
 
@@ -374,7 +384,7 @@ export default async function NodeDetailPage({
           worldSlug={world.slug}
           nodeSlug={node.slug}
           canEdit={canEdit}
-          events={timelineEvents ?? []}
+          events={timelineEventItems}
         />
       )}
 

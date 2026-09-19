@@ -7,16 +7,23 @@ import {
   moveTimelineEvent,
   updateTimelineEvent,
 } from "@/lib/actions/characterTimeline";
+import { TimelineEventImageUpload } from "./TimelineEventImageUpload";
 
 export type TimelineEventItem = {
   id: string;
   label: string;
+  /** 常駐顯示的簡短標題,CharacterTimelineDisplay 點開/展開前看到的那行。 */
   description: string;
+  /** 展開才看到的長文內容,選填。 */
+  content: string;
+  /** 展開才看到的配圖,選填。 */
+  imageUrl: string | null;
 };
 
 /**
- * Phase 1:陽春的清單編輯器,不分美術方向。八主題的正式顯示樣式留給
- * Phase 2 的另一個 display 元件,這裡只負責新增/編輯/排序/刪除。
+ * 陽春的管理清單,不分美術方向——八主題的正式顯示樣式(含展開內文/配圖)
+ * 是另一個 display 元件(CharacterTimelineDisplay),這裡只負責新增/
+ * 編輯/排序/刪除,以及配圖上傳(見 TimelineEventImageUpload)。
  */
 function TimelineEventRow({
   event,
@@ -63,7 +70,15 @@ function TimelineEventRow({
           <textarea
             name="description"
             defaultValue={event.description}
-            rows={3}
+            placeholder="簡短描述(標題),常駐顯示"
+            rows={2}
+            className="rounded-lg border border-border bg-background px-3 py-1.5 text-sm"
+          />
+          <textarea
+            name="content"
+            defaultValue={event.content}
+            placeholder="內文(選填,展開才會看到)"
+            rows={4}
             className="rounded-lg border border-border bg-background px-3 py-1.5 text-sm"
           />
           {state && "error" in state && (
@@ -101,6 +116,21 @@ function TimelineEventRow({
       <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">
         {event.description}
       </p>
+      {event.content && (
+        <p className="mt-1 whitespace-pre-wrap text-xs text-muted-foreground">
+          內文:{event.content}
+        </p>
+      )}
+      {canEdit && (
+        <div className="mt-3 border-t border-border pt-2">
+          <TimelineEventImageUpload
+            eventId={event.id}
+            worldSlug={worldSlug}
+            nodeSlug={nodeSlug}
+            imageUrl={event.imageUrl}
+          />
+        </div>
+      )}
       {canEdit && (
         <div className="mt-3 flex flex-wrap gap-3 border-t border-border pt-2 text-xs">
           <button
@@ -221,8 +251,14 @@ export function CharacterTimelineEditor({
           />
           <textarea
             name="description"
-            placeholder="這個時間點發生的事"
+            placeholder="簡短描述(標題),常駐顯示"
             rows={2}
+            className="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm"
+          />
+          <textarea
+            name="content"
+            placeholder="內文(選填,展開才會看到;配圖請先新增後在下面上傳)"
+            rows={3}
             className="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm"
           />
           {createState && "error" in createState && (

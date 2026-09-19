@@ -12,28 +12,6 @@ export default async function Home() {
 
   return (
     <div className="flex flex-1 flex-col bg-background">
-      <header className="border-b border-border">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-          <span className="font-display text-xl font-semibold tracking-wide">
-            Heldendicht
-          </span>
-          <nav className="flex gap-4 text-sm">
-            <Link href="/worlds" className="hover:underline">
-              探索世界觀
-            </Link>
-            <Link href="/login" className="hover:underline">
-              登入
-            </Link>
-            <Link
-              href="/signup"
-              className="rounded-lg bg-primary px-3 py-1.5 text-primary-foreground transition hover:bg-primary-hover"
-            >
-              註冊
-            </Link>
-          </nav>
-        </div>
-      </header>
-
       <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-12">
         <h1 className="text-3xl font-semibold tracking-tight">
           歡迎來到多世界觀企劃站

@@ -202,6 +202,18 @@ export default async function PublicNodeDetailPage({
           <NodeIdentityCard {...identityCardProps} />
           <NodeIdentityCardDesktop {...identityCardProps} />
 
+          {node.node_type === "character" && nodeImageUrl && (
+            <div className="mt-4 flex flex-col items-center gap-1">
+              <span className="text-xs text-muted-foreground">代表圖</span>
+              {/* eslint-disable-next-line @next/next/no-img-element -- signed URL,無法用 next/image 白名單網域 */}
+              <img
+                src={nodeImageUrl}
+                alt=""
+                className="w-full max-w-[220px] rounded-lg border border-border object-cover"
+              />
+            </div>
+          )}
+
           {node.node_type === "character" && (
             <CharacterFieldsDisplay fields={characterFields} />
           )}

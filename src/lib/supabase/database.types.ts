@@ -551,6 +551,44 @@ export type Database = {
           },
         ];
       };
+      site_rule_fields: {
+        Row: {
+          id: string;
+          label: string;
+          content: string;
+          order_index: number;
+          created_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["site_rule_fields"]["Row"]> & {
+          label: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["site_rule_fields"]["Row"]>;
+        Relationships: [];
+      };
+      world_rule_fields: {
+        Row: {
+          id: string;
+          world_id: string;
+          label: string;
+          content: string;
+          order_index: number;
+          created_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["world_rule_fields"]["Row"]> & {
+          world_id: string;
+          label: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["world_rule_fields"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "world_rule_fields_world_id_fkey";
+            columns: ["world_id"];
+            isOneToOne: false;
+            referencedRelation: "worlds";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       relationships: {
         Row: {
           id: string;

@@ -204,6 +204,14 @@ export default async function WorldDashboardPage({
         )}
         {isStaff && (
           <Link
+            href={`/dashboard/worlds/${world.slug}/rules`}
+            className="rounded-md px-3 py-1.5 hover:bg-surface hover:underline"
+          >
+            世界觀規則
+          </Link>
+        )}
+        {isStaff && (
+          <Link
             href={`/dashboard/worlds/${world.slug}/categories`}
             className="rounded-md px-3 py-1.5 hover:bg-surface hover:underline"
           >

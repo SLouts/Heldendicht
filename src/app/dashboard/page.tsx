@@ -66,6 +66,9 @@ export default async function DashboardPage() {
           <Link href="/dashboard/admin/reset-password" className="ml-3 underline">
             手動重設密碼
           </Link>
+          <Link href="/dashboard/admin/rules" className="ml-3 underline">
+            全站規則
+          </Link>
         </p>
       )}
     </div>

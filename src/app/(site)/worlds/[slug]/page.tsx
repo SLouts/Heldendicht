@@ -79,6 +79,8 @@ export default async function WorldPage({
     { data: categories },
     { data: layers },
     { data: mapNodes },
+    { data: siteRules },
+    { data: worldRules },
     bannerUrl,
     iconUrl,
   ] = await Promise.all([
@@ -114,6 +116,15 @@ export default async function WorldPage({
       )
       .eq("world_id", world.id)
       .not("map_x", "is", null),
+    supabase
+      .from("site_rule_fields")
+      .select("id, label, content")
+      .order("order_index", { ascending: true }),
+    supabase
+      .from("world_rule_fields")
+      .select("id, label, content")
+      .eq("world_id", world.id)
+      .order("order_index", { ascending: true }),
     getWorldMediaSignedUrl(world.banner_path),
     getWorldMediaSignedUrl(world.icon_path),
   ]);
@@ -180,6 +191,23 @@ export default async function WorldPage({
         <p className="mt-4 max-w-2xl whitespace-pre-wrap text-sm text-muted-foreground">
           {world.description}
         </p>
+      )}
+
+      {((siteRules?.length ?? 0) > 0 || (worldRules?.length ?? 0) > 0) && (
+        <section className="mt-8">
+          <CollapsibleSection
+            title="規則"
+            count={(siteRules?.length ?? 0) + (worldRules?.length ?? 0)}
+            description="投稿或使用這個網站/這個世界觀要遵守的規定、授權或權利聲明"
+          >
+            <ul className="mt-3 flex flex-col divide-y divide-border">
+              {worldRules?.map((rule) => <RuleFieldItem key={rule.id} rule={rule} />)}
+              {siteRules?.map((rule) => (
+                <RuleFieldItem key={rule.id} rule={rule} scopeLabel="全站" />
+              ))}
+            </ul>
+          </CollapsibleSection>
+        </section>
       )}
 
       {hasVisibleMap && (
@@ -394,5 +422,27 @@ function RelationshipList({
         );
       })}
     </ul>
+  );
+}
+
+function RuleFieldItem({
+  rule,
+  scopeLabel,
+}: {
+  rule: { id: string; label: string; content: string };
+  scopeLabel?: string;
+}) {
+  return (
+    <li className="py-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="font-medium">{rule.label}</span>
+        {scopeLabel && (
+          <span className="rounded-full bg-badge-neutral-bg px-2 py-0.5 text-xs text-badge-neutral-fg">
+            {scopeLabel}
+          </span>
+        )}
+      </div>
+      <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{rule.content}</p>
+    </li>
   );
 }

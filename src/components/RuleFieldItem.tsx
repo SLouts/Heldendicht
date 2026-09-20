@@ -1,7 +1,7 @@
-import { MarkdownLinkText } from "./MarkdownLinkText";
+import { MarkdownText } from "./MarkdownText";
 
 /** 一則規則(標題+說明文字),世界觀規則清單/全站規則頁共用。內文支援
- * markdown 連結語法 [文字](網址)。 */
+ * 簡易 markdown:段落、清單、粗體、斜體、[文字](網址) 連結。 */
 export function RuleFieldItem({
   rule,
   scopeLabel,
@@ -19,9 +19,9 @@ export function RuleFieldItem({
           </span>
         )}
       </div>
-      <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">
-        <MarkdownLinkText text={rule.content} />
-      </p>
+      <div className="mt-1">
+        <MarkdownText text={rule.content} />
+      </div>
     </li>
   );
 }

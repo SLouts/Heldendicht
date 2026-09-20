@@ -7,7 +7,7 @@ import {
   moveSiteRuleField,
   updateSiteRuleField,
 } from "@/lib/actions/siteRuleFields";
-import { MarkdownLinkText } from "@/components/MarkdownLinkText";
+import { MarkdownText } from "@/components/MarkdownText";
 
 export type RuleFieldItem = { id: string; label: string; content: string };
 
@@ -46,7 +46,7 @@ function FieldItem({
           rows={4}
           className="rounded-lg border border-border bg-background px-2 py-1.5 text-sm"
         />
-        <p className="text-xs text-muted-foreground">支援 [文字](網址) 連結語法。</p>
+        <p className="text-xs text-muted-foreground">支援簡易 markdown:段落、- 清單、**粗體**、*斜體*、[文字](網址) 連結。</p>
         <div className="flex items-center gap-2">
           <button
             type="submit"
@@ -108,9 +108,9 @@ function FieldItem({
           </button>
         </div>
       </div>
-      <p className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">
-        <MarkdownLinkText text={field.content} />
-      </p>
+      <div className="mt-2">
+        <MarkdownText text={field.content} />
+      </div>
     </div>
   );
 }
@@ -160,7 +160,7 @@ export function SiteRuleFieldsEditor({ fields }: { fields: RuleFieldItem[] }) {
           rows={3}
           className="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm"
         />
-        <p className="text-xs text-muted-foreground">支援 [文字](網址) 連結語法。</p>
+        <p className="text-xs text-muted-foreground">支援簡易 markdown:段落、- 清單、**粗體**、*斜體*、[文字](網址) 連結。</p>
         <button
           type="submit"
           disabled={createPending}

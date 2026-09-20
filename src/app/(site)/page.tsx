@@ -86,6 +86,20 @@ export default async function Home() {
           <p className="mt-4 text-lg text-muted-foreground">
             跟其他玩家一起建立世界觀、經營角色,把設定跟故事留在同一個地方。
           </p>
+          <p className="mx-auto mt-4 max-w-2xl text-xs text-muted-foreground">
+            Heldendicht 目前處於系統建置與公開測試階段。本站所有展示資料皆為測試用途,平台不對資料遺失、異常或非預期之系統變更負擔保責任,請創作者務必自行保留本地備份。投稿或瀏覽前請先閱讀
+            <Link href="/rules" className="underline underline-offset-2 hover:text-foreground">
+              全站規則
+            </Link>
+            ,若有系統問題或意見反饋,歡迎來信至{" "}
+            <a
+              href="mailto:heldendicht.cit@gmail.com"
+              className="underline underline-offset-2 hover:text-foreground"
+            >
+              heldendicht.cit@gmail.com
+            </a>
+            。
+          </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <Link
               href="/worlds"
@@ -154,25 +168,6 @@ export default async function Home() {
             )}
           </div>
         </section>
-
-        <footer className="mt-16 border-t border-border pt-8 pb-4 text-center text-sm text-muted-foreground">
-          <p>目前為測試營運階段,請創作者自行保留備份,以免資料異動造成損失。</p>
-          <p className="mt-2">
-            站務信箱:
-            <a
-              href="mailto:heldendicht.cit@gmail.com"
-              className="ml-1 underline underline-offset-2 hover:text-foreground"
-            >
-              heldendicht.cit@gmail.com
-            </a>
-          </p>
-          <Link
-            href="/rules"
-            className="mt-4 inline-block rounded-lg border border-border px-4 py-1.5 text-xs transition hover:bg-surface"
-          >
-            查看全站規則
-          </Link>
-        </footer>
       </main>
     </div>
   );

@@ -12,6 +12,7 @@ import {
 } from "next/font/google";
 import Script from "next/script";
 import { ArtThemeSwitcher } from "@/components/ArtThemeSwitcher";
+import { SiteFooter } from "@/components/SiteFooter";
 import { ART_THEME_ATTR, ART_THEME_IDS, ART_THEME_STORAGE_KEY } from "@/lib/artTheme";
 import "./globals.css";
 
@@ -87,6 +88,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           {bootstrapArtTheme}
         </Script>
         {children}
+        <SiteFooter />
         <ArtThemeSwitcher />
       </body>
     </html>

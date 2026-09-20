@@ -154,6 +154,25 @@ export default async function Home() {
             )}
           </div>
         </section>
+
+        <footer className="mt-16 border-t border-border pt-8 pb-4 text-center text-sm text-muted-foreground">
+          <p>目前為測試營運階段,請創作者自行保留備份,以免資料異動造成損失。</p>
+          <p className="mt-2">
+            站務信箱:
+            <a
+              href="mailto:heldendicht.cit@gmail.com"
+              className="ml-1 underline underline-offset-2 hover:text-foreground"
+            >
+              heldendicht.cit@gmail.com
+            </a>
+          </p>
+          <Link
+            href="/rules"
+            className="mt-4 inline-block rounded-lg border border-border px-4 py-1.5 text-xs transition hover:bg-surface"
+          >
+            查看全站規則
+          </Link>
+        </footer>
       </main>
     </div>
   );

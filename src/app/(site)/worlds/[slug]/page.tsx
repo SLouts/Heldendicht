@@ -10,6 +10,7 @@ import WorldMapView, {
 import { WorldHero } from "@/app/dashboard/worlds/[slug]/WorldHero";
 import { NavMenu } from "@/components/NavMenu";
 import { CollapsibleSection } from "@/components/CollapsibleSection";
+import { RuleFieldItem } from "@/components/RuleFieldItem";
 import { NODE_TYPE_LABEL, FALLBACK_NODE_TYPE_ORDER } from "@/lib/nodeTypeLabels";
 import type { Database } from "@/lib/supabase/database.types";
 
@@ -425,24 +426,3 @@ function RelationshipList({
   );
 }
 
-function RuleFieldItem({
-  rule,
-  scopeLabel,
-}: {
-  rule: { id: string; label: string; content: string };
-  scopeLabel?: string;
-}) {
-  return (
-    <li className="py-3">
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="font-medium">{rule.label}</span>
-        {scopeLabel && (
-          <span className="rounded-full bg-badge-neutral-bg px-2 py-0.5 text-xs text-badge-neutral-fg">
-            {scopeLabel}
-          </span>
-        )}
-      </div>
-      <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{rule.content}</p>
-    </li>
-  );
-}

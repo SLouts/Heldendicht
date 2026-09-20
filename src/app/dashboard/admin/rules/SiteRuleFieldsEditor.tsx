@@ -7,6 +7,7 @@ import {
   moveSiteRuleField,
   updateSiteRuleField,
 } from "@/lib/actions/siteRuleFields";
+import { MarkdownLinkText } from "@/components/MarkdownLinkText";
 
 export type RuleFieldItem = { id: string; label: string; content: string };
 
@@ -45,6 +46,7 @@ function FieldItem({
           rows={4}
           className="rounded-lg border border-border bg-background px-2 py-1.5 text-sm"
         />
+        <p className="text-xs text-muted-foreground">支援 [文字](網址) 連結語法。</p>
         <div className="flex items-center gap-2">
           <button
             type="submit"
@@ -106,7 +108,9 @@ function FieldItem({
           </button>
         </div>
       </div>
-      <p className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">{field.content}</p>
+      <p className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">
+        <MarkdownLinkText text={field.content} />
+      </p>
     </div>
   );
 }
@@ -156,6 +160,7 @@ export function SiteRuleFieldsEditor({ fields }: { fields: RuleFieldItem[] }) {
           rows={3}
           className="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm"
         />
+        <p className="text-xs text-muted-foreground">支援 [文字](網址) 連結語法。</p>
         <button
           type="submit"
           disabled={createPending}

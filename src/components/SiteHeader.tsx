@@ -22,7 +22,7 @@ export async function SiteHeader() {
         </Link>
         <nav className="flex items-center gap-4 text-sm">
           <Link href="/worlds" className="hover:underline">
-            探索世界觀
+            探索公開世界觀
           </Link>
           {user ? (
             <Link

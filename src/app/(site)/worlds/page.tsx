@@ -10,7 +10,7 @@ export default async function WorldsPage() {
 
   return (
     <div className="mx-auto w-full max-w-5xl flex-1 px-6 py-12">
-      <h1 className="text-2xl font-semibold">探索世界觀</h1>
+      <h1 className="text-2xl font-semibold">探索公開世界觀</h1>
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {worlds?.map((world) => (
           <Link

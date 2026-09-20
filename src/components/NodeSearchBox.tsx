@@ -10,7 +10,14 @@ import type { NodeType } from "@/lib/supabase/database.types";
 const NODE_TYPE_FILTER_ORDER: NodeType[] = ["character", ...FALLBACK_NODE_TYPE_ORDER];
 const DEBOUNCE_MS = 300;
 
-export function NodeSearchBox({ worldId, worldSlug }: { worldId: string; worldSlug: string }) {
+export function NodeSearchBox({
+  worldId,
+  basePath,
+}: {
+  worldId: string;
+  /** 搜尋結果連去哪個前綴——公開頁面用 /worlds/[slug]/nodes,後台頁面用 /dashboard/worlds/[slug]/nodes。 */
+  basePath: string;
+}) {
   const [query, setQuery] = useState("");
   const [nodeType, setNodeType] = useState<NodeType | "all">("all");
   const [results, setResults] = useState<NodeSearchResult[] | null>(null);
@@ -96,7 +103,7 @@ export function NodeSearchBox({ worldId, worldSlug }: { worldId: string; worldSl
           {results.map((result) => (
             <li key={result.id} className="py-3">
               <Link
-                href={`/worlds/${worldSlug}/nodes/${result.slug}`}
+                href={`${basePath}/${result.slug}`}
                 className="flex flex-wrap items-center gap-2 hover:underline"
               >
                 <span className="rounded-full bg-badge-info-bg px-2 py-0.5 text-xs text-badge-info-fg">

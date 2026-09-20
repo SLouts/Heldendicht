@@ -7,6 +7,7 @@ import { getWorldMapSignedUrl } from "@/lib/worldmap";
 import { NavMenu } from "@/components/NavMenu";
 import { CollapsibleSection } from "@/components/CollapsibleSection";
 import { NODE_TYPE_LABEL, FALLBACK_NODE_TYPE_ORDER } from "@/lib/nodeTypeLabels";
+import { NodeSearchBox } from "@/components/NodeSearchBox";
 import { WorldHero } from "./WorldHero";
 import WorldMapView, {
   type MapLayer,
@@ -243,6 +244,11 @@ export default async function WorldDashboardPage({
           </Link>
         )}
       </NavMenu>
+
+      <section className="mt-6">
+        <h2 className="text-xl font-semibold">搜尋這個世界觀</h2>
+        <NodeSearchBox worldId={world.id} basePath={`/dashboard/worlds/${world.slug}/nodes`} />
+      </section>
 
       {(hasVisibleMap || isStaff) && (
         <section className="mt-8">

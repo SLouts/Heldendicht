@@ -11,7 +11,7 @@ import { WorldHero } from "@/app/dashboard/worlds/[slug]/WorldHero";
 import { NavMenu } from "@/components/NavMenu";
 import { CollapsibleSection } from "@/components/CollapsibleSection";
 import { RuleFieldItem } from "@/components/RuleFieldItem";
-import { NodeSearchBox } from "./NodeSearchBox";
+import { NodeSearchBox } from "@/components/NodeSearchBox";
 import { NODE_TYPE_LABEL, FALLBACK_NODE_TYPE_ORDER } from "@/lib/nodeTypeLabels";
 import type { Database } from "@/lib/supabase/database.types";
 
@@ -191,7 +191,7 @@ export default async function WorldPage({
 
       <section className="mt-6">
         <h2 className="text-xl font-semibold">搜尋這個世界觀</h2>
-        <NodeSearchBox worldId={world.id} worldSlug={slug} />
+        <NodeSearchBox worldId={world.id} basePath={`/worlds/${slug}/nodes`} />
       </section>
 
       {world.description && (

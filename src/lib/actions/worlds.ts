@@ -70,7 +70,9 @@ export async function createWorld(
     };
   }
 
-  redirect(`/dashboard/worlds/${data.slug}`);
+  // ?new=1 讓世界觀首頁知道要顯示「接下來可以做什麼」的新手指引——只在
+  // 剛建立完成的這次導向帶上,之後從別的連結點進來都不會有這個參數。
+  redirect(`/dashboard/worlds/${data.slug}?new=1`);
 }
 
 const UpdateWorldSchema = CreateWorldSchema.omit({ slug: true }).extend({

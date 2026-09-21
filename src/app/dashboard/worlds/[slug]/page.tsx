@@ -18,6 +18,7 @@ import {
   type DashboardTypeGroup,
 } from "./WorldDirectoryTab";
 import type { MapNode, UnplacedNode } from "./worldmap/WorldMapView";
+import { NewWorldOnboarding } from "./NewWorldOnboarding";
 import { FALLBACK_NODE_TYPE_ORDER } from "@/lib/nodeTypeLabels";
 import { unwrapRelation } from "@/lib/unwrapRelation";
 
@@ -25,8 +26,11 @@ const RECENT_CHANGES_LIMIT = 8;
 
 export default async function WorldDashboardPage({
   params,
+  searchParams,
 }: PageProps<"/dashboard/worlds/[slug]">) {
   const { slug } = await params;
+  const sp = await searchParams;
+  const isNewlyCreated = sp.new === "1";
   const user = await requireUser();
   const supabase = await createClient();
 
@@ -217,6 +221,8 @@ export default async function WorldDashboardPage({
       <div className="mt-2">
         <WorldHero name={world.name} tagline={world.tagline} bannerUrl={bannerUrl} iconUrl={iconUrl} />
       </div>
+
+      {isNewlyCreated && <NewWorldOnboarding worldSlug={world.slug} />}
 
       <WorldQuickBar worldSlug={world.slug} />
 

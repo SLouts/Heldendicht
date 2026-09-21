@@ -521,6 +521,30 @@ export type Database = {
           },
         ];
       };
+      world_section_templates: {
+        Row: {
+          id: string;
+          world_id: string;
+          label: string;
+          order_index: number;
+          created_at: string;
+        };
+        Insert: Partial<
+          Database["public"]["Tables"]["world_section_templates"]["Row"]
+        > & { world_id: string; label: string };
+        Update: Partial<
+          Database["public"]["Tables"]["world_section_templates"]["Row"]
+        >;
+        Relationships: [
+          {
+            foreignKeyName: "world_section_templates_world_id_fkey";
+            columns: ["world_id"];
+            isOneToOne: false;
+            referencedRelation: "worlds";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       character_field_values: {
         Row: {
           node_id: string;

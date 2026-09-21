@@ -205,6 +205,14 @@ export default async function WorldDashboardPage({
         )}
         {isStaff && (
           <Link
+            href={`/dashboard/worlds/${world.slug}/section-templates`}
+            className="rounded-md px-3 py-1.5 hover:bg-surface hover:underline"
+          >
+            補充區塊範本
+          </Link>
+        )}
+        {isStaff && (
+          <Link
             href={`/dashboard/worlds/${world.slug}/rules`}
             className="rounded-md px-3 py-1.5 hover:bg-surface hover:underline"
           >

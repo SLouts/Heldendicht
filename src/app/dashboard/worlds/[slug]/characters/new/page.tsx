@@ -29,7 +29,7 @@ export default async function NewCharacterPage({
   ] = await Promise.all([
     supabase
       .from("world_character_fields")
-      .select("id, label")
+      .select("id, label, character_type")
       .eq("world_id", world.id)
       .order("order_index", { ascending: true }),
     supabase

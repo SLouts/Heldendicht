@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { createCharacter } from "@/lib/actions/characters";
 
 export function NewCharacterForm({
@@ -11,12 +11,18 @@ export function NewCharacterForm({
 }: {
   worldId: string;
   worldSlug: string;
-  characterFields: { id: string; label: string }[];
+  characterFields: { id: string; label: string; character_type: "pc" | "npc" | null }[];
   categories: { id: string; name: string; accepts_submissions: boolean }[];
 }) {
   const [state, formAction, pending] = useActionState(
     createCharacter,
     undefined,
+  );
+  const [characterType, setCharacterType] = useState<"pc" | "npc">("pc");
+
+  // 共用欄位(character_type 是 NULL)兩邊都出現,'pc'/'npc' 只在對應類型出現。
+  const visibleFields = characterFields.filter(
+    (f) => f.character_type === null || f.character_type === characterType,
   );
 
   return (
@@ -31,7 +37,8 @@ export function NewCharacterForm({
         <select
           id="characterType"
           name="characterType"
-          defaultValue="pc"
+          value={characterType}
+          onChange={(e) => setCharacterType(e.target.value as "pc" | "npc")}
           className="w-48 rounded-lg border border-border bg-surface px-3 py-2"
         >
           <option value="pc">PC(可遊玩角色,受配額限制)</option>
@@ -88,12 +95,12 @@ export function NewCharacterForm({
         </div>
       )}
 
-      {characterFields.length > 0 && (
+      {visibleFields.length > 0 && (
         <div className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-3">
           <p className="text-sm font-medium">
             這個世界觀要求角色都要填以下基本資料
           </p>
-          {characterFields.map((f) => (
+          {visibleFields.map((f) => (
             <div key={f.id} className="flex flex-col gap-1">
               <label htmlFor={`field_${f.id}`} className="text-sm font-medium">
                 {f.label}

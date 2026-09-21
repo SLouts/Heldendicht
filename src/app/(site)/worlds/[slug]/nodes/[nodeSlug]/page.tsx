@@ -94,7 +94,7 @@ export default async function PublicNodeDetailPage({
     node.node_type === "character"
       ? supabase
           .from("world_character_fields")
-          .select("id, label")
+          .select("id, label, character_type")
           .eq("world_id", world.id)
           .order("order_index", { ascending: true })
       : Promise.resolve({ data: null }),
@@ -131,11 +131,16 @@ export default async function PublicNodeDetailPage({
   const valueByFieldId = new Map(
     (characterFieldValues ?? []).map((v) => [v.field_id, v.value]),
   );
-  const characterFields = (characterFieldDefs ?? []).map((f) => ({
-    id: f.id,
-    label: f.label,
-    value: valueByFieldId.get(f.id) ?? "",
-  }));
+  // 共用欄位(character_type 是 NULL)兩邊都出現,'pc'/'npc' 只在對應類型出現。
+  const characterFields = (characterFieldDefs ?? [])
+    .filter(
+      (f) => f.character_type === null || f.character_type === character?.character_type,
+    )
+    .map((f) => ({
+      id: f.id,
+      label: f.label,
+      value: valueByFieldId.get(f.id) ?? "",
+    }));
 
   // wikilinks_select RLS 已經確保這裡拿到的 target 都是訪客看得到的節點
   // (rejected 的節點對非 creator/staff 一律不可見,不會出現在這裡)——

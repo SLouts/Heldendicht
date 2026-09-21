@@ -58,14 +58,19 @@ export async function createCharacter(
   // 這個世界觀要求角色填的必填欄位——用當下資料庫的清單重新驗證,
   // 不信任表單自己夾帶的欄位 id/名稱,避免有人繞過瀏覽器端的 required
   // 屬性送出空值。在真的建立節點之前就先擋下,不要留下欄位沒填的角色。
-  const { data: characterFields } = await supabase
+  const { data: allCharacterFields } = await supabase
     .from("world_character_fields")
-    .select("id, label")
+    .select("id, label, character_type")
     .eq("world_id", worldId)
     .order("order_index", { ascending: true });
 
+  // 共用欄位(character_type 是 NULL)兩邊都要填,'pc'/'npc' 只在對應類型才要填。
+  const characterFields = (allCharacterFields ?? []).filter(
+    (f) => f.character_type === null || f.character_type === characterType,
+  );
+
   const fieldValues: Record<string, string> = {};
-  for (const f of characterFields ?? []) {
+  for (const f of characterFields) {
     const v = formData.get(`field_${f.id}`);
     if (typeof v !== "string" || v.trim() === "") {
       return { error: `請填寫「${f.label}」` };
@@ -98,7 +103,7 @@ export async function createCharacter(
     return { error: error.code === "23505" ? "建立失敗,請稍後再試" : error.message };
   }
 
-  if (characterFields && characterFields.length > 0 && nodeId) {
+  if (characterFields.length > 0 && nodeId) {
     await setCharacterFieldValues(nodeId, worldSlug, characterFields, fieldValues);
   }
 

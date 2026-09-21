@@ -17,6 +17,11 @@ const LabelSchema = z
   .min(1, { error: "請輸入欄位名稱" })
   .max(30, { error: "欄位名稱最多 30 字" });
 
+/** 空字串代表「共用」(NULL,兩邊都適用),不是驗證失敗。 */
+const CharacterTypeSchema = z
+  .union([z.literal("pc"), z.literal("npc"), z.literal("")])
+  .transform((v) => (v === "" ? null : v));
+
 /**
  * 世界觀主辦/編輯自訂「角色必填欄位」模板——套用在這個世界觀底下所有
  * 角色節點(PC/NPC)的建立/編輯表單,玩家填角色資料時這些欄位都要填。
@@ -39,6 +44,12 @@ export async function createCharacterField(
   if (!parsed.success) {
     return { fieldErrors: { label: [parsed.error.issues[0].message] } };
   }
+  const characterTypeParsed = CharacterTypeSchema.safeParse(
+    formData.get("characterType") ?? "",
+  );
+  const characterType = characterTypeParsed.success
+    ? characterTypeParsed.data
+    : null;
 
   const supabase = await createClient();
   const { data: last } = await supabase
@@ -52,6 +63,7 @@ export async function createCharacterField(
   const { error } = await supabase.from("world_character_fields").insert({
     world_id: worldId,
     label: parsed.data,
+    character_type: characterType,
     order_index: (last?.order_index ?? -1) + 1,
   });
   if (error) {
@@ -83,11 +95,20 @@ export async function updateCharacterField(
   if (!parsed.success) {
     return { fieldErrors: { label: [parsed.error.issues[0].message] } };
   }
+  const characterTypeParsed = CharacterTypeSchema.safeParse(
+    formData.get("characterType") ?? "",
+  );
+  const characterType = characterTypeParsed.success
+    ? characterTypeParsed.data
+    : null;
 
   const supabase = await createClient();
   const { error, count } = await supabase
     .from("world_character_fields")
-    .update({ label: parsed.data }, { count: "exact" })
+    .update(
+      { label: parsed.data, character_type: characterType },
+      { count: "exact" },
+    )
     .eq("id", fieldId);
   if (error || count === 0) {
     return {

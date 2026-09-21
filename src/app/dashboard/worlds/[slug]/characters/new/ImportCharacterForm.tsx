@@ -13,7 +13,7 @@ export function ImportCharacterForm({
 }: {
   worldId: string;
   worldSlug: string;
-  characterFields: { id: string; label: string }[];
+  characterFields: { id: string; label: string; character_type: "pc" | "npc" | null }[];
   sectionTemplates: { id: string; label: string }[];
   categories: { id: string; name: string; accepts_submissions: boolean }[];
 }) {
@@ -22,8 +22,17 @@ export function ImportCharacterForm({
     undefined,
   );
   const [rawText, setRawText] = useState("");
+  const [characterType, setCharacterType] = useState<"pc" | "npc">("pc");
 
-  const fieldLabels = useMemo(() => characterFields.map((f) => f.label), [characterFields]);
+  // 共用欄位(character_type 是 NULL)兩邊都出現,'pc'/'npc' 只在對應類型出現。
+  const visibleFields = useMemo(
+    () =>
+      characterFields.filter(
+        (f) => f.character_type === null || f.character_type === characterType,
+      ),
+    [characterFields, characterType],
+  );
+  const fieldLabels = useMemo(() => visibleFields.map((f) => f.label), [visibleFields]);
   const sectionLabels = useMemo(() => sectionTemplates.map((t) => t.label), [sectionTemplates]);
 
   const preview = useMemo(
@@ -52,7 +61,8 @@ export function ImportCharacterForm({
         <select
           id="importCharacterType"
           name="characterType"
-          defaultValue="pc"
+          value={characterType}
+          onChange={(e) => setCharacterType(e.target.value as "pc" | "npc")}
           className="w-48 rounded-lg border border-border bg-surface px-3 py-2"
         >
           <option value="pc">PC(可遊玩角色,受配額限制)</option>
@@ -128,7 +138,7 @@ export function ImportCharacterForm({
                 </p>
                 {preview.fieldValues.length === 0 ? (
                   <p className="text-xs text-muted-foreground">
-                    無——{characterFields.length === 0 ? "這個世界觀還沒設定角色必填欄位" : "沒有比對到標籤"}
+                    無——{visibleFields.length === 0 ? "這個世界觀還沒設定角色必填欄位" : "沒有比對到標籤"}
                   </p>
                 ) : (
                   <ul className="mt-1 flex flex-col gap-0.5">

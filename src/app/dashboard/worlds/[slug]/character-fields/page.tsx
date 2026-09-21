@@ -2,13 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/dal";
 import { createClient } from "@/lib/supabase/server";
-import { OrderedLabelEditor } from "@/components/OrderedLabelEditor";
-import {
-  createCharacterField,
-  deleteCharacterField,
-  moveCharacterField,
-  updateCharacterField,
-} from "@/lib/actions/characterFields";
+import { CharacterFieldsEditor } from "./CharacterFieldsEditor";
 
 export default async function CharacterFieldsPage({
   params,
@@ -39,7 +33,7 @@ export default async function CharacterFieldsPage({
 
   const { data: fields } = await supabase
     .from("world_character_fields")
-    .select("id, label")
+    .select("id, label, character_type")
     .eq("world_id", world.id)
     .order("order_index", { ascending: true });
 
@@ -47,19 +41,13 @@ export default async function CharacterFieldsPage({
     <div>
       <BackLink slug={slug} />
       <h1 className="mt-2 text-2xl font-semibold">{world.name} 的角色必填欄位</h1>
-      <OrderedLabelEditor
+      <p className="mt-1 text-sm text-muted-foreground">
+        每個欄位可以設定成共用(PC/NPC 都適用),也可以限定只有 PC 或只有 NPC 的角色需要填。
+      </p>
+      <CharacterFieldsEditor
         worldId={world.id}
         worldSlug={world.slug}
         items={fields ?? []}
-        idFieldName="fieldId"
-        createAction={createCharacterField}
-        updateAction={updateCharacterField}
-        onDelete={deleteCharacterField}
-        onMove={moveCharacterField}
-        newSectionLabel="新增欄位"
-        newPlaceholder="例如「性別」"
-        emptyText="還沒有設定任何必填欄位。"
-        deleteConfirmText={(label) => `確定要刪除「${label}」這個必填欄位嗎?已經填過的角色資料也會一併清掉。`}
       />
     </div>
   );

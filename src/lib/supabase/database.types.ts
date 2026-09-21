@@ -507,6 +507,7 @@ export type Database = {
           id: string;
           world_id: string;
           label: string;
+          character_type: CharacterType | null;
           order_index: number;
           created_at: string;
         };

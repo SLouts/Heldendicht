@@ -56,10 +56,10 @@ export async function importCharacterFromText(
 
   const supabase = await createClient();
 
-  const [{ data: characterFields }, { data: sectionTemplates }] = await Promise.all([
+  const [{ data: allCharacterFields }, { data: sectionTemplates }] = await Promise.all([
     supabase
       .from("world_character_fields")
-      .select("id, label")
+      .select("id, label, character_type")
       .eq("world_id", worldId)
       .order("order_index", { ascending: true }),
     supabase
@@ -69,9 +69,14 @@ export async function importCharacterFromText(
       .order("order_index", { ascending: true }),
   ]);
 
+  // 共用欄位(character_type 是 NULL)兩邊都要比對,'pc'/'npc' 只在對應類型才比對。
+  const characterFields = (allCharacterFields ?? []).filter(
+    (f) => f.character_type === null || f.character_type === characterType,
+  );
+
   const result = parseCharacterImportText(
     rawText,
-    (characterFields ?? []).map((f) => f.label),
+    characterFields.map((f) => f.label),
     (sectionTemplates ?? []).map((t) => t.label),
   );
 
@@ -110,7 +115,7 @@ export async function importCharacterFromText(
     }
   }
 
-  if (result.fieldValues.length > 0 && characterFields) {
+  if (result.fieldValues.length > 0) {
     const labelToId = new Map(characterFields.map((f) => [f.label, f.id]));
     const rows = result.fieldValues
       .map((fv) => ({ node_id: nodeId, field_id: labelToId.get(fv.label), value: fv.value }))

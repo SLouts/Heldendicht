@@ -155,12 +155,15 @@ export function NodeSectionsEditor({
   nodeSlug,
   canEdit,
   sections,
+  hideHeading,
 }: {
   nodeId: string;
   worldSlug: string;
   nodeSlug: string;
   canEdit: boolean;
   sections: NodeSectionItem[];
+  /** 在分頁裡顯示時,分頁標籤本身已經說明是「補充區塊」,不用重複一次標題/說明。 */
+  hideHeading?: boolean;
 }) {
   const [createState, createAction, createPending] = useActionState(
     createNodeSection,
@@ -171,13 +174,17 @@ export function NodeSectionsEditor({
   if (sections.length === 0 && !canEdit) return null;
 
   return (
-    <section className="mt-10">
-      <h2 className="text-lg font-semibold">補充區塊</h2>
-      <p className="mt-1 text-sm text-muted-foreground">
-        像外表、技能、個人主線、時間線這類可以獨立收合的補充內容,跟上面的主要內文分開管理。
-      </p>
+    <section className={hideHeading ? undefined : "mt-10"}>
+      {!hideHeading && (
+        <>
+          <h2 className="text-lg font-semibold">補充區塊</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            像外表、技能、個人主線、時間線這類可以獨立收合的補充內容,跟上面的主要內文分開管理。
+          </p>
+        </>
+      )}
 
-      <div className="mt-3 flex flex-col gap-2">
+      <div className={hideHeading ? "flex flex-col gap-2" : "mt-3 flex flex-col gap-2"}>
         {sections.map((section, i) => (
           <SectionItem
             key={section.id}

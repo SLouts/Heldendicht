@@ -75,16 +75,25 @@ export function CharacterFieldsForm({
   );
 }
 
-/** 沒有編輯權限時的唯讀顯示。 */
+/** 沒有編輯權限時的唯讀顯示。compact 給節點側邊欄資訊卡這種窄欄用,
+ * 固定單欄不強擠成 2/3 欄,避免標籤跟值在窄寬度下擠成兩行。 */
 export function CharacterFieldsDisplay({
   fields,
+  compact,
 }: {
   fields: CharacterFieldWithValue[];
+  compact?: boolean;
 }) {
   if (fields.length === 0) return null;
 
   return (
-    <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-1 rounded-lg border border-border bg-surface p-3 text-sm sm:grid-cols-3">
+    <dl
+      className={
+        compact
+          ? "mt-4 flex flex-col gap-1 rounded-lg border border-border bg-surface p-3 text-sm"
+          : "mt-4 grid grid-cols-2 gap-x-4 gap-y-1 rounded-lg border border-border bg-surface p-3 text-sm sm:grid-cols-3"
+      }
+    >
       {fields.map((f) => (
         <div key={f.id} className="flex gap-1">
           <dt className="text-muted-foreground">{f.label}</dt>

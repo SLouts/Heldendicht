@@ -50,13 +50,6 @@ export default async function DashboardPage() {
         )}
       </div>
 
-      <p className="mt-10 text-sm text-muted-foreground">
-        想先了解節點頁面的附件/嵌入圖片怎麼運作?
-        <Link href="/dashboard/demo/attachments" className="ml-1 underline">
-          看看互動示範
-        </Link>
-      </p>
-
       {isSiteAdmin && (
         <p className="mt-2 text-sm text-muted-foreground">
           站務工具:

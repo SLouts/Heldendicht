@@ -12,7 +12,7 @@ import { NavMenu } from "@/components/NavMenu";
 import { CollapsibleSection } from "@/components/CollapsibleSection";
 import { RuleFieldItem } from "@/components/RuleFieldItem";
 import { NodeSearchBox } from "@/components/NodeSearchBox";
-import { NODE_TYPE_LABEL, FALLBACK_NODE_TYPE_ORDER } from "@/lib/nodeTypeLabels";
+import { NODE_TYPE_LABEL, NODE_STATUS_LABEL, FALLBACK_NODE_TYPE_ORDER } from "@/lib/nodeTypeLabels";
 import type { Database } from "@/lib/supabase/database.types";
 
 type ProfileSummary = Pick<
@@ -45,10 +45,6 @@ type RelationshipRow = Pick<
 > & {
   node_a: RelationshipNodeSummary | RelationshipNodeSummary[] | null;
   node_b: RelationshipNodeSummary | RelationshipNodeSummary[] | null;
-};
-
-const STATUS_LABEL: Record<string, string> = {
-  pending: "未正式過審",
 };
 
 export default async function WorldPage({
@@ -370,9 +366,9 @@ function NodeList({
                 擁有者:{character.ownerLabel}
               </span>
             )}
-            {STATUS_LABEL[node.status] && (
+            {node.status === "pending" && (
               <span className="rounded-full bg-badge-pending-bg px-2 py-0.5 text-xs text-badge-pending-fg">
-                {STATUS_LABEL[node.status]}
+                {NODE_STATUS_LABEL[node.status]}
               </span>
             )}
             {node.is_placeholder && (

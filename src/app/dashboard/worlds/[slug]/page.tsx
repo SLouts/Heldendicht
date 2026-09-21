@@ -6,7 +6,7 @@ import { getWorldMediaSignedUrl } from "@/lib/worldMedia";
 import { getWorldMapSignedUrl } from "@/lib/worldmap";
 import { NavMenu } from "@/components/NavMenu";
 import { CollapsibleSection } from "@/components/CollapsibleSection";
-import { NODE_TYPE_LABEL, FALLBACK_NODE_TYPE_ORDER } from "@/lib/nodeTypeLabels";
+import { NODE_TYPE_LABEL, NODE_STATUS_LABEL, FALLBACK_NODE_TYPE_ORDER } from "@/lib/nodeTypeLabels";
 import { NodeSearchBox } from "@/components/NodeSearchBox";
 import { WorldHero } from "./WorldHero";
 import WorldMapView, {
@@ -56,12 +56,6 @@ type RelationshipRow = Pick<
 > & {
   node_a: RelationshipNodeSummary | RelationshipNodeSummary[] | null;
   node_b: RelationshipNodeSummary | RelationshipNodeSummary[] | null;
-};
-
-const STATUS_LABEL: Record<string, string> = {
-  pending: "未正式過審",
-  approved: "已過審",
-  rejected: "已駁回",
 };
 
 export default async function WorldDashboardPage({
@@ -454,7 +448,7 @@ function NodeList({
                       : "rounded-full bg-badge-pending-bg px-2 py-0.5 text-xs text-badge-pending-fg"
                   }
                 >
-                  {STATUS_LABEL[node.status]}
+                  {NODE_STATUS_LABEL[node.status]}
                 </span>
               )}
               {node.creator_id === currentUserId && (

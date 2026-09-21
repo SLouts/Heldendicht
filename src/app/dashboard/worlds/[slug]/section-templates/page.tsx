@@ -2,7 +2,13 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/dal";
 import { createClient } from "@/lib/supabase/server";
-import { SectionTemplatesEditor } from "./SectionTemplatesEditor";
+import { OrderedLabelEditor } from "@/components/OrderedLabelEditor";
+import {
+  createSectionTemplate,
+  deleteSectionTemplate,
+  moveSectionTemplate,
+  updateSectionTemplate,
+} from "@/lib/actions/sectionTemplates";
 
 export default async function SectionTemplatesPage({
   params,
@@ -44,10 +50,19 @@ export default async function SectionTemplatesPage({
       <p className="mt-1 text-sm text-muted-foreground">
         列出角色通常會有哪些補充區塊(例如「技能」「外觀」「背景故事」),「貼上文字自動匯入」功能會依這份清單辨認玩家貼的文字裡哪些標題該切成獨立的補充區塊。刪掉範本不會影響已經建立的補充區塊,也不會限制手動新增不在清單裡的區塊。
       </p>
-      <SectionTemplatesEditor
+      <OrderedLabelEditor
         worldId={world.id}
         worldSlug={world.slug}
-        templates={templates ?? []}
+        items={templates ?? []}
+        idFieldName="templateId"
+        createAction={createSectionTemplate}
+        updateAction={updateSectionTemplate}
+        onDelete={deleteSectionTemplate}
+        onMove={moveSectionTemplate}
+        newSectionLabel="新增區塊範本"
+        newPlaceholder="例如「技能」"
+        emptyText="還沒有設定任何區塊範本。"
+        deleteConfirmText={(label) => `確定要刪除「${label}」這個區塊範本嗎?已經建立的補充區塊不會被刪除。`}
       />
     </div>
   );

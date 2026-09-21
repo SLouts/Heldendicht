@@ -9,12 +9,8 @@ import { CharacterTimelineDisplay } from "@/app/dashboard/worlds/[slug]/nodes/[n
 import { NodeHero } from "@/app/dashboard/worlds/[slug]/nodes/[nodeSlug]/NodeHero";
 import { NodeInfobox } from "./NodeInfobox";
 import { NodeTabs, type NodeTab } from "./NodeTabs";
-import { NODE_TYPE_LABEL } from "@/lib/nodeTypeLabels";
+import { NODE_TYPE_LABEL, NODE_STATUS_LABEL } from "@/lib/nodeTypeLabels";
 import type { Database } from "@/lib/supabase/database.types";
-
-const STATUS_LABEL: Record<string, string> = {
-  pending: "未正式過審",
-};
 
 type RelationshipNodeSummary = Pick<
   Database["public"]["Tables"]["nodes"]["Row"],
@@ -197,9 +193,9 @@ export default async function PublicNodeDetailPage({
   );
 
   const isCharacter = node.node_type === "character" && character;
-  const extraBadges = STATUS_LABEL[node.status] ? (
+  const extraBadges = node.status === "pending" ? (
     <span className="rounded-full bg-badge-pending-bg px-2 py-0.5 text-xs text-badge-pending-fg">
-      {STATUS_LABEL[node.status]}
+      {NODE_STATUS_LABEL[node.status]}
     </span>
   ) : undefined;
   const ownerLabel =

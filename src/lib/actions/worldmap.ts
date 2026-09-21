@@ -5,6 +5,7 @@ import * as z from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireUser } from "@/lib/dal";
+import { moveOrderedItem } from "@/lib/orderedList";
 import {
   WORLD_MAP_BUCKET,
   WORLD_MAP_MAX_BYTES,
@@ -164,29 +165,14 @@ export async function moveMapLayer(
     throw new Error("只有這個世界觀的主辦(admin)可以調整圖層順序");
   }
 
-  const { data: layers } = await supabase
-    .from("world_map_layers")
-    .select("id, order_index")
-    .eq("world_id", worldId)
-    .order("order_index", { ascending: true });
-  if (!layers) return;
-
-  const idx = layers.findIndex((l) => l.id === layerId);
-  const swapIdx = direction === "up" ? idx - 1 : idx + 1;
-  if (idx === -1 || swapIdx < 0 || swapIdx >= layers.length) return;
-
-  const a = layers[idx];
-  const b = layers[swapIdx];
-  await Promise.all([
-    supabase
-      .from("world_map_layers")
-      .update({ order_index: b.order_index })
-      .eq("id", a.id),
-    supabase
-      .from("world_map_layers")
-      .update({ order_index: a.order_index })
-      .eq("id", b.id),
-  ]);
+  const { error } = await moveOrderedItem({
+    supabase,
+    table: "world_map_layers",
+    itemId: layerId,
+    group: { column: "world_id", value: worldId },
+    direction,
+  });
+  if (error) throw new Error(error);
 
   revalidatePath(`/dashboard/worlds/${worldSlug}/worldmap`);
   revalidatePath(`/dashboard/worlds/${worldSlug}/worldmap/layers`);

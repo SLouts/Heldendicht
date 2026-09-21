@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import * as z from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/dal";
+import { moveOrderedItem } from "@/lib/orderedList";
 
 export type RuleFieldFormState =
   | { error: string }
@@ -135,32 +136,13 @@ export async function moveSiteRuleField(
   await requireUser();
   const supabase = await createClient();
 
-  const { data: fields } = await supabase
-    .from("site_rule_fields")
-    .select("id, order_index")
-    .order("order_index", { ascending: true });
-  if (!fields) return;
-
-  const idx = fields.findIndex((f) => f.id === fieldId);
-  const swapIdx = direction === "up" ? idx - 1 : idx + 1;
-  if (idx === -1 || swapIdx < 0 || swapIdx >= fields.length) return;
-
-  const current = fields[idx];
-  const sibling = fields[swapIdx];
-
-  const [{ error: e1 }, { error: e2 }] = await Promise.all([
-    supabase
-      .from("site_rule_fields")
-      .update({ order_index: sibling.order_index })
-      .eq("id", current.id),
-    supabase
-      .from("site_rule_fields")
-      .update({ order_index: current.order_index })
-      .eq("id", sibling.id),
-  ]);
-  if (e1 || e2) {
-    throw new Error("排序失敗,請稍後再試");
-  }
+  const { error } = await moveOrderedItem({
+    supabase,
+    table: "site_rule_fields",
+    itemId: fieldId,
+    direction,
+  });
+  if (error) throw new Error(error);
 
   revalidatePath(ADMIN_RULES_PATH);
 }

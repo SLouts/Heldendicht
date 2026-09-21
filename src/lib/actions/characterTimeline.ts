@@ -5,6 +5,7 @@ import * as z from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireUser } from "@/lib/dal";
+import { moveOrderedItem } from "@/lib/orderedList";
 import {
   NODE_MEDIA_BUCKET,
   NODE_TIMELINE_IMAGE_MAX_BYTES,
@@ -179,33 +180,14 @@ export async function moveTimelineEvent(
   await requireUser();
   const supabase = await createClient();
 
-  const { data: events } = await supabase
-    .from("character_timeline_events")
-    .select("id, order_index")
-    .eq("node_id", nodeId)
-    .order("order_index", { ascending: true });
-  if (!events) return;
-
-  const idx = events.findIndex((e) => e.id === eventId);
-  const swapIdx = direction === "up" ? idx - 1 : idx + 1;
-  if (idx === -1 || swapIdx < 0 || swapIdx >= events.length) return;
-
-  const current = events[idx];
-  const sibling = events[swapIdx];
-
-  const [{ error: e1 }, { error: e2 }] = await Promise.all([
-    supabase
-      .from("character_timeline_events")
-      .update({ order_index: sibling.order_index })
-      .eq("id", current.id),
-    supabase
-      .from("character_timeline_events")
-      .update({ order_index: current.order_index })
-      .eq("id", sibling.id),
-  ]);
-  if (e1 || e2) {
-    throw new Error("排序失敗,請稍後再試");
-  }
+  const { error } = await moveOrderedItem({
+    supabase,
+    table: "character_timeline_events",
+    itemId: eventId,
+    group: { column: "node_id", value: nodeId },
+    direction,
+  });
+  if (error) throw new Error(error);
 
   revalidatePath(`/dashboard/worlds/${worldSlug}/nodes/${nodeSlug}`);
   revalidatePath(`/worlds/${worldSlug}/nodes/${nodeSlug}`);

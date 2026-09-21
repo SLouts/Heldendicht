@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import * as z from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/dal";
+import { moveOrderedItem } from "@/lib/orderedList";
 
 export type SectionTemplateFormState =
   | { error: string }
@@ -129,32 +130,15 @@ export async function moveSectionTemplate(
   await requireUser();
   const supabase = await createClient();
 
-  const { data: templates } = await supabase
-    .from("world_section_templates")
-    .select("id, order_index")
-    .eq("world_id", worldId)
-    .order("order_index", { ascending: true });
-  if (!templates) return;
-
-  const idx = templates.findIndex((t) => t.id === templateId);
-  const swapIdx = direction === "up" ? idx - 1 : idx + 1;
-  if (idx === -1 || swapIdx < 0 || swapIdx >= templates.length) return;
-
-  const current = templates[idx];
-  const sibling = templates[swapIdx];
-
-  const [{ error: e1 }, { error: e2 }] = await Promise.all([
-    supabase
-      .from("world_section_templates")
-      .update({ order_index: sibling.order_index })
-      .eq("id", current.id),
-    supabase
-      .from("world_section_templates")
-      .update({ order_index: current.order_index })
-      .eq("id", sibling.id),
-  ]);
-  if (e1 || e2) {
-    throw new Error("排序失敗,請稍後再試");
+  const { error } = await moveOrderedItem({
+    supabase,
+    table: "world_section_templates",
+    itemId: templateId,
+    group: { column: "world_id", value: worldId },
+    direction,
+  });
+  if (error) {
+    throw new Error(error);
   }
 
   revalidatePath(`/dashboard/worlds/${worldSlug}/section-templates`);

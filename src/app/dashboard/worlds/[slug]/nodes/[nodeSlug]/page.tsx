@@ -15,14 +15,8 @@ import { CharacterTimelineDisplay } from "./CharacterTimelineDisplay";
 import { NodeMediaUpload } from "./NodeMediaUpload";
 import { NodeHero } from "./NodeHero";
 import { ReportForm } from "@/components/ReportForm";
-import { NODE_TYPE_LABEL } from "@/lib/nodeTypeLabels";
+import { NODE_TYPE_LABEL, NODE_STATUS_LABEL } from "@/lib/nodeTypeLabels";
 import { getNodeMediaSignedUrl } from "@/lib/nodeMedia";
-
-const STATUS_LABEL: Record<string, string> = {
-  pending: "未正式過審",
-  approved: "已過審",
-  rejected: "已駁回",
-};
 
 export default async function NodeDetailPage({
   params,
@@ -217,7 +211,7 @@ export default async function NodeDetailPage({
                 : "rounded-full bg-badge-pending-bg px-2 py-0.5 text-xs text-badge-pending-fg"
             }
           >
-            {STATUS_LABEL[node.status]}
+            {NODE_STATUS_LABEL[node.status]}
           </span>
         )}
         {node.is_placeholder && (

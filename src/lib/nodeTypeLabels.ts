@@ -1,4 +1,4 @@
-import type { NodeType } from "@/lib/supabase/database.types";
+import type { NodeType, NodeStatus } from "@/lib/supabase/database.types";
 
 /** 節點頁面上顯示用的中文標籤,跟 nodes.node_type 這個 DB enum 一一對應。 */
 export const NODE_TYPE_LABEL: Record<NodeType, string> = {
@@ -10,6 +10,17 @@ export const NODE_TYPE_LABEL: Record<NodeType, string> = {
   event: "事件",
   article: "文章",
   unspecified: "尚未分類(待撰寫)",
+};
+
+/**
+ * 節點審核狀態的中文標籤,跟 nodes.status 這個 DB enum 一一對應——approved
+ * 是預設/正常狀態,通常不需要額外標示,呼叫端自行決定要不要顯示
+ * approved 這個 key(例如只在 status !== 'approved' 時才顯示 badge)。
+ */
+export const NODE_STATUS_LABEL: Record<NodeStatus, string> = {
+  pending: "未正式過審",
+  approved: "已過審",
+  rejected: "已駁回",
 };
 
 /**

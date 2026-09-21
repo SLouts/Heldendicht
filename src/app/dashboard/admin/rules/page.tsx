@@ -1,7 +1,13 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/dal";
 import { createClient } from "@/lib/supabase/server";
-import { SiteRuleFieldsEditor } from "./SiteRuleFieldsEditor";
+import { OrderedContentEditor } from "@/components/OrderedContentEditor";
+import {
+  createSiteRuleField,
+  deleteSiteRuleField,
+  moveSiteRuleField,
+  updateSiteRuleField,
+} from "@/lib/actions/siteRuleFields";
 
 export default async function SiteRulesPage() {
   await requireUser();
@@ -30,7 +36,17 @@ export default async function SiteRulesPage() {
       <p className="mt-1 text-sm text-muted-foreground">
         投稿或使用這個網站要遵守的規定、授權或權利聲明,任何人(含未登入訪客)都會在每個世界觀頁面看到,跟世界觀自己的規則並列顯示。
       </p>
-      <SiteRuleFieldsEditor fields={fields ?? []} />
+      <OrderedContentEditor
+        items={fields ?? []}
+        createAction={createSiteRuleField}
+        updateAction={updateSiteRuleField}
+        onDelete={deleteSiteRuleField}
+        onMove={moveSiteRuleField}
+        newLabel="新增規則"
+        newLabelPlaceholder="例如「內容分級」"
+        emptyText="還沒有設定任何全站規則。"
+        deleteConfirmText={(label) => `確定要刪除「${label}」這則規則嗎?`}
+      />
     </div>
   );
 }

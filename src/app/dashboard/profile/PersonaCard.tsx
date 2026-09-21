@@ -10,11 +10,8 @@ import {
   type PersonaField,
 } from "@/lib/actions/personas";
 import { PersonaFieldsEditor } from "./PersonaFieldsEditor";
-
-const STATUS_LABEL: Record<string, string> = {
-  pending: "未正式過審",
-  rejected: "已駁回",
-};
+import { NODE_STATUS_LABEL } from "@/lib/nodeTypeLabels";
+import type { NodeStatus } from "@/lib/supabase/database.types";
 
 export type PersonaLink = {
   nodeId: string;
@@ -22,7 +19,7 @@ export type PersonaLink = {
   title: string;
   worldSlug: string;
   worldName: string;
-  status: string;
+  status: NodeStatus;
 };
 
 export function PersonaCard({
@@ -167,9 +164,9 @@ export function PersonaCard({
                   >
                     {link.worldName} ·{link.title}
                   </Link>
-                  {STATUS_LABEL[link.status] && (
+                  {link.status !== "approved" && (
                     <span className="rounded-full bg-badge-pending-bg px-2 py-0.5 text-xs text-badge-pending-fg">
-                      {STATUS_LABEL[link.status]}
+                      {NODE_STATUS_LABEL[link.status]}
                     </span>
                   )}
                   <form

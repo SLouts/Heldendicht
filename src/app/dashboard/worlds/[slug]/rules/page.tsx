@@ -2,7 +2,13 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/dal";
 import { createClient } from "@/lib/supabase/server";
-import { WorldRuleFieldsEditor } from "./WorldRuleFieldsEditor";
+import { OrderedContentEditor } from "@/components/OrderedContentEditor";
+import {
+  createWorldRuleField,
+  deleteWorldRuleField,
+  moveWorldRuleField,
+  updateWorldRuleField,
+} from "@/lib/actions/worldRuleFields";
 
 export default async function WorldRulesPage({
   params,
@@ -44,7 +50,23 @@ export default async function WorldRulesPage({
       <p className="mt-1 text-sm text-muted-foreground">
         投稿或使用這個世界觀要遵守的規定、授權或權利聲明,不是世界觀本身的介紹內容——訪客會在世界觀頁面看到,跟全站規則並列顯示。
       </p>
-      <WorldRuleFieldsEditor worldId={world.id} worldSlug={world.slug} fields={fields ?? []} />
+      <OrderedContentEditor
+        items={fields ?? []}
+        extraHiddenFields={
+          <>
+            <input type="hidden" name="worldId" value={world.id} />
+            <input type="hidden" name="worldSlug" value={world.slug} />
+          </>
+        }
+        createAction={createWorldRuleField}
+        updateAction={updateWorldRuleField}
+        onDelete={deleteWorldRuleField.bind(null, world.slug)}
+        onMove={moveWorldRuleField.bind(null, world.id, world.slug)}
+        newLabel="新增規則"
+        newLabelPlaceholder="例如「投稿規範」"
+        emptyText="還沒有設定任何世界觀規則。"
+        deleteConfirmText={(label) => `確定要刪除「${label}」這則規則嗎?`}
+      />
     </div>
   );
 }

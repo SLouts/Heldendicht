@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import * as z from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/dal";
+import { moveOrderedItem } from "@/lib/orderedList";
 
 export type ContentCategoryFormState =
   | { error: string }
@@ -177,29 +178,14 @@ export async function moveContentCategory(
     throw new Error("只有這個世界觀的主辦/編輯可以調整分類順序");
   }
 
-  const { data: categories } = await supabase
-    .from("world_content_categories")
-    .select("id, order_index")
-    .eq("world_id", worldId)
-    .order("order_index", { ascending: true });
-  if (!categories) return;
-
-  const idx = categories.findIndex((c) => c.id === categoryId);
-  const swapIdx = direction === "up" ? idx - 1 : idx + 1;
-  if (idx === -1 || swapIdx < 0 || swapIdx >= categories.length) return;
-
-  const a = categories[idx];
-  const b = categories[swapIdx];
-  await Promise.all([
-    supabase
-      .from("world_content_categories")
-      .update({ order_index: b.order_index })
-      .eq("id", a.id),
-    supabase
-      .from("world_content_categories")
-      .update({ order_index: a.order_index })
-      .eq("id", b.id),
-  ]);
+  const { error } = await moveOrderedItem({
+    supabase,
+    table: "world_content_categories",
+    itemId: categoryId,
+    group: { column: "world_id", value: worldId },
+    direction,
+  });
+  if (error) throw new Error(error);
 
   revalidatePath(`/dashboard/worlds/${worldSlug}/categories`);
   revalidatePath(`/dashboard/worlds/${worldSlug}`);

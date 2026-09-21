@@ -2,7 +2,13 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/dal";
 import { createClient } from "@/lib/supabase/server";
-import { CharacterFieldsEditor } from "./CharacterFieldsEditor";
+import { OrderedLabelEditor } from "@/components/OrderedLabelEditor";
+import {
+  createCharacterField,
+  deleteCharacterField,
+  moveCharacterField,
+  updateCharacterField,
+} from "@/lib/actions/characterFields";
 
 export default async function CharacterFieldsPage({
   params,
@@ -41,10 +47,19 @@ export default async function CharacterFieldsPage({
     <div>
       <BackLink slug={slug} />
       <h1 className="mt-2 text-2xl font-semibold">{world.name} 的角色必填欄位</h1>
-      <CharacterFieldsEditor
+      <OrderedLabelEditor
         worldId={world.id}
         worldSlug={world.slug}
-        fields={fields ?? []}
+        items={fields ?? []}
+        idFieldName="fieldId"
+        createAction={createCharacterField}
+        updateAction={updateCharacterField}
+        onDelete={deleteCharacterField}
+        onMove={moveCharacterField}
+        newSectionLabel="新增欄位"
+        newPlaceholder="例如「性別」"
+        emptyText="還沒有設定任何必填欄位。"
+        deleteConfirmText={(label) => `確定要刪除「${label}」這個必填欄位嗎?已經填過的角色資料也會一併清掉。`}
       />
     </div>
   );

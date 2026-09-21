@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import * as z from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/dal";
+import { moveOrderedItem } from "@/lib/orderedList";
 
 export type RuleFieldFormState =
   | { error: string }
@@ -121,8 +122,8 @@ export async function updateWorldRuleField(
 }
 
 export async function deleteWorldRuleField(
-  fieldId: string,
   worldSlug: string,
+  fieldId: string,
 ): Promise<void> {
   await requireUser();
   const supabase = await createClient();
@@ -138,43 +139,30 @@ export async function deleteWorldRuleField(
   revalidatePath(`/dashboard/worlds/${worldSlug}/rules`);
 }
 
-/** 上移/下移一則規則:跟相鄰的規則互換 order_index。 */
+/**
+ * 上移/下移一則規則:跟相鄰的規則互換 order_index。worldId/worldSlug
+ * 放在前面兩個參數,是為了讓呼叫端(Server Component)可以用
+ * `.bind(null, worldId, worldSlug)` 綁好世界觀context 再把結果當成
+ * Server Action 傳給共用的 OrderedContentEditor——.bind() 只能從左邊
+ * 固定參數,所以會被呼叫端提供的參數(fieldId/direction)要放在最後面。
+ */
 export async function moveWorldRuleField(
-  fieldId: string,
   worldId: string,
   worldSlug: string,
+  fieldId: string,
   direction: "up" | "down",
 ): Promise<void> {
   await requireUser();
   const supabase = await createClient();
 
-  const { data: fields } = await supabase
-    .from("world_rule_fields")
-    .select("id, order_index")
-    .eq("world_id", worldId)
-    .order("order_index", { ascending: true });
-  if (!fields) return;
-
-  const idx = fields.findIndex((f) => f.id === fieldId);
-  const swapIdx = direction === "up" ? idx - 1 : idx + 1;
-  if (idx === -1 || swapIdx < 0 || swapIdx >= fields.length) return;
-
-  const current = fields[idx];
-  const sibling = fields[swapIdx];
-
-  const [{ error: e1 }, { error: e2 }] = await Promise.all([
-    supabase
-      .from("world_rule_fields")
-      .update({ order_index: sibling.order_index })
-      .eq("id", current.id),
-    supabase
-      .from("world_rule_fields")
-      .update({ order_index: current.order_index })
-      .eq("id", sibling.id),
-  ]);
-  if (e1 || e2) {
-    throw new Error("排序失敗,請稍後再試");
-  }
+  const { error } = await moveOrderedItem({
+    supabase,
+    table: "world_rule_fields",
+    itemId: fieldId,
+    group: { column: "world_id", value: worldId },
+    direction,
+  });
+  if (error) throw new Error(error);
 
   revalidatePath(`/dashboard/worlds/${worldSlug}/rules`);
 }

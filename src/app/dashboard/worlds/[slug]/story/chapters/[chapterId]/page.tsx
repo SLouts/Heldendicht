@@ -6,6 +6,7 @@ import { deleteChapter } from "@/lib/actions/story";
 import { EditChapterForm } from "./EditChapterForm";
 import { StepEditForm } from "./StepEditForm";
 import { StepContent } from "./StepContent";
+import { unwrapRelation } from "@/lib/unwrapRelation";
 
 export default async function ChapterDetailPage({
   params,
@@ -31,9 +32,7 @@ export default async function ChapterDetailPage({
     .maybeSingle();
   if (!chapter) notFound();
 
-  const character = Array.isArray(chapter.character)
-    ? chapter.character[0]
-    : chapter.character;
+  const character = unwrapRelation(chapter.character);
 
   const [
     { data: isStaff },
@@ -123,8 +122,8 @@ export default async function ChapterDetailPage({
 
       <div className="mt-3 flex flex-col gap-3">
         {steps?.map((step) => {
-          const node = Array.isArray(step.node) ? step.node[0] : step.node;
-          const pov = Array.isArray(step.pov) ? step.pov[0] : step.pov;
+          const node = unwrapRelation(step.node);
+          const pov = unwrapRelation(step.pov);
 
           if (!canManage) {
             return (

@@ -11,6 +11,7 @@ import { NodeInfobox } from "./NodeInfobox";
 import { NodeTabs, type NodeTab } from "./NodeTabs";
 import { NODE_TYPE_LABEL, NODE_STATUS_LABEL } from "@/lib/nodeTypeLabels";
 import type { Database } from "@/lib/supabase/database.types";
+import { unwrapRelation } from "@/lib/unwrapRelation";
 
 type RelationshipNodeSummary = Pick<
   Database["public"]["Tables"]["nodes"]["Row"],
@@ -59,13 +60,9 @@ export default async function PublicNodeDetailPage({
     .maybeSingle();
   if (!node) notFound();
 
-  const character = Array.isArray(node.characters)
-    ? node.characters[0]
-    : node.characters;
+  const character = unwrapRelation(node.characters);
   const characterOwner = character?.owner_id
-    ? Array.isArray(character.profiles)
-      ? character.profiles[0]
-      : character.profiles
+    ? unwrapRelation(character.profiles)
     : null;
 
   const [
@@ -146,7 +143,7 @@ export default async function PublicNodeDetailPage({
   const wikiLinkMap = new Map(
     (outboundLinks ?? [])
       .map((link) => {
-        const target = Array.isArray(link.target) ? link.target[0] : link.target;
+        const target = unwrapRelation(link.target);
         return [link.raw_text, target] as const;
       })
       .filter(
@@ -347,8 +344,8 @@ function NodeRelationshipList({
   return (
     <ul className="flex flex-col divide-y divide-border">
       {relationships.map((rel) => {
-        const nodeA = Array.isArray(rel.node_a) ? rel.node_a[0] : rel.node_a;
-        const nodeB = Array.isArray(rel.node_b) ? rel.node_b[0] : rel.node_b;
+        const nodeA = unwrapRelation(rel.node_a);
+        const nodeB = unwrapRelation(rel.node_b);
         const isSelfA = nodeA?.id === currentNodeId;
         const other = isSelfA ? nodeB : nodeA;
         if (!other) return null;

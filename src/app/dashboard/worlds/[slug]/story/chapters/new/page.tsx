@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/dal";
 import { createClient } from "@/lib/supabase/server";
 import { NewChapterForm } from "./NewChapterForm";
+import { unwrapRelation } from "@/lib/unwrapRelation";
 
 export default async function NewChapterPage({
   params,
@@ -68,9 +69,7 @@ export default async function NewChapterPage({
     .maybeSingle();
   if (!characterNode) notFound();
 
-  const character = Array.isArray(characterNode.characters)
-    ? characterNode.characters[0]
-    : characterNode.characters;
+  const character = unwrapRelation(characterNode.characters);
 
   const { data: isStaff } = await supabase.rpc("is_world_staff", {
     p_world_id: world.id,

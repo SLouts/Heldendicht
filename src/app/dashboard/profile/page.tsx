@@ -9,6 +9,7 @@ import { ProfileImageForm } from "./ProfileImageForm";
 import { CreatePersonaForm } from "./CreatePersonaForm";
 import { PersonaCard, type PersonaLink } from "./PersonaCard";
 import type { PersonaField } from "@/lib/actions/personas";
+import { unwrapRelation, toRelationArray } from "@/lib/unwrapRelation";
 
 export default async function ProfilePage() {
   const user = await requireUser();
@@ -38,15 +39,11 @@ export default async function ProfilePage() {
   const bannerUrl = getProfileMediaPublicUrl(profile?.banner_path ?? null);
 
   const personaCards = (personas ?? []).map((p) => {
-    const characterRows = Array.isArray(p.characters)
-      ? p.characters
-      : p.characters
-        ? [p.characters]
-        : [];
+    const characterRows = toRelationArray(p.characters);
     const links: PersonaLink[] = characterRows.flatMap((c) => {
-      const node = Array.isArray(c.nodes) ? c.nodes[0] : c.nodes;
+      const node = unwrapRelation(c.nodes);
       if (!node) return [];
-      const world = Array.isArray(node.worlds) ? node.worlds[0] : node.worlds;
+      const world = unwrapRelation(node.worlds);
       if (!world) return [];
       return [
         {
@@ -118,7 +115,7 @@ export default async function ProfilePage() {
         </p>
         <ul className="mt-3 flex flex-col gap-2">
           {memberships?.map((m, i) => {
-            const world = Array.isArray(m.worlds) ? m.worlds[0] : m.worlds;
+            const world = unwrapRelation(m.worlds);
             if (!world) return null;
             return (
               <li

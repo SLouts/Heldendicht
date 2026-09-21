@@ -792,6 +792,13 @@ export type Database = {
             referencedRelation: "nodes";
             referencedColumns: ["id"];
           },
+          {
+            foreignKeyName: "story_steps_pov_character_id_fkey";
+            columns: ["pov_character_id"];
+            isOneToOne: false;
+            referencedRelation: "nodes";
+            referencedColumns: ["id"];
+          },
         ];
       };
       notes: {

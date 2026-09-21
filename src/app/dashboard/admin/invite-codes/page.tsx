@@ -3,6 +3,7 @@ import { requireUser } from "@/lib/dal";
 import { createClient } from "@/lib/supabase/server";
 import { deleteInviteCode } from "@/lib/actions/inviteCodes";
 import { CreateInviteCodeForm } from "./CreateInviteCodeForm";
+import { unwrapRelation } from "@/lib/unwrapRelation";
 
 export default async function InviteCodesPage() {
   await requireUser();
@@ -35,7 +36,7 @@ export default async function InviteCodesPage() {
 
       <ul className="mt-6 flex flex-col gap-2">
         {codes?.map((c) => {
-          const creator = Array.isArray(c.profiles) ? c.profiles[0] : c.profiles;
+          const creator = unwrapRelation(c.profiles);
           const exhausted = c.use_count >= c.max_uses;
           const expired = c.expires_at ? new Date(c.expires_at) < new Date() : false;
           return (

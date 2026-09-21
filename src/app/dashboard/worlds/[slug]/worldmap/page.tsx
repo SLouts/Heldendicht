@@ -8,6 +8,7 @@ import WorldMapView, {
   type MapNode,
   type UnplacedNode,
 } from "./WorldMapView";
+import { unwrapRelation } from "@/lib/unwrapRelation";
 
 export default async function WorldMapPage({
   params,
@@ -54,7 +55,7 @@ export default async function WorldMapPage({
   const unplacedNodes: UnplacedNode[] = [];
 
   for (const n of nodes ?? []) {
-    const char = Array.isArray(n.characters) ? n.characters[0] : n.characters;
+    const char = unwrapRelation(n.characters);
     const base = {
       id: n.id,
       title: n.title,

@@ -7,6 +7,7 @@ import {
   type NotificationItem,
   type ReviewWorldSummary,
 } from "./NotificationBell";
+import { unwrapRelation } from "@/lib/unwrapRelation";
 
 // /dashboard 底下都需要登入。proxy.ts 已經做了一次「優化用」的導向,
 // 這裡是真正的檢查點 —— 沒登入會被 requireUser() 導去 /login。
@@ -38,9 +39,9 @@ export default async function DashboardLayout({
     ]);
 
   const notifications: NotificationItem[] = (notifRows ?? []).map((n) => {
-    const actor = Array.isArray(n.actor) ? n.actor[0] : n.actor;
-    const node = Array.isArray(n.node) ? n.node[0] : n.node;
-    const world = Array.isArray(n.world) ? n.world[0] : n.world;
+    const actor = unwrapRelation(n.actor);
+    const node = unwrapRelation(n.node);
+    const world = unwrapRelation(n.world);
     return {
       id: n.id,
       type: n.type,
@@ -59,7 +60,7 @@ export default async function DashboardLayout({
   // RPC 那樣回傳一個跨世界觀的總數 —— 通知鈴鐺才有辦法標示每筆審核提示來自哪個世界觀。
   const staffWorlds = (staffMemberships ?? [])
     .map((m) => {
-      const world = Array.isArray(m.world) ? m.world[0] : m.world;
+      const world = unwrapRelation(m.world);
       return world ? { id: m.world_id, slug: world.slug, name: world.name } : null;
     })
     .filter((w): w is { id: string; slug: string; name: string } => w !== null);

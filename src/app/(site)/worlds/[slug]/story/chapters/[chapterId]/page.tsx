@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { StepContent } from "@/app/dashboard/worlds/[slug]/story/chapters/[chapterId]/StepContent";
+import { unwrapRelation } from "@/lib/unwrapRelation";
 
 /**
  * 公開版章節詳細頁,唯讀——沒有編輯/刪除/新增段落,可見度交給
@@ -30,9 +31,7 @@ export default async function PublicChapterDetailPage({
     .maybeSingle();
   if (!chapter) notFound();
 
-  const character = Array.isArray(chapter.character)
-    ? chapter.character[0]
-    : chapter.character;
+  const character = unwrapRelation(chapter.character);
 
   const [{ data: steps }, { data: worldNodes }] = await Promise.all([
     supabase
@@ -68,8 +67,8 @@ export default async function PublicChapterDetailPage({
       <h2 className="mt-8 text-lg font-semibold">段落</h2>
       <div className="mt-3 flex flex-col gap-3">
         {steps?.map((step) => {
-          const node = Array.isArray(step.node) ? step.node[0] : step.node;
-          const pov = Array.isArray(step.pov) ? step.pov[0] : step.pov;
+          const node = unwrapRelation(step.node);
+          const pov = unwrapRelation(step.pov);
           return (
             <div
               key={step.id}

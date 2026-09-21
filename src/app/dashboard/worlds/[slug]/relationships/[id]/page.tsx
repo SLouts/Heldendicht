@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { deleteRelationship, revokeRelationship } from "@/lib/actions/relationships";
 import { EditRelationshipForm } from "./EditRelationshipForm";
 import { ReportForm } from "@/components/ReportForm";
+import { unwrapRelation } from "@/lib/unwrapRelation";
 
 export default async function RelationshipDetailPage({
   params,
@@ -30,8 +31,8 @@ export default async function RelationshipDetailPage({
     .maybeSingle();
   if (!rel) notFound();
 
-  const nodeA = Array.isArray(rel.node_a) ? rel.node_a[0] : rel.node_a;
-  const nodeB = Array.isArray(rel.node_b) ? rel.node_b[0] : rel.node_b;
+  const nodeA = unwrapRelation(rel.node_a);
+  const nodeB = unwrapRelation(rel.node_b);
 
   const { data: isStaff } = await supabase.rpc("is_world_staff", {
     p_world_id: world.id,

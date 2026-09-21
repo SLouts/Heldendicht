@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { unwrapRelation } from "@/lib/unwrapRelation";
 
 /**
  * 公開版關係線詳細頁,純唯讀——沒有撤銷/刪除/檢舉這些操作(那些都是要
@@ -30,8 +31,8 @@ export default async function PublicRelationshipDetailPage({
     .maybeSingle();
   if (!rel) notFound();
 
-  const nodeA = Array.isArray(rel.node_a) ? rel.node_a[0] : rel.node_a;
-  const nodeB = Array.isArray(rel.node_b) ? rel.node_b[0] : rel.node_b;
+  const nodeA = unwrapRelation(rel.node_a);
+  const nodeB = unwrapRelation(rel.node_b);
 
   return (
     <div className="mx-auto w-full max-w-2xl flex-1 px-6 py-12">

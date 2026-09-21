@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/dal";
 import { createClient } from "@/lib/supabase/server";
+import { unwrapRelation } from "@/lib/unwrapRelation";
 
 type CharacterOption = { id: string; title: string; ownerId: string | null };
 
@@ -35,7 +36,7 @@ export default async function StoryPage({
 
   const pcOptions: CharacterOption[] = (characterNodes ?? [])
     .map((n) => {
-      const c = Array.isArray(n.characters) ? n.characters[0] : n.characters;
+      const c = unwrapRelation(n.characters);
       return c?.character_type === "pc"
         ? { id: n.id, title: n.title, ownerId: c.owner_id }
         : null;

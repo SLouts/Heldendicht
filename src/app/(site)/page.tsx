@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/dal";
 import { RecentActivityList, type RecentActivityItem } from "./RecentActivityList";
 import { PlatformFeatures } from "./PlatformFeatures";
+import { unwrapRelation } from "@/lib/unwrapRelation";
 
 /**
  * 首頁——平台概覽與動態樞紐,不重複維護 /worlds 那份完整的世界觀卡片
@@ -61,7 +62,7 @@ export default async function Home() {
   const profileById = new Map((updaterProfiles ?? []).map((p) => [p.id, p]));
 
   const recentActivity: RecentActivityItem[] = (recentNodes ?? []).map((node) => {
-    const world = Array.isArray(node.world) ? node.world[0] : node.world;
+    const world = unwrapRelation(node.world);
     const updaterId = lastEditorByNode.get(node.id) ?? node.creator_id;
     const updater = profileById.get(updaterId);
     return {

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/dal";
 import { createClient } from "@/lib/supabase/server";
 import { resolveReport } from "@/lib/actions/reports";
+import { unwrapRelation } from "@/lib/unwrapRelation";
 
 const STATUS_LABEL: Record<string, string> = {
   open: "待處理",
@@ -63,8 +64,8 @@ export default async function WorldReportsPage({
   const nodeMap = new Map((nodes ?? []).map((n) => [n.id, n]));
   const relMap = new Map(
     (relationships ?? []).map((r) => {
-      const a = Array.isArray(r.node_a) ? r.node_a[0] : r.node_a;
-      const b = Array.isArray(r.node_b) ? r.node_b[0] : r.node_b;
+      const a = unwrapRelation(r.node_a);
+      const b = unwrapRelation(r.node_b);
       return [r.id, `${a?.title ?? "?"} ↔ ${b?.title ?? "?"}`] as const;
     }),
   );
@@ -110,7 +111,7 @@ export default async function WorldReportsPage({
       <ul className="mt-6 flex flex-col gap-3">
         {reports.map((report) => {
           const reporter = (
-            Array.isArray(report.reporter) ? report.reporter[0] : report.reporter
+            unwrapRelation(report.reporter)
           ) as ReporterProfile | null;
           const targetLabel =
             report.target_type === "node"

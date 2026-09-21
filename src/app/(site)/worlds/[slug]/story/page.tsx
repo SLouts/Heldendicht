@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { unwrapRelation } from "@/lib/unwrapRelation";
 
 type CharacterOption = { id: string; title: string };
 
@@ -33,7 +34,7 @@ export default async function PublicStoryPage({
 
   const pcOptions: CharacterOption[] = (characterNodes ?? [])
     .map((n) => {
-      const c = Array.isArray(n.characters) ? n.characters[0] : n.characters;
+      const c = unwrapRelation(n.characters);
       return c?.character_type === "pc" ? { id: n.id, title: n.title } : null;
     })
     .filter((n): n is CharacterOption => n !== null);

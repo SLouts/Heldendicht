@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/dal";
 import { createClient } from "@/lib/supabase/server";
+import { unwrapRelation } from "@/lib/unwrapRelation";
 
 type ProfileSummary = {
   id: string;
@@ -46,7 +47,7 @@ export default async function MessagesInboxPage() {
     const isMine = row.sender_id === user.id;
     const counterpartId = isMine ? row.recipient_id : row.sender_id;
     const counterpartRaw = isMine ? row.recipient : row.sender;
-    const counterpart = Array.isArray(counterpartRaw) ? counterpartRaw[0] : counterpartRaw;
+    const counterpart = unwrapRelation(counterpartRaw);
     if (!counterpart) continue;
 
     if (!conversations.has(counterpartId)) {

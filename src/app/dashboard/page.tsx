@@ -5,6 +5,7 @@ import { getProfileMediaPublicUrl } from "@/lib/profileMedia";
 import { DashboardIdentityCard } from "./DashboardIdentityCard";
 import { DashboardPreferencesPanel } from "./DashboardPreferencesPanel";
 import { DashboardWorldsSection, type DashboardWorldItem } from "./DashboardWorldsSection";
+import { unwrapRelation } from "@/lib/unwrapRelation";
 
 /**
  * 工作台首頁動線:先個人身分資訊、版面偏好,再進入世界觀選擇——不是一
@@ -49,7 +50,7 @@ export default async function DashboardPage() {
   const ownedWorlds: DashboardWorldItem[] = [];
   const joinedWorlds: DashboardWorldItem[] = [];
   for (const m of memberships ?? []) {
-    const world = Array.isArray(m.worlds) ? m.worlds[0] : m.worlds;
+    const world = unwrapRelation(m.worlds);
     if (!world) continue;
     const item: DashboardWorldItem = { id: world.id, slug: world.slug, name: world.name, role: m.role };
     if (world.owner_id === user.id) {

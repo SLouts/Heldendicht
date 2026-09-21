@@ -14,6 +14,7 @@ import { RuleFieldItem } from "@/components/RuleFieldItem";
 import { NodeSearchBox } from "@/components/NodeSearchBox";
 import { NODE_TYPE_LABEL, NODE_STATUS_LABEL, FALLBACK_NODE_TYPE_ORDER } from "@/lib/nodeTypeLabels";
 import type { Database } from "@/lib/supabase/database.types";
+import { unwrapRelation } from "@/lib/unwrapRelation";
 
 type ProfileSummary = Pick<
   Database["public"]["Tables"]["profiles"]["Row"],
@@ -150,7 +151,7 @@ export default async function WorldPage({
     })),
   );
   const placedNodes: MapNode[] = (mapNodes ?? []).map((n) => {
-    const char = Array.isArray(n.characters) ? n.characters[0] : n.characters;
+    const char = unwrapRelation(n.characters);
     return {
       id: n.id,
       title: n.title,
@@ -303,13 +304,11 @@ export default async function WorldPage({
 
 function characterInfo(node: NodeRow) {
   if (node.node_type !== "character") return null;
-  const char = Array.isArray(node.characters) ? node.characters[0] : node.characters;
+  const char = unwrapRelation(node.characters);
   if (!char) return null;
 
   const owner = char.owner_id
-    ? Array.isArray(char.profiles)
-      ? char.profiles[0]
-      : char.profiles
+    ? unwrapRelation(char.profiles)
     : null;
 
   return {
@@ -397,8 +396,8 @@ function RelationshipList({
   return (
     <ul className="mt-3 divide-y divide-border">
       {relationships.map((rel) => {
-        const nodeA = Array.isArray(rel.node_a) ? rel.node_a[0] : rel.node_a;
-        const nodeB = Array.isArray(rel.node_b) ? rel.node_b[0] : rel.node_b;
+        const nodeA = unwrapRelation(rel.node_a);
+        const nodeB = unwrapRelation(rel.node_b);
         const isRevoked = rel.status === "revoked";
         return (
           <li key={rel.id}>

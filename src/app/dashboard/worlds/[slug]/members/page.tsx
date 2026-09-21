@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { removeMember } from "@/lib/actions/memberships";
 import { InviteMemberForm } from "./InviteMemberForm";
 import { RoleSelect } from "./RoleSelect";
+import { unwrapRelation } from "@/lib/unwrapRelation";
 
 export default async function MembersPage({
   params,
@@ -48,7 +49,7 @@ export default async function MembersPage({
 
       <ul className="mt-6 flex flex-col gap-2">
         {members?.map((m) => {
-          const profile = Array.isArray(m.profiles) ? m.profiles[0] : m.profiles;
+          const profile = unwrapRelation(m.profiles);
           const label =
             profile?.display_name || profile?.username || profile?.email || "未知使用者";
           return (

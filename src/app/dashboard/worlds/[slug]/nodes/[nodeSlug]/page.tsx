@@ -17,6 +17,7 @@ import { NodeHero } from "./NodeHero";
 import { ReportForm } from "@/components/ReportForm";
 import { NODE_TYPE_LABEL, NODE_STATUS_LABEL } from "@/lib/nodeTypeLabels";
 import { getNodeMediaSignedUrl } from "@/lib/nodeMedia";
+import { unwrapRelation } from "@/lib/unwrapRelation";
 
 export default async function NodeDetailPage({
   params,
@@ -42,13 +43,9 @@ export default async function NodeDetailPage({
     .maybeSingle();
   if (!node) notFound();
 
-  const character = Array.isArray(node.characters)
-    ? node.characters[0]
-    : node.characters;
+  const character = unwrapRelation(node.characters);
   const characterOwner = character?.owner_id
-    ? Array.isArray(character.profiles)
-      ? character.profiles[0]
-      : character.profiles
+    ? unwrapRelation(character.profiles)
     : null;
   const isPersonaOwner =
     character?.character_type === "pc" && character.owner_id === user.id;
@@ -142,7 +139,7 @@ export default async function NodeDetailPage({
 
   const wikiLinkMap = new Map(
     (outboundLinks ?? []).map((link) => {
-      const target = Array.isArray(link.target) ? link.target[0] : link.target;
+      const target = unwrapRelation(link.target);
       return [
         link.raw_text,
         { slug: target?.slug ?? "", isPlaceholder: target?.is_placeholder ?? false },
@@ -159,7 +156,7 @@ export default async function NodeDetailPage({
 
   const attachmentItems: AttachmentItem[] = await Promise.all(
     (attachments ?? []).map(async (a) => {
-      const uploader = Array.isArray(a.profiles) ? a.profiles[0] : a.profiles;
+      const uploader = unwrapRelation(a.profiles);
       const url =
         (await getAttachmentSignedUrl(
           a.storage_path,

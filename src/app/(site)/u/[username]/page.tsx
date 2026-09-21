@@ -7,6 +7,7 @@ import type { PersonaField } from "@/lib/actions/personas";
 import { FollowButton } from "./FollowButton";
 import { FollowListCard, type FollowProfile } from "./FollowListCard";
 import { UnfollowButton } from "./UnfollowButton";
+import { unwrapRelation, toRelationArray } from "@/lib/unwrapRelation";
 
 export default async function PublicProfilePage({
   params,
@@ -56,10 +57,10 @@ export default async function PublicProfilePage({
 
   const isOwnProfile = currentUser?.id === profile.id;
   const followerProfiles = (followerRows ?? [])
-    .map((r) => (Array.isArray(r.follower) ? r.follower[0] : r.follower))
+    .map((r) => (unwrapRelation(r.follower)))
     .filter((p): p is FollowProfile => p != null);
   const followingProfiles = (followingRows ?? [])
-    .map((r) => (Array.isArray(r.followee) ? r.followee[0] : r.followee))
+    .map((r) => (unwrapRelation(r.followee)))
     .filter((p): p is FollowProfile => p != null);
 
   const avatarUrl = getProfileMediaPublicUrl(profile.avatar_path);
@@ -68,15 +69,11 @@ export default async function PublicProfilePage({
 
   const personaCards = (personas ?? [])
     .map((p) => {
-      const characterRows = Array.isArray(p.characters)
-        ? p.characters
-        : p.characters
-          ? [p.characters]
-          : [];
+      const characterRows = toRelationArray(p.characters);
       const links = characterRows.flatMap((c) => {
-        const node = Array.isArray(c.nodes) ? c.nodes[0] : c.nodes;
+        const node = unwrapRelation(c.nodes);
         if (!node) return [];
-        const world = Array.isArray(node.worlds) ? node.worlds[0] : node.worlds;
+        const world = unwrapRelation(node.worlds);
         if (!world) return [];
         return [
           {

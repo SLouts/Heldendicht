@@ -6,6 +6,7 @@ import StoryMapGraph, {
   type RelEdge,
   type WikiEdge,
 } from "@/app/dashboard/worlds/[slug]/map/StoryMapGraph";
+import { unwrapRelation } from "@/lib/unwrapRelation";
 
 type GraphNodeData = {
   id: string;
@@ -46,7 +47,7 @@ export default async function PublicStoryMapPage({
     .order("title");
 
   const graphNodes: GraphNodeData[] = (nodes ?? []).map((n) => {
-    const char = Array.isArray(n.characters) ? n.characters[0] : n.characters;
+    const char = unwrapRelation(n.characters);
     return {
       id: n.id,
       title: n.title,

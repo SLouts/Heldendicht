@@ -10,6 +10,7 @@ import { WorldOverviewTab, type MapLayer } from "./WorldOverviewTab";
 import { WorldDirectoryTab, type CategoryGroup, type TypeGroup } from "./WorldDirectoryTab";
 import { WorldRulesTab } from "./WorldRulesTab";
 import { WorldRecentChangesTab } from "./WorldRecentChangesTab";
+import { WorldSearchTab } from "./WorldSearchTab";
 import { WorldSidebar } from "./WorldSidebar";
 import { WorldQuickBar } from "./WorldQuickBar";
 import { FALLBACK_NODE_TYPE_ORDER } from "@/lib/nodeTypeLabels";
@@ -191,17 +192,18 @@ export default async function WorldPage({
       label: "近期變更",
       content: <WorldRecentChangesTab nodes={recentNodes} basePath={`/worlds/${slug}/nodes`} />,
     },
+    {
+      key: "search",
+      label: "搜尋",
+      content: <WorldSearchTab worldId={world.id} basePath={`/worlds/${slug}/nodes`} />,
+    },
   ];
 
   return (
     <div className="mx-auto w-full max-w-5xl flex-1 px-6 py-12">
       <WorldHero name={world.name} tagline={world.tagline} bannerUrl={bannerUrl} iconUrl={iconUrl} />
 
-      <WorldQuickBar
-        worldId={world.id}
-        worldSlug={slug}
-        searchBasePath={`/worlds/${slug}/nodes`}
-      />
+      <WorldQuickBar worldSlug={slug} />
 
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-8">
         <div className="lg:order-2 lg:col-span-4">

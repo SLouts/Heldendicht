@@ -9,6 +9,7 @@ import { NodeTabs, type NodeTab } from "@/app/(site)/worlds/[slug]/nodes/[nodeSl
 import { WorldOverviewTab, type MapLayer } from "@/app/(site)/worlds/[slug]/WorldOverviewTab";
 import { WorldRulesTab } from "@/app/(site)/worlds/[slug]/WorldRulesTab";
 import { WorldRecentChangesTab } from "@/app/(site)/worlds/[slug]/WorldRecentChangesTab";
+import { WorldSearchTab } from "@/app/(site)/worlds/[slug]/WorldSearchTab";
 import { WorldSidebar } from "@/app/(site)/worlds/[slug]/WorldSidebar";
 import { WorldQuickBar } from "@/app/(site)/worlds/[slug]/WorldQuickBar";
 import {
@@ -199,6 +200,13 @@ export default async function WorldDashboardPage({
         />
       ),
     },
+    {
+      key: "search",
+      label: "搜尋",
+      content: (
+        <WorldSearchTab worldId={world.id} basePath={`/dashboard/worlds/${world.slug}/nodes`} />
+      ),
+    },
   ];
 
   return (
@@ -210,11 +218,7 @@ export default async function WorldDashboardPage({
         <WorldHero name={world.name} tagline={world.tagline} bannerUrl={bannerUrl} iconUrl={iconUrl} />
       </div>
 
-      <WorldQuickBar
-        worldId={world.id}
-        worldSlug={world.slug}
-        searchBasePath={`/dashboard/worlds/${world.slug}/nodes`}
-      />
+      <WorldQuickBar worldSlug={world.slug} />
 
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-8">
         <div className="lg:order-2 lg:col-span-4">

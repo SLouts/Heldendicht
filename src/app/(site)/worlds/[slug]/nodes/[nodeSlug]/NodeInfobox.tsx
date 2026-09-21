@@ -97,7 +97,7 @@ export function NodeInfobox({
         )}
       </dl>
 
-      {characterFields.length > 0 && (
+      {characterFields.some((f) => f.value.trim() !== "") && (
         <div className="mt-3 border-t border-border pt-3">
           <CharacterFieldsDisplay fields={characterFields} compact />
         </div>

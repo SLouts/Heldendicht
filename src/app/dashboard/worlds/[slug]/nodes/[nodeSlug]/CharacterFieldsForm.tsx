@@ -84,7 +84,9 @@ export function CharacterFieldsDisplay({
   fields: CharacterFieldWithValue[];
   compact?: boolean;
 }) {
-  if (fields.length === 0) return null;
+  // 沒填值的欄位整列都不顯示,不留空白列給人看到破折號。
+  const filledFields = fields.filter((f) => f.value.trim() !== "");
+  if (filledFields.length === 0) return null;
 
   return (
     <dl
@@ -94,10 +96,10 @@ export function CharacterFieldsDisplay({
           : "mt-4 grid grid-cols-2 gap-x-4 gap-y-1 rounded-lg border border-border bg-surface p-3 text-sm sm:grid-cols-3"
       }
     >
-      {fields.map((f) => (
+      {filledFields.map((f) => (
         <div key={f.id} className="flex gap-1">
           <dt className="text-muted-foreground">{f.label}</dt>
-          <dd>{f.value || "—"}</dd>
+          <dd>{f.value}</dd>
         </div>
       ))}
     </dl>

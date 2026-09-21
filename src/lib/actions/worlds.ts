@@ -76,6 +76,7 @@ export async function createWorld(
 const UpdateWorldSchema = CreateWorldSchema.omit({ slug: true }).extend({
   worldId: z.uuid(),
   worldSlug: z.string(),
+  charactersAutoApprove: z.boolean(),
 });
 
 /**
@@ -97,6 +98,7 @@ export async function updateWorldSettings(
     description: formData.get("description") ?? "",
     defaultPcQuota: formData.get("defaultPcQuota") || 0,
     isPublic: formData.get("isPublic") === "on",
+    charactersAutoApprove: formData.get("charactersAutoApprove") === "on",
   });
   if (!parsed.success) {
     return { fieldErrors: parsed.error.flatten().fieldErrors };
@@ -112,6 +114,7 @@ export async function updateWorldSettings(
         description: parsed.data.description || null,
         default_pc_quota: parsed.data.defaultPcQuota,
         is_public: parsed.data.isPublic,
+        characters_auto_approve: parsed.data.charactersAutoApprove,
       },
       { count: "exact" },
     )

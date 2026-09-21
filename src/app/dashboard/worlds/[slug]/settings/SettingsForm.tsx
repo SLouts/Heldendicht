@@ -14,6 +14,7 @@ export function SettingsForm({
     description: string | null;
     default_pc_quota: number;
     is_public: boolean;
+    characters_auto_approve: boolean;
   };
 }) {
   const [state, formAction, pending] = useActionState(
@@ -85,6 +86,15 @@ export function SettingsForm({
           defaultChecked={world.is_public}
         />
         公開(訪客不登入也能看到企劃介紹)
+      </label>
+
+      <label className="flex items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          name="charactersAutoApprove"
+          defaultChecked={world.characters_auto_approve}
+        />
+        角色節點免審(開啟後,新建立的角色節點直接生效,不需要人工過審)
       </label>
 
       {state && "error" in state && (

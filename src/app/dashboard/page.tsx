@@ -9,8 +9,7 @@ import { unwrapRelation } from "@/lib/unwrapRelation";
 
 /**
  * 工作台首頁動線:先個人身分資訊、版面偏好,再進入世界觀選擇——不是一
- * 進來就直接丟一串世界觀清單。三個區塊都是 Server Component 直接 SSR,
- * 唯一的例外是 CurrentThemeBadge(見該檔案說明,主題狀態只存在瀏覽器)。
+ * 進來就直接丟一串世界觀清單。三個區塊都是 Server Component 直接 SSR。
  */
 export default async function DashboardPage() {
   const user = await requireUser();

@@ -14,7 +14,8 @@ export function SettingsForm({
     description: string | null;
     default_pc_quota: number;
     is_public: boolean;
-    characters_auto_approve: boolean;
+    pc_auto_approve: boolean;
+    npc_auto_approve: boolean;
   };
 }) {
   const [state, formAction, pending] = useActionState(
@@ -91,10 +92,19 @@ export function SettingsForm({
       <label className="flex items-center gap-2 text-sm">
         <input
           type="checkbox"
-          name="charactersAutoApprove"
-          defaultChecked={world.characters_auto_approve}
+          name="pcAutoApprove"
+          defaultChecked={world.pc_auto_approve}
         />
-        角色節點免審(開啟後,新建立的角色節點直接生效,不需要人工過審)
+        PC 角色節點免審(開啟後,新建立的 PC 節點直接生效,不需要人工過審)
+      </label>
+
+      <label className="flex items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          name="npcAutoApprove"
+          defaultChecked={world.npc_auto_approve}
+        />
+        NPC 角色節點免審(開啟後,新建立的 NPC 節點直接生效,不需要人工過審)
       </label>
 
       {state && "error" in state && (

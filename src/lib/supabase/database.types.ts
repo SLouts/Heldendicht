@@ -155,7 +155,8 @@ export type Database = {
           owner_id: string;
           default_pc_quota: number;
           is_public: boolean;
-          characters_auto_approve: boolean;
+          pc_auto_approve: boolean;
+          npc_auto_approve: boolean;
           created_at: string;
           updated_at: string;
         };

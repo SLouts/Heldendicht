@@ -83,12 +83,12 @@ export default async function PublicNodeDetailPage({
       .eq("source_node_id", node.id),
     supabase
       .from("node_attachments")
-      .select("id, file_name, kind, storage_path, created_at")
+      .select("id, file_name, kind, storage_path, is_spoiler, created_at")
       .eq("node_id", node.id)
       .order("created_at", { ascending: false }),
     supabase
       .from("node_sections")
-      .select("id, title, content")
+      .select("id, title, content, is_spoiler")
       .eq("node_id", node.id)
       .order("order_index", { ascending: true }),
     node.node_type === "character"
@@ -114,7 +114,7 @@ export default async function PublicNodeDetailPage({
     node.node_type === "character"
       ? supabase
           .from("character_timeline_events")
-          .select("id, label, description, content, image_path")
+          .select("id, label, description, content, image_path, is_spoiler")
           .eq("node_id", node.id)
           .order("order_index", { ascending: true })
       : Promise.resolve({ data: null }),
@@ -169,7 +169,10 @@ export default async function PublicNodeDetailPage({
   const imageMap = new Map(
     attachmentUrls
       .filter((a) => a.kind === "image")
-      .map((a) => [a.id, { url: a.url, fileName: a.file_name }]),
+      .map((a) => [
+        a.id,
+        { url: a.url, fileName: a.file_name, isSpoiler: a.is_spoiler },
+      ]),
   );
   const fileAttachments = attachmentUrls.filter((a) => a.kind === "file");
 
@@ -186,6 +189,7 @@ export default async function PublicNodeDetailPage({
       description: e.description,
       content: e.content,
       imageUrl: await getNodeMediaSignedUrl(e.image_path),
+      isSpoiler: e.is_spoiler,
     })),
   );
 

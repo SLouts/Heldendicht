@@ -347,6 +347,7 @@ export type Database = {
           file_size: number;
           kind: AttachmentKind;
           uploader_id: string;
+          is_spoiler: boolean;
           created_at: string;
         };
         Insert: Partial<Database["public"]["Tables"]["node_attachments"]["Row"]> & {
@@ -451,6 +452,7 @@ export type Database = {
           node_id: string;
           title: string;
           content: string;
+          is_spoiler: boolean;
           order_index: number;
           created_at: string;
           updated_at: string;
@@ -478,6 +480,7 @@ export type Database = {
           description: string;
           content: string;
           image_path: string | null;
+          is_spoiler: boolean;
           order_index: number;
           created_at: string;
           updated_at: string;

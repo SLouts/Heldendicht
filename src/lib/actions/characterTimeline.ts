@@ -32,6 +32,7 @@ const TimelineEventSchema = z.object({
     .min(1, { error: "請輸入這個時間點發生的事" })
     .max(500, { error: "描述最多 500 字" }),
   content: z.string().trim().max(3000, { error: "內文最多 3000 字" }),
+  isSpoiler: z.boolean(),
 });
 
 /**
@@ -61,6 +62,7 @@ export async function createTimelineEvent(
     label: formData.get("label") ?? "",
     description: formData.get("description") ?? "",
     content: formData.get("content") ?? "",
+    isSpoiler: formData.get("isSpoiler") === "on",
   });
   if (!parsed.success) {
     return { fieldErrors: parsed.error.flatten().fieldErrors };
@@ -90,6 +92,7 @@ export async function createTimelineEvent(
     label: parsed.data.label,
     description: parsed.data.description,
     content: parsed.data.content,
+    is_spoiler: parsed.data.isSpoiler,
     order_index: (last?.order_index ?? -1) + 1,
   });
   if (error) {
@@ -122,6 +125,7 @@ export async function updateTimelineEvent(
     label: formData.get("label") ?? "",
     description: formData.get("description") ?? "",
     content: formData.get("content") ?? "",
+    isSpoiler: formData.get("isSpoiler") === "on",
   });
   if (!parsed.success) {
     return { fieldErrors: parsed.error.flatten().fieldErrors };
@@ -135,6 +139,7 @@ export async function updateTimelineEvent(
         label: parsed.data.label,
         description: parsed.data.description,
         content: parsed.data.content,
+        is_spoiler: parsed.data.isSpoiler,
         updated_at: new Date().toISOString(),
       },
       { count: "exact" },

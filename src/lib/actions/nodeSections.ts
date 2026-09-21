@@ -18,6 +18,7 @@ const SectionSchema = z.object({
     .min(1, { error: "請輸入標題" })
     .max(50, { error: "標題最多 50 字" }),
   content: z.string().trim().max(5000, { error: "內容最多 5000 字" }),
+  isSpoiler: z.boolean(),
 });
 
 /**
@@ -45,6 +46,7 @@ export async function createNodeSection(
   const parsed = SectionSchema.safeParse({
     title: formData.get("title") ?? "",
     content: formData.get("content") ?? "",
+    isSpoiler: formData.get("isSpoiler") === "on",
   });
   if (!parsed.success) {
     return { fieldErrors: parsed.error.flatten().fieldErrors };
@@ -63,6 +65,7 @@ export async function createNodeSection(
     node_id: nodeId,
     title: parsed.data.title,
     content: parsed.data.content,
+    is_spoiler: parsed.data.isSpoiler,
     order_index: (last?.order_index ?? -1) + 1,
   });
   if (error) {
@@ -93,6 +96,7 @@ export async function updateNodeSection(
   const parsed = SectionSchema.safeParse({
     title: formData.get("title") ?? "",
     content: formData.get("content") ?? "",
+    isSpoiler: formData.get("isSpoiler") === "on",
   });
   if (!parsed.success) {
     return { fieldErrors: parsed.error.flatten().fieldErrors };
@@ -102,7 +106,11 @@ export async function updateNodeSection(
   const { error, count } = await supabase
     .from("node_sections")
     .update(
-      { title: parsed.data.title, content: parsed.data.content },
+      {
+        title: parsed.data.title,
+        content: parsed.data.content,
+        is_spoiler: parsed.data.isSpoiler,
+      },
       { count: "exact" },
     )
     .eq("id", sectionId);

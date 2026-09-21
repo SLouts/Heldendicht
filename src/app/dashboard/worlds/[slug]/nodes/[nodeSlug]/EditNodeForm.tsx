@@ -87,6 +87,7 @@ export function EditNodeForm({
         file.name || "貼上的圖片",
         file.type,
         file.size,
+        false,
       );
       if ("error" in result) {
         setPasteError(result.error);

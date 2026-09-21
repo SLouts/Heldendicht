@@ -12,6 +12,7 @@ export type NodeSectionItem = {
   id: string;
   title: string;
   content: string;
+  is_spoiler: boolean;
 };
 
 function SectionItem({
@@ -62,6 +63,14 @@ function SectionItem({
             rows={6}
             className="rounded-lg border border-border bg-background px-3 py-1.5 text-sm"
           />
+          <label className="flex items-center gap-1.5 text-sm">
+            <input
+              type="checkbox"
+              name="isSpoiler"
+              defaultChecked={section.is_spoiler}
+            />
+            標記防雷
+          </label>
           {state && "error" in state && (
             <p className="text-sm text-danger">{state.error}</p>
           )}
@@ -95,6 +104,11 @@ function SectionItem({
     <details className="rounded-lg border border-border bg-surface p-3">
       <summary className="cursor-pointer font-medium">
         {section.title}
+        {section.is_spoiler && (
+          <span className="ml-1.5 rounded-full bg-badge-pending-bg px-2 py-0.5 text-xs font-normal text-badge-pending-fg">
+            ⚠️ 防雷,點擊展開
+          </span>
+        )}
       </summary>
       <p className="mt-2 whitespace-pre-wrap text-sm">{section.content}</p>
       {canEdit && (
@@ -226,6 +240,10 @@ export function NodeSectionsEditor({
             rows={4}
             className="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm"
           />
+          <label className="flex items-center gap-1.5 text-sm">
+            <input type="checkbox" name="isSpoiler" />
+            標記防雷
+          </label>
           {createState && "error" in createState && (
             <p className="text-sm text-danger">{createState.error}</p>
           )}

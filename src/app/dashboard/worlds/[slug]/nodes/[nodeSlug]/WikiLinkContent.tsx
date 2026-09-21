@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Fragment } from "react";
+import { SpoilerImage } from "@/components/SpoilerImage";
 
 export function WikiLinkContent({
   content,
@@ -10,7 +11,7 @@ export function WikiLinkContent({
   content: string;
   basePath: string;
   links: Map<string, { slug: string; isPlaceholder: boolean }>;
-  images: Map<string, { url: string; fileName: string }>;
+  images: Map<string, { url: string; fileName: string; isSpoiler: boolean }>;
 }) {
   const parts: React.ReactNode[] = [];
   let lastIndex = 0;
@@ -54,13 +55,22 @@ export function WikiLinkContent({
       const image = images.get(imageId);
       if (image) {
         parts.push(
-          // eslint-disable-next-line @next/next/no-img-element -- signed URL,無法用 next/image 白名單網域
-          <img
-            key={key++}
-            src={image.url}
-            alt={image.fileName}
-            className="my-2 block max-h-96 max-w-full rounded-lg border border-border"
-          />,
+          image.isSpoiler ? (
+            <SpoilerImage
+              key={key++}
+              src={image.url}
+              alt={image.fileName}
+              className="my-2 block max-h-96 max-w-full rounded-lg border border-border"
+            />
+          ) : (
+            // eslint-disable-next-line @next/next/no-img-element -- signed URL,無法用 next/image 白名單網域
+            <img
+              key={key++}
+              src={image.url}
+              alt={image.fileName}
+              className="my-2 block max-h-96 max-w-full rounded-lg border border-border"
+            />
+          ),
         );
       } else {
         // 附件已經被刪除,或這個嵌入語法根本無效 —— 原樣顯示,不讓內文憑空消失一段。

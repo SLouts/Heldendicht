@@ -26,6 +26,32 @@ function ExpandableDescription({
   event: TimelineEventItem;
   className: string;
 }) {
+  // 防雷:連常駐顯示的 description 都收進點開才展開的區塊,因為
+  // description 本身就可能是劇透(例如「角色死亡」),不能直接曝光。
+  if (event.isSpoiler) {
+    return (
+      <details>
+        <summary className={className + " cursor-pointer"}>
+          ⚠️ 防雷內容,點擊查看
+        </summary>
+        <div className="mt-2 text-sm">
+          <p className="whitespace-pre-wrap">{event.description}</p>
+          {event.content && (
+            <p className="mt-1 whitespace-pre-wrap">{event.content}</p>
+          )}
+          {event.imageUrl && (
+            // eslint-disable-next-line @next/next/no-img-element -- signed URL,無法用 next/image 白名單網域
+            <img
+              src={event.imageUrl}
+              alt=""
+              className="mt-2 max-h-64 w-full rounded border border-border object-cover"
+            />
+          )}
+        </div>
+      </details>
+    );
+  }
+
   if (!event.content && !event.imageUrl) {
     return <p className={className}>{event.description}</p>;
   }

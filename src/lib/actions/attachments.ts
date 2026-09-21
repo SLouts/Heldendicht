@@ -88,6 +88,7 @@ export async function finalizeNodeAttachmentUpload(
   fileName: string,
   contentType: string,
   fileSize: number,
+  isSpoiler: boolean,
 ): Promise<FinalizeAttachmentResult> {
   const user = await requireUser();
 
@@ -122,6 +123,7 @@ export async function finalizeNodeAttachmentUpload(
       file_size: fileSize,
       kind: typeInfo.kind,
       uploader_id: user.id,
+      is_spoiler: isSpoiler,
     })
     .select("id")
     .single();
@@ -134,6 +136,29 @@ export async function finalizeNodeAttachmentUpload(
 
   revalidatePath(`/dashboard/worlds/${worldSlug}/nodes/${nodeSlug}`);
   return { id: attachment.id };
+}
+
+/** 切換附件的防雷標記。權限一樣是 can_edit_node,不限上傳者本人,由 node_attachments_update RLS policy 把關。 */
+export async function toggleNodeAttachmentSpoiler(
+  attachmentId: string,
+  worldSlug: string,
+  nodeSlug: string,
+  isSpoiler: boolean,
+): Promise<void> {
+  await requireUser();
+  const supabase = await createClient();
+
+  const { error, count } = await supabase
+    .from("node_attachments")
+    .update({ is_spoiler: isSpoiler }, { count: "exact" })
+    .eq("id", attachmentId);
+
+  if (error || count === 0) {
+    throw new Error(error?.message ?? "你沒有權限修改這個附件");
+  }
+
+  revalidatePath(`/dashboard/worlds/${worldSlug}/nodes/${nodeSlug}`);
+  revalidatePath(`/worlds/${worldSlug}/nodes/${nodeSlug}`);
 }
 
 /** 刪除節點附件。權限一樣是 can_edit_node,不限上傳者本人,由 node_attachments_delete RLS policy 把關。 */

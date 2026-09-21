@@ -79,7 +79,7 @@ export default async function NodeDetailPage({
     supabase
       .from("node_attachments")
       .select(
-        "id, file_name, file_size, kind, storage_path, created_at, profiles(display_name, username, email)",
+        "id, file_name, file_size, kind, storage_path, is_spoiler, created_at, profiles(display_name, username, email)",
       )
       .eq("node_id", node.id)
       .order("created_at", { ascending: false }),
@@ -92,7 +92,7 @@ export default async function NodeDetailPage({
       : Promise.resolve({ data: null }),
     supabase
       .from("node_sections")
-      .select("id, title, content")
+      .select("id, title, content, is_spoiler")
       .eq("node_id", node.id)
       .order("order_index", { ascending: true }),
     node.node_type === "character"
@@ -116,7 +116,7 @@ export default async function NodeDetailPage({
     node.node_type === "character"
       ? supabase
           .from("character_timeline_events")
-          .select("id, label, description, content, image_path")
+          .select("id, label, description, content, image_path, is_spoiler")
           .eq("node_id", node.id)
           .order("order_index", { ascending: true })
       : Promise.resolve({ data: null }),
@@ -171,13 +171,17 @@ export default async function NodeDetailPage({
         uploaderLabel:
           uploader?.display_name || uploader?.username || uploader?.email || "未知玩家",
         createdAt: a.created_at,
+        isSpoiler: a.is_spoiler,
       };
     }),
   );
   const imageMap = new Map(
     attachmentItems
       .filter((a) => a.kind === "image")
-      .map((a) => [a.id, { url: a.url, fileName: a.fileName }]),
+      .map((a) => [
+        a.id,
+        { url: a.url, fileName: a.fileName, isSpoiler: a.isSpoiler },
+      ]),
   );
 
   const [nodeImageUrl, characterAvatarUrl, characterIllustrationUrl] = await Promise.all([
@@ -193,6 +197,7 @@ export default async function NodeDetailPage({
       description: e.description,
       content: e.content,
       imageUrl: await getNodeMediaSignedUrl(e.image_path),
+      isSpoiler: e.is_spoiler,
     })),
   );
 

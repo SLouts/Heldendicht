@@ -18,6 +18,8 @@ export type TimelineEventItem = {
   content: string;
   /** 展開才看到的配圖,選填。 */
   imageUrl: string | null;
+  /** 防雷標記,開啟後連 description 都要點擊才會顯示。 */
+  isSpoiler: boolean;
 };
 
 /**
@@ -81,6 +83,14 @@ function TimelineEventRow({
             rows={4}
             className="rounded-lg border border-border bg-background px-3 py-1.5 text-sm"
           />
+          <label className="flex items-center gap-1.5 text-sm">
+            <input
+              type="checkbox"
+              name="isSpoiler"
+              defaultChecked={event.isSpoiler}
+            />
+            標記防雷(連描述都要點擊才會顯示)
+          </label>
           {state && "error" in state && (
             <p className="text-sm text-danger">{state.error}</p>
           )}
@@ -112,7 +122,14 @@ function TimelineEventRow({
 
   return (
     <li className="rounded-lg border border-border bg-surface p-3">
-      <p className="font-medium">{event.label}</p>
+      <p className="font-medium">
+        {event.label}
+        {event.isSpoiler && (
+          <span className="ml-1.5 rounded-full bg-badge-pending-bg px-2 py-0.5 text-xs font-normal text-badge-pending-fg">
+            防雷
+          </span>
+        )}
+      </p>
       <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">
         {event.description}
       </p>
@@ -261,6 +278,10 @@ export function CharacterTimelineEditor({
             rows={3}
             className="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm"
           />
+          <label className="flex items-center gap-1.5 text-sm">
+            <input type="checkbox" name="isSpoiler" />
+            標記防雷(連描述都要點擊才會顯示)
+          </label>
           {createState && "error" in createState && (
             <p className="text-sm text-danger">{createState.error}</p>
           )}

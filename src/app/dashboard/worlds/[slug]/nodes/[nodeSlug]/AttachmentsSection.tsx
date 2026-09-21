@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import {
   createNodeAttachmentUploadTicket,
   finalizeNodeAttachmentUpload,
+  toggleNodeAttachmentSpoiler,
   deleteNodeAttachment,
 } from "@/lib/actions/attachments";
 import { insertTextAtCursor } from "@/lib/insertAtCursor";
@@ -19,6 +20,7 @@ export type AttachmentItem = {
   url: string;
   uploaderLabel: string;
   createdAt: string;
+  isSpoiler: boolean;
 };
 
 function formatSize(bytes: number): string {
@@ -78,6 +80,10 @@ export function AttachmentsSection({
       return;
     }
 
+    const isSpoiler = (
+      e.currentTarget.elements.namedItem("isSpoiler") as HTMLInputElement | null
+    )?.checked ?? false;
+
     setError(null);
     setPending(true);
     try {
@@ -110,6 +116,7 @@ export function AttachmentsSection({
         file.name,
         file.type,
         file.size,
+        isSpoiler,
       );
       if ("error" in result) {
         setError(result.error);
@@ -145,6 +152,10 @@ export function AttachmentsSection({
             required
             className="text-sm"
           />
+          <label className="flex items-center gap-1.5 text-sm">
+            <input type="checkbox" name="isSpoiler" />
+            標記防雷
+          </label>
           <button
             type="submit"
             disabled={pending}
@@ -179,7 +190,14 @@ export function AttachmentsSection({
               )}
 
               <div className="flex min-w-0 flex-1 flex-col">
-                <span className="truncate text-sm">{a.fileName}</span>
+                <span className="truncate text-sm">
+                  {a.fileName}
+                  {a.isSpoiler && (
+                    <span className="ml-1.5 rounded-full bg-badge-pending-bg px-2 py-0.5 text-xs text-badge-pending-fg">
+                      防雷
+                    </span>
+                  )}
+                </span>
                 <span className="text-xs text-muted-foreground">
                   {formatSize(a.fileSize)} · {a.uploaderLabel} ·{" "}
                   {new Date(a.createdAt).toLocaleDateString("zh-TW")}
@@ -199,6 +217,22 @@ export function AttachmentsSection({
                 <a href={a.url} target="_blank" rel="noreferrer" className="underline">
                   {a.kind === "image" ? "開啟原圖" : "下載"}
                 </a>
+                {canEdit && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      void toggleNodeAttachmentSpoiler(
+                        a.id,
+                        worldSlug,
+                        nodeSlug,
+                        !a.isSpoiler,
+                      )
+                    }
+                    className="underline"
+                  >
+                    {a.isSpoiler ? "取消防雷" : "標記防雷"}
+                  </button>
+                )}
                 {canEdit && (
                   <form action={deleteNodeAttachment.bind(null, a.id, worldSlug, nodeSlug)}>
                     <button type="submit" className="text-danger underline">

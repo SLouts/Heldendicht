@@ -16,10 +16,11 @@ export type RecentChangeNode = Pick<
  */
 export function WorldRecentChangesTab({
   nodes,
-  worldSlug,
+  basePath,
 }: {
   nodes: RecentChangeNode[] | null | undefined;
-  worldSlug: string;
+  /** 節點連結前綴,例如 `/worlds/xxx/nodes` 或 `/dashboard/worlds/xxx/nodes`。 */
+  basePath: string;
 }) {
   if (!nodes || nodes.length === 0) {
     return <p className="text-sm text-muted-foreground">目前還沒有任何變更紀錄。</p>;
@@ -31,7 +32,7 @@ export function WorldRecentChangesTab({
         <li key={node.id} className="py-3">
           {node.status !== "rejected" ? (
             <Link
-              href={`/worlds/${worldSlug}/nodes/${node.slug}`}
+              href={`${basePath}/${node.slug}`}
               className="flex flex-wrap items-center gap-2 hover:underline"
             >
               <NodeRow node={node} />

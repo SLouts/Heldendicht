@@ -3,16 +3,21 @@ import { NodeSearchBox } from "@/components/NodeSearchBox";
 
 /**
  * 中段快捷列——世界觀內條目搜尋(NodeSearchBox,原封不動沿用既有元件,
- * 純 ILIKE 查詢,沒有向量/外部 AI)+快速參與按鈕。按鈕連去後台的建立
- * 頁面(需要登入),未登入訪客點了會被 requireUser() 導去 /login,跟
- * 站上其他「公開頁面連去後台操作」的慣例一致,不在這裡重複判斷登入狀態。
+ * 純 ILIKE 查詢,沒有向量/外部 AI)+快速參與按鈕。跟後台版世界觀首頁
+ * 共用同一份檔案:兩個「+新增」按鈕本來就都連去後台的建立頁面(建立
+ * 一律在後台做,不管是從公開頁面還是後台頁面點進來都一樣),差別只有
+ * 搜尋結果連結的前綴(searchBasePath)。公開版點了未登入會被
+ * requireUser() 導去 /login,跟站上其他「公開頁面連去後台操作」的慣例
+ * 一致,不在這裡重複判斷登入狀態。
  */
 export function WorldQuickBar({
   worldId,
   worldSlug,
+  searchBasePath,
 }: {
   worldId: string;
   worldSlug: string;
+  searchBasePath: string;
 }) {
   return (
     <section className="mt-6">
@@ -33,7 +38,7 @@ export function WorldQuickBar({
           </Link>
         </div>
       </div>
-      <NodeSearchBox worldId={worldId} basePath={`/worlds/${worldSlug}/nodes`} />
+      <NodeSearchBox worldId={worldId} basePath={searchBasePath} />
     </section>
   );
 }

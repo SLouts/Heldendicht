@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getWorldMapSignedUrl } from "@/lib/worldmap";
@@ -48,7 +49,6 @@ export default async function WorldPage({
     { data: categories },
     { data: layers },
     { data: mapNodes },
-    { data: siteRules },
     { data: worldRules },
     { data: recentNodes },
     bannerUrl,
@@ -86,10 +86,6 @@ export default async function WorldPage({
       )
       .eq("world_id", world.id)
       .not("map_x", "is", null),
-    supabase
-      .from("site_rule_fields")
-      .select("id, label, content")
-      .order("order_index", { ascending: true }),
     supabase
       .from("world_rule_fields")
       .select("id, label, content")
@@ -167,6 +163,7 @@ export default async function WorldPage({
           hasVisibleMap={hasVisibleMap}
           worldId={world.id}
           worldSlug={slug}
+          basePath={`/worlds/${slug}/nodes`}
         />
       ),
     },
@@ -187,12 +184,12 @@ export default async function WorldPage({
     {
       key: "rules",
       label: "企劃規則與手冊",
-      content: <WorldRulesTab worldRules={worldRules} siteRules={siteRules} />,
+      content: <WorldRulesTab worldRules={worldRules} />,
     },
     {
       key: "recent",
       label: "近期變更",
-      content: <WorldRecentChangesTab nodes={recentNodes} worldSlug={slug} />,
+      content: <WorldRecentChangesTab nodes={recentNodes} basePath={`/worlds/${slug}/nodes`} />,
     },
   ];
 
@@ -200,16 +197,36 @@ export default async function WorldPage({
     <div className="mx-auto w-full max-w-5xl flex-1 px-6 py-12">
       <WorldHero name={world.name} tagline={world.tagline} bannerUrl={bannerUrl} iconUrl={iconUrl} />
 
-      <WorldQuickBar worldId={world.id} worldSlug={slug} />
+      <WorldQuickBar
+        worldId={world.id}
+        worldSlug={slug}
+        searchBasePath={`/worlds/${slug}/nodes`}
+      />
 
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-8">
         <div className="lg:order-2 lg:col-span-4">
           <WorldSidebar
-            worldSlug={slug}
             ownerLabel={owner?.display_name || owner?.username || null}
             defaultPcQuota={world.default_pc_quota}
             collaborativePercent={collaborativePercent}
             totalNodeCount={totalNodeCount}
+            navMenu={
+              <>
+                <Link
+                  href={`/worlds/${slug}/story`}
+                  className="rounded-md px-3 py-1.5 hover:bg-surface hover:underline"
+                >
+                  故事時間軸
+                </Link>
+                <Link
+                  href={`/worlds/${slug}/map`}
+                  className="rounded-md px-3 py-1.5 hover:bg-surface hover:underline"
+                >
+                  關係圖
+                </Link>
+              </>
+            }
+            footerNote="對特定節點或關係線有疑慮嗎?到該節點/關係線自己的頁面可以個別檢舉,主辦會盡快處理。"
           />
         </div>
 

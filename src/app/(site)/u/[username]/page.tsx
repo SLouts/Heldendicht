@@ -24,36 +24,49 @@ export default async function PublicProfilePage({
 
   if (!profile) notFound();
 
-  const [{ data: worlds }, { data: personas }, { data: followerRows }, { data: followingRows }, isFollowing] =
-    await Promise.all([
-      supabase.rpc("public_world_memberships", { p_user_id: profile.id }),
-      supabase
-        .from("character_personas")
-        .select(
-          "id, name, tagline, bio, fields, avatar_path, characters(node_id, nodes(slug, title, status, worlds(slug, name)))",
-        )
-        .eq("owner_id", profile.id)
-        .order("created_at", { ascending: true }),
-      supabase
-        .from("follows")
-        .select("follower:profiles!follows_follower_id_fkey(id, username, display_name, avatar_path)")
-        .eq("followee_id", profile.id)
-        .order("created_at", { ascending: false }),
-      supabase
-        .from("follows")
-        .select("followee:profiles!follows_followee_id_fkey(id, username, display_name, avatar_path)")
-        .eq("follower_id", profile.id)
-        .order("created_at", { ascending: false }),
-      currentUser
-        ? supabase
-            .from("follows")
-            .select("follower_id")
-            .eq("follower_id", currentUser.id)
-            .eq("followee_id", profile.id)
-            .maybeSingle()
-            .then(({ data }) => Boolean(data))
-        : Promise.resolve(false),
-    ]);
+  const [
+    { data: worlds },
+    { data: personas },
+    { data: standaloneCharacters },
+    { data: followerRows },
+    { data: followingRows },
+    isFollowing,
+  ] = await Promise.all([
+    supabase.rpc("public_world_memberships", { p_user_id: profile.id }),
+    supabase
+      .from("character_personas")
+      .select(
+        "id, name, tagline, bio, fields, avatar_path, characters(node_id, nodes(slug, title, status, worlds(slug, name)))",
+      )
+      .eq("owner_id", profile.id)
+      .order("created_at", { ascending: true }),
+    // 沒有連結任何 persona 的 PC——目前這個頁面唯一會列出它們的地方,
+    // 直接連回節點本身的詳細頁(沒有 persona 可以展示「本尊」全頁)。
+    supabase
+      .from("characters")
+      .select("node_id, nodes(slug, title, status, worlds(slug, name))")
+      .eq("owner_id", profile.id)
+      .is("persona_id", null),
+    supabase
+      .from("follows")
+      .select("follower:profiles!follows_follower_id_fkey(id, username, display_name, avatar_path)")
+      .eq("followee_id", profile.id)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("follows")
+      .select("followee:profiles!follows_followee_id_fkey(id, username, display_name, avatar_path)")
+      .eq("follower_id", profile.id)
+      .order("created_at", { ascending: false }),
+    currentUser
+      ? supabase
+          .from("follows")
+          .select("follower_id")
+          .eq("follower_id", currentUser.id)
+          .eq("followee_id", profile.id)
+          .maybeSingle()
+          .then(({ data }) => Boolean(data))
+      : Promise.resolve(false),
+  ]);
 
   const isOwnProfile = currentUser?.id === profile.id;
   const followerProfiles = (followerRows ?? [])
@@ -97,6 +110,23 @@ export default async function PublicProfilePage({
     })
     // 沒有任何看得到的世界觀連結就不展示——避免出現一張看起來像壞掉的空卡片。
     .filter((p) => p.links.length > 0);
+
+  const standalonePcLinks = (standaloneCharacters ?? []).flatMap((c) => {
+    const node = unwrapRelation(c.nodes);
+    if (!node) return [];
+    const world = unwrapRelation(node.worlds);
+    if (!world) return [];
+    return [
+      {
+        nodeId: c.node_id,
+        title: node.title,
+        nodeSlug: node.slug,
+        status: node.status,
+        worldSlug: world.slug,
+        worldName: world.name,
+      },
+    ];
+  });
 
   return (
     <div className="flex flex-1 flex-col bg-background">
@@ -224,18 +254,25 @@ export default async function PublicProfilePage({
                   key={p.id}
                   className="flex gap-3 rounded-lg border border-border bg-surface p-4"
                 >
-                  {p.avatarUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element -- public bucket 網址,無法用 next/image 白名單網域
-                    <img
-                      src={p.avatarUrl}
-                      alt={p.name}
-                      className="h-14 w-14 shrink-0 rounded-full border border-border object-cover"
-                    />
-                  ) : (
-                    <div className="h-14 w-14 shrink-0 rounded-full border border-border bg-muted" />
-                  )}
+                  <Link href={`/u/${username}/personas/${p.id}`} className="shrink-0">
+                    {p.avatarUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element -- public bucket 網址,無法用 next/image 白名單網域
+                      <img
+                        src={p.avatarUrl}
+                        alt={p.name}
+                        className="h-14 w-14 rounded-full border border-border object-cover"
+                      />
+                    ) : (
+                      <div className="h-14 w-14 rounded-full border border-border bg-muted" />
+                    )}
+                  </Link>
                   <div>
-                    <p className="font-medium">{p.name}</p>
+                    <Link
+                      href={`/u/${username}/personas/${p.id}`}
+                      className="font-medium hover:underline"
+                    >
+                      {p.name}
+                    </Link>
                     {p.tagline && (
                       <p className="mt-0.5 text-sm italic text-muted-foreground">
                         「{p.tagline}」
@@ -273,6 +310,33 @@ export default async function PublicProfilePage({
                 </div>
               ))}
             </div>
+          </>
+        )}
+
+        {standalonePcLinks.length > 0 && (
+          <>
+            <h2 className="mt-10 text-lg font-semibold">獨立 PC</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              還沒有歸類到跨世界觀角色身分的 PC。
+            </p>
+            <ul className="mt-4 flex flex-col gap-2">
+              {standalonePcLinks.map((link) => (
+                <li key={link.nodeId}>
+                  <Link
+                    href={`/worlds/${link.worldSlug}/nodes/${link.nodeSlug}`}
+                    className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-surface px-4 py-3 transition hover:border-primary/50"
+                  >
+                    <span className="font-medium">{link.title}</span>
+                    <span className="text-xs text-muted-foreground">{link.worldName}</span>
+                    {link.status === "pending" && (
+                      <span className="rounded-full bg-badge-pending-bg px-2 py-0.5 text-xs text-badge-pending-fg">
+                        未正式過審
+                      </span>
+                    )}
+                  </Link>
+                </li>
+              ))}
+            </ul>
           </>
         )}
       </main>

@@ -3,28 +3,11 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getAttachmentSignedUrl } from "@/lib/attachments";
 import { getNodeMediaSignedUrl } from "@/lib/nodeMedia";
-import { WikiLinkContent } from "@/app/dashboard/worlds/[slug]/nodes/[nodeSlug]/WikiLinkContent";
-import { NodeSectionsEditor } from "@/app/dashboard/worlds/[slug]/nodes/[nodeSlug]/NodeSectionsEditor";
-import { CharacterTimelineDisplay } from "@/app/dashboard/worlds/[slug]/nodes/[nodeSlug]/CharacterTimelineDisplay";
 import { NodeHero } from "@/app/dashboard/worlds/[slug]/nodes/[nodeSlug]/NodeHero";
 import { NodeInfobox } from "./NodeInfobox";
-import { NodeTabs, type NodeTab } from "./NodeTabs";
+import { NodeContentPanel } from "@/components/NodeContentPanel";
 import { NODE_TYPE_LABEL, NODE_STATUS_LABEL } from "@/lib/nodeTypeLabels";
-import type { Database } from "@/lib/supabase/database.types";
 import { unwrapRelation } from "@/lib/unwrapRelation";
-
-type RelationshipNodeSummary = Pick<
-  Database["public"]["Tables"]["nodes"]["Row"],
-  "id" | "title" | "slug"
->;
-
-type NodeRelationshipRow = Pick<
-  Database["public"]["Tables"]["relationships"]["Row"],
-  "id" | "label" | "label_reverse" | "status"
-> & {
-  node_a: RelationshipNodeSummary | RelationshipNodeSummary[] | null;
-  node_b: RelationshipNodeSummary | RelationshipNodeSummary[] | null;
-};
 
 /**
  * 公開版節點頁面——可見度完全交給 nodes_select_visible RLS
@@ -222,81 +205,6 @@ export default async function PublicNodeDetailPage({
     quote: null,
   };
 
-  const tabs: NodeTab[] = [
-    {
-      key: "content",
-      label: "主文",
-      content: (
-        <>
-          {node.content ? (
-            <WikiLinkContent
-              content={node.content}
-              basePath={`/worlds/${world.slug}/nodes`}
-              links={wikiLinkMap}
-              images={imageMap}
-            />
-          ) : (
-            <p className="text-sm text-muted-foreground">還沒有內文。</p>
-          )}
-
-          {fileAttachments.length > 0 && (
-            <section className="mt-8">
-              <h2 className="text-lg font-semibold">附件</h2>
-              <ul className="mt-3 flex flex-col gap-2">
-                {fileAttachments.map((a) => (
-                  <li key={a.id} className="text-sm">
-                    <a href={a.url} className="underline">
-                      {a.file_name}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
-        </>
-      ),
-    },
-  ];
-
-  if (timelineEventItems.length > 0) {
-    tabs.push({
-      key: "timeline",
-      label: "時間軸",
-      content: <CharacterTimelineDisplay events={timelineEventItems} />,
-    });
-  }
-
-  if ((sections ?? []).length > 0) {
-    tabs.push({
-      key: "sections",
-      label: "補充區塊",
-      content: (
-        <NodeSectionsEditor
-          nodeId={node.id}
-          worldSlug={world.slug}
-          nodeSlug={node.slug}
-          canEdit={false}
-          sections={sections ?? []}
-          hideHeading
-        />
-      ),
-    });
-  }
-
-  if ((relationships ?? []).length > 0) {
-    tabs.push({
-      key: "relationships",
-      label: "人際關係",
-      content: (
-        <NodeRelationshipList
-          relationships={relationships ?? []}
-          worldSlug={world.slug}
-          currentNodeId={node.id}
-        />
-      ),
-    });
-  }
-
   return (
     <div className="mx-auto w-full max-w-2xl flex-1 px-6 py-12 lg:max-w-5xl">
       <Link
@@ -330,58 +238,19 @@ export default async function PublicNodeDetailPage({
         </div>
 
         <div className="lg:order-1 lg:col-span-8 lg:min-w-0">
-          <NodeTabs tabs={tabs} />
+          <NodeContentPanel
+            nodeId={node.id}
+            nodeContent={node.content}
+            worldSlug={world.slug}
+            wikiLinkMap={wikiLinkMap}
+            imageMap={imageMap}
+            fileAttachments={fileAttachments}
+            sections={sections ?? []}
+            timelineEventItems={timelineEventItems}
+            relationships={relationships ?? []}
+          />
         </div>
       </div>
     </div>
-  );
-}
-
-/** 節點分頁裡的「人際關係」清單——顯示這個節點跟其他節點之間的關係線,
- * 連去公開版的關係線詳細頁。跟世界觀首頁的 RelationshipList 不同的是
- * 這裡只列跟「目前這個節點」有關的關係,並且用另一端節點的標題當主要
- * 顯示文字,而不是「A ↔ B」。 */
-function NodeRelationshipList({
-  relationships,
-  worldSlug,
-  currentNodeId,
-}: {
-  relationships: NodeRelationshipRow[];
-  worldSlug: string;
-  currentNodeId: string;
-}) {
-  return (
-    <ul className="flex flex-col divide-y divide-border">
-      {relationships.map((rel) => {
-        const nodeA = unwrapRelation(rel.node_a);
-        const nodeB = unwrapRelation(rel.node_b);
-        const isSelfA = nodeA?.id === currentNodeId;
-        const other = isSelfA ? nodeB : nodeA;
-        if (!other) return null;
-
-        const label = isSelfA ? rel.label : rel.label_reverse || rel.label;
-        const isRevoked = rel.status === "revoked";
-
-        return (
-          <li key={rel.id} className="py-3">
-            <Link
-              href={`/worlds/${worldSlug}/relationships/${rel.id}`}
-              className={
-                "flex flex-wrap items-center gap-2 hover:underline" +
-                (isRevoked ? " text-muted-foreground" : "")
-              }
-            >
-              <span className="font-medium">{other.title}</span>
-              {label && <span className="text-xs text-muted-foreground">{label}</span>}
-              {isRevoked && (
-                <span className="rounded-full bg-badge-neutral-bg px-2 py-0.5 text-xs text-badge-neutral-fg">
-                  已撤銷
-                </span>
-              )}
-            </Link>
-          </li>
-        );
-      })}
-    </ul>
   );
 }

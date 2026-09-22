@@ -22,9 +22,9 @@ export function NewWorldOnboarding({ worldSlug }: { worldSlug: string }) {
       description: "上傳橫幅/Icon、寫詳細介紹,讓首頁看起來更完整。",
     },
     {
-      href: `/dashboard/worlds/${worldSlug}/character-fields`,
-      title: "設定角色必填欄位",
-      description: "例如性別、生日、種族——玩家建立角色時都要填,PC/NPC 可以分開設定。",
+      href: `/dashboard/worlds/${worldSlug}/character-template`,
+      title: "設定角色卡格式",
+      description: "必填欄位(性別、生日等)跟補充章節,PC/NPC 可以分開設定,還能填範例給玩家參考。",
     },
     {
       href: `/dashboard/worlds/${worldSlug}/rules`,

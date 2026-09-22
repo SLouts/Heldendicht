@@ -591,6 +591,7 @@ export type Database = {
           world_id: string;
           label: string;
           character_type: CharacterType | null;
+          example_value: string;
           order_index: number;
           created_at: string;
         };
@@ -615,6 +616,7 @@ export type Database = {
           id: string;
           world_id: string;
           label: string;
+          example_content: string;
           order_index: number;
           created_at: string;
         };

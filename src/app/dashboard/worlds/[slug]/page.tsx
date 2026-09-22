@@ -262,18 +262,10 @@ export default async function WorldDashboardPage({
                 </Link>
                 {isStaff && (
                   <Link
-                    href={`/dashboard/worlds/${world.slug}/character-fields`}
+                    href={`/dashboard/worlds/${world.slug}/character-template`}
                     className="rounded-md px-3 py-1.5 hover:bg-surface hover:underline"
                   >
-                    角色必填欄位
-                  </Link>
-                )}
-                {isStaff && (
-                  <Link
-                    href={`/dashboard/worlds/${world.slug}/section-templates`}
-                    className="rounded-md px-3 py-1.5 hover:bg-surface hover:underline"
-                  >
-                    補充區塊範本
+                    角色卡設定
                   </Link>
                 )}
                 {isStaff && (

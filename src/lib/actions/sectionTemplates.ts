@@ -17,6 +17,11 @@ const LabelSchema = z
   .min(1, { error: "請輸入區塊標題" })
   .max(30, { error: "區塊標題最多 30 字" });
 
+const ExampleContentSchema = z
+  .string()
+  .trim()
+  .max(2000, { error: "範例內容最多 2000 字" });
+
 /**
  * 世界觀主辦/編輯自訂「補充區塊範本」——跟 world_character_fields 同一套
  * 「模板」型態表格,只是這裡列的是 node_sections 的標題清單,給「貼上
@@ -39,6 +44,14 @@ export async function createSectionTemplate(
   if (!parsed.success) {
     return { fieldErrors: { label: [parsed.error.issues[0].message] } };
   }
+  const exampleContentParsed = ExampleContentSchema.safeParse(
+    formData.get("exampleContent") ?? "",
+  );
+  if (!exampleContentParsed.success) {
+    return {
+      fieldErrors: { exampleContent: [exampleContentParsed.error.issues[0].message] },
+    };
+  }
 
   const supabase = await createClient();
   const { data: last } = await supabase
@@ -52,6 +65,7 @@ export async function createSectionTemplate(
   const { error } = await supabase.from("world_section_templates").insert({
     world_id: worldId,
     label: parsed.data,
+    example_content: exampleContentParsed.data,
     order_index: (last?.order_index ?? -1) + 1,
   });
   if (error) {
@@ -63,7 +77,7 @@ export async function createSectionTemplate(
     };
   }
 
-  revalidatePath(`/dashboard/worlds/${worldSlug}/section-templates`);
+  revalidatePath(`/dashboard/worlds/${worldSlug}/character-template`);
   return undefined;
 }
 
@@ -83,11 +97,22 @@ export async function updateSectionTemplate(
   if (!parsed.success) {
     return { fieldErrors: { label: [parsed.error.issues[0].message] } };
   }
+  const exampleContentParsed = ExampleContentSchema.safeParse(
+    formData.get("exampleContent") ?? "",
+  );
+  if (!exampleContentParsed.success) {
+    return {
+      fieldErrors: { exampleContent: [exampleContentParsed.error.issues[0].message] },
+    };
+  }
 
   const supabase = await createClient();
   const { error, count } = await supabase
     .from("world_section_templates")
-    .update({ label: parsed.data }, { count: "exact" })
+    .update(
+      { label: parsed.data, example_content: exampleContentParsed.data },
+      { count: "exact" },
+    )
     .eq("id", templateId);
   if (error || count === 0) {
     return {
@@ -98,7 +123,7 @@ export async function updateSectionTemplate(
     };
   }
 
-  revalidatePath(`/dashboard/worlds/${worldSlug}/section-templates`);
+  revalidatePath(`/dashboard/worlds/${worldSlug}/character-template`);
   return undefined;
 }
 
@@ -117,7 +142,7 @@ export async function deleteSectionTemplate(
     throw new Error("刪除失敗,或你沒有權限");
   }
 
-  revalidatePath(`/dashboard/worlds/${worldSlug}/section-templates`);
+  revalidatePath(`/dashboard/worlds/${worldSlug}/character-template`);
 }
 
 /** 上移/下移一個範本:跟相鄰的範本互換 order_index。 */
@@ -141,5 +166,5 @@ export async function moveSectionTemplate(
     throw new Error(error);
   }
 
-  revalidatePath(`/dashboard/worlds/${worldSlug}/section-templates`);
+  revalidatePath(`/dashboard/worlds/${worldSlug}/character-template`);
 }

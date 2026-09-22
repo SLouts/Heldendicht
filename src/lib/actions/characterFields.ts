@@ -22,6 +22,8 @@ const CharacterTypeSchema = z
   .union([z.literal("pc"), z.literal("npc"), z.literal("")])
   .transform((v) => (v === "" ? null : v));
 
+const ExampleValueSchema = z.string().trim().max(200, { error: "範例值最多 200 字" });
+
 /**
  * 世界觀主辦/編輯自訂「角色必填欄位」模板——套用在這個世界觀底下所有
  * 角色節點(PC/NPC)的建立/編輯表單,玩家填角色資料時這些欄位都要填。
@@ -50,6 +52,14 @@ export async function createCharacterField(
   const characterType = characterTypeParsed.success
     ? characterTypeParsed.data
     : null;
+  const exampleValueParsed = ExampleValueSchema.safeParse(
+    formData.get("exampleValue") ?? "",
+  );
+  if (!exampleValueParsed.success) {
+    return {
+      fieldErrors: { exampleValue: [exampleValueParsed.error.issues[0].message] },
+    };
+  }
 
   const supabase = await createClient();
   const { data: last } = await supabase
@@ -64,6 +74,7 @@ export async function createCharacterField(
     world_id: worldId,
     label: parsed.data,
     character_type: characterType,
+    example_value: exampleValueParsed.data,
     order_index: (last?.order_index ?? -1) + 1,
   });
   if (error) {
@@ -75,7 +86,7 @@ export async function createCharacterField(
     };
   }
 
-  revalidatePath(`/dashboard/worlds/${worldSlug}/character-fields`);
+  revalidatePath(`/dashboard/worlds/${worldSlug}/character-template`);
   return undefined;
 }
 
@@ -101,12 +112,24 @@ export async function updateCharacterField(
   const characterType = characterTypeParsed.success
     ? characterTypeParsed.data
     : null;
+  const exampleValueParsed = ExampleValueSchema.safeParse(
+    formData.get("exampleValue") ?? "",
+  );
+  if (!exampleValueParsed.success) {
+    return {
+      fieldErrors: { exampleValue: [exampleValueParsed.error.issues[0].message] },
+    };
+  }
 
   const supabase = await createClient();
   const { error, count } = await supabase
     .from("world_character_fields")
     .update(
-      { label: parsed.data, character_type: characterType },
+      {
+        label: parsed.data,
+        character_type: characterType,
+        example_value: exampleValueParsed.data,
+      },
       { count: "exact" },
     )
     .eq("id", fieldId);
@@ -119,7 +142,7 @@ export async function updateCharacterField(
     };
   }
 
-  revalidatePath(`/dashboard/worlds/${worldSlug}/character-fields`);
+  revalidatePath(`/dashboard/worlds/${worldSlug}/character-template`);
   return undefined;
 }
 
@@ -138,7 +161,7 @@ export async function deleteCharacterField(
     throw new Error("刪除失敗,或你沒有權限");
   }
 
-  revalidatePath(`/dashboard/worlds/${worldSlug}/character-fields`);
+  revalidatePath(`/dashboard/worlds/${worldSlug}/character-template`);
 }
 
 /** 上移/下移一個欄位:跟相鄰的欄位互換 order_index。 */
@@ -160,7 +183,7 @@ export async function moveCharacterField(
   });
   if (error) throw new Error(error);
 
-  revalidatePath(`/dashboard/worlds/${worldSlug}/character-fields`);
+  revalidatePath(`/dashboard/worlds/${worldSlug}/character-template`);
 }
 
 export type SetFieldValuesResult = { error: string } | { ok: true };

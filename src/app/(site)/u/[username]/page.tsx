@@ -4,8 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/dal";
 import { getProfileMediaPublicUrl } from "@/lib/profileMedia";
 import type { PersonaField } from "@/lib/actions/personas";
-import { FollowButton } from "./FollowButton";
-import { FollowListCard, type FollowProfile } from "./FollowListCard";
+import { FollowButton } from "@/components/FollowButton";
+import { FollowListCard, type FollowProfile } from "@/components/FollowListCard";
 import { UnfollowButton } from "./UnfollowButton";
 import { unwrapRelation, toRelationArray } from "@/lib/unwrapRelation";
 

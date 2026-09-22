@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireUser } from "@/lib/dal";
 import { createClient } from "@/lib/supabase/server";
 import { unwrapRelation } from "@/lib/unwrapRelation";
+import { UserSearchBox } from "@/components/UserSearchBox";
 
 type ProfileSummary = {
   id: string;
@@ -69,9 +70,13 @@ export default async function MessagesInboxPage() {
     <div>
       <h1 className="text-2xl font-semibold">私訊</h1>
 
+      <div className="mt-6">
+        <UserSearchBox />
+      </div>
+
       {list.length === 0 ? (
         <p className="mt-6 text-sm text-muted-foreground">
-          目前還沒有任何對話。到別人的個人頁面點「私訊」就可以開始。
+          目前還沒有任何對話。用上面的搜尋找人,或到別人的個人頁面點「私訊」就可以開始。
         </p>
       ) : (
         <div className="mt-6 flex flex-col gap-2">

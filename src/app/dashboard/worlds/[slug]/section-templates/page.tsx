@@ -62,7 +62,7 @@ export default async function SectionTemplatesPage({
         newSectionLabel="新增區塊範本"
         newPlaceholder="例如「技能」"
         emptyText="還沒有設定任何區塊範本。"
-        deleteConfirmText={(label) => `確定要刪除「${label}」這個區塊範本嗎?已經建立的補充區塊不會被刪除。`}
+        deleteConfirmText="確定要刪除「{label}」這個區塊範本嗎?已經建立的補充區塊不會被刪除。"
       />
     </div>
   );

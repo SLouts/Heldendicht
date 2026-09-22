@@ -45,7 +45,6 @@ export default async function SiteRulesPage() {
         newLabel="新增規則"
         newLabelPlaceholder="例如「內容分級」"
         emptyText="還沒有設定任何全站規則。"
-        deleteConfirmText={(label) => `確定要刪除「${label}」這則規則嗎?`}
       />
     </div>
   );

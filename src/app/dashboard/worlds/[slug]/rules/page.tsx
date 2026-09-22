@@ -65,7 +65,6 @@ export default async function WorldRulesPage({
         newLabel="新增規則"
         newLabelPlaceholder="例如「投稿規範」"
         emptyText="還沒有設定任何世界觀規則。"
-        deleteConfirmText={(label) => `確定要刪除「${label}」這則規則嗎?`}
       />
     </div>
   );

@@ -57,7 +57,11 @@ export function OrderedLabelEditor({
   newSectionLabel: string;
   newPlaceholder: string;
   emptyText: string;
-  deleteConfirmText: (label: string) => string;
+  /** 靜態字串,用字面上的 "{label}" 當佔位符——不能傳函式,Server
+   * Component 傳給 Client Component 的 prop 只有 Server Action 能是
+   * 函式,一般 closure 會在執行期丟出「Functions cannot be passed
+   * directly to Client Components」。 */
+  deleteConfirmText: string;
 }) {
   const [createState, createAction_, createPending] = useActionState(
     createAction,
@@ -159,7 +163,7 @@ function OrderedLabelItemRow({
     worldSlug: string,
     direction: "up" | "down",
   ) => Promise<void>;
-  deleteConfirmText: (label: string) => string;
+  deleteConfirmText: string;
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [state, formAction, pending] = useActionState(updateAction, undefined);
@@ -233,7 +237,7 @@ function OrderedLabelItemRow({
         <button
           type="button"
           onClick={() => {
-            if (confirm(deleteConfirmText(item.label))) {
+            if (confirm(deleteConfirmText.replace("{label}", item.label))) {
               void onDelete(item.id, worldSlug);
             }
           }}

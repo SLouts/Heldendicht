@@ -34,7 +34,6 @@ export function OrderedContentEditor({
   newLabel,
   newLabelPlaceholder,
   emptyText,
-  deleteConfirmText,
 }: {
   items: OrderedContentItem[];
   extraHiddenFields?: ReactNode;
@@ -51,7 +50,6 @@ export function OrderedContentEditor({
   newLabel: string;
   newLabelPlaceholder: string;
   emptyText: string;
-  deleteConfirmText: (label: string) => string;
 }) {
   const [createState, createAction_, createPending] = useActionState(
     createAction,
@@ -72,7 +70,6 @@ export function OrderedContentEditor({
             updateAction={updateAction}
             onDelete={onDelete}
             onMove={onMove}
-            deleteConfirmText={deleteConfirmText}
           />
         ))}
         {items.length === 0 && (
@@ -139,7 +136,6 @@ function OrderedContentItemRow({
   updateAction,
   onDelete,
   onMove,
-  deleteConfirmText,
 }: {
   item: OrderedContentItem;
   index: number;
@@ -151,7 +147,6 @@ function OrderedContentItemRow({
   ) => Promise<ContentFormState>;
   onDelete: (id: string) => void;
   onMove: (id: string, direction: "up" | "down") => void;
-  deleteConfirmText: (label: string) => string;
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [state, formAction, pending] = useActionState(updateAction, undefined);
@@ -234,7 +229,7 @@ function OrderedContentItemRow({
           <button
             type="button"
             onClick={() => {
-              if (confirm(deleteConfirmText(item.label))) {
+              if (confirm(`確定要刪除「${item.label}」這則規則嗎?`)) {
                 onDelete(item.id);
               }
             }}

@@ -106,6 +106,18 @@ export function NewRelationshipForm({
         />
       </div>
 
+      <div className="flex flex-col gap-1">
+        <span className="text-sm font-medium">方向性</span>
+        <label className="flex items-center gap-2 text-sm">
+          <input type="radio" name="direction" value="bi" defaultChecked />
+          雙向(A、B 兩端的角色擁有者都能編輯這條關係線)
+        </label>
+        <label className="flex items-center gap-2 text-sm">
+          <input type="radio" name="direction" value="uni" />
+          單向(只有 A 端的角色擁有者能編輯,B 端不行)
+        </label>
+      </div>
+
       {state && "error" in state && (
         <p className="text-sm text-danger">{state.error}</p>
       )}

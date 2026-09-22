@@ -136,3 +136,72 @@ export async function updateWorldSettings(
   revalidatePath(`/dashboard/worlds/${parsed.data.worldSlug}/settings`);
   return undefined;
 }
+
+const RequestWorldDeletionSchema = z.object({
+  worldId: z.uuid(),
+  worldSlug: SlugSchema,
+  worldName: z.string().min(1),
+  reason: z.string().min(1, { error: "請說明申請刪除的原因" }),
+});
+
+/**
+ * 申請刪除世界觀。連 admin 都不能直接刪,只能提出申請,交給站務
+ * (site_admin)審核——由 world_deletion_requests_insert policy 把關
+ * (僅該世界觀的 admin 能發起)。
+ */
+export async function requestWorldDeletion(
+  _prevState: WorldFormState,
+  formData: FormData,
+): Promise<WorldFormState> {
+  const user = await requireUser();
+
+  const parsed = RequestWorldDeletionSchema.safeParse({
+    worldId: formData.get("worldId"),
+    worldSlug: formData.get("worldSlug"),
+    worldName: formData.get("worldName"),
+    reason: formData.get("reason") ?? "",
+  });
+  if (!parsed.success) {
+    return { fieldErrors: parsed.error.flatten().fieldErrors };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("world_deletion_requests").insert({
+    world_id: parsed.data.worldId,
+    world_slug: parsed.data.worldSlug,
+    world_name: parsed.data.worldName,
+    requested_by: user.id,
+    reason: parsed.data.reason,
+  });
+
+  if (error) {
+    return { error: "申請失敗,只有這個世界觀的主辦(admin)可以提出申請" };
+  }
+
+  revalidatePath(`/dashboard/worlds/${parsed.data.worldSlug}/settings`);
+  return undefined;
+}
+
+/**
+ * 核准/駁回世界觀刪除申請。只有站務(site_admin)能呼叫——由
+ * resolve_world_deletion_request() RPC 把關,核准的話會在同一個交易裡
+ * 直接刪除該世界觀。
+ */
+export async function resolveWorldDeletionRequest(
+  requestId: string,
+  approve: boolean,
+): Promise<void> {
+  await requireUser();
+  const supabase = await createClient();
+
+  const { error } = await supabase.rpc("resolve_world_deletion_request", {
+    p_request_id: requestId,
+    p_approve: approve,
+  });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  revalidatePath("/dashboard/admin/world-deletion-requests");
+}

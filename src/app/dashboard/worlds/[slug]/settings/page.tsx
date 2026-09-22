@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getWorldMediaSignedUrl } from "@/lib/worldMedia";
 import { SettingsForm } from "./SettingsForm";
 import { WorldMediaUpload } from "./WorldMediaUpload";
+import { WorldDeletionRequestForm } from "./WorldDeletionRequestForm";
 
 export default async function WorldSettingsPage({
   params,
@@ -39,9 +40,15 @@ export default async function WorldSettingsPage({
     );
   }
 
-  const [bannerUrl, iconUrl] = await Promise.all([
+  const [bannerUrl, iconUrl, { data: pendingDeletionRequest }] = await Promise.all([
     getWorldMediaSignedUrl(world.banner_path),
     getWorldMediaSignedUrl(world.icon_path),
+    supabase
+      .from("world_deletion_requests")
+      .select("reason")
+      .eq("world_id", world.id)
+      .eq("status", "pending")
+      .maybeSingle(),
   ]);
 
   return (
@@ -80,6 +87,17 @@ export default async function WorldSettingsPage({
       >
         管理地圖圖層
       </Link>
+
+      <h2 className="mt-10 text-lg font-semibold text-danger">危險區域</h2>
+      <p className="mt-1 text-sm text-muted-foreground">
+        刪除世界觀無法復原,即使是主辦也不能直接刪除,必須提出申請交由站務審核。
+      </p>
+      <WorldDeletionRequestForm
+        worldId={world.id}
+        worldSlug={world.slug}
+        worldName={world.name}
+        pendingRequest={pendingDeletionRequest ?? null}
+      />
     </div>
   );
 }

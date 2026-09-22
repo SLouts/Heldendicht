@@ -2,8 +2,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/dal";
 import { createClient } from "@/lib/supabase/server";
-import { deleteRelationship, revokeRelationship } from "@/lib/actions/relationships";
+import { revokeRelationship } from "@/lib/actions/relationships";
 import { EditRelationshipForm } from "./EditRelationshipForm";
+import { RelationshipDeletionForm } from "./RelationshipDeletionForm";
 import { ReportForm } from "@/components/ReportForm";
 import { unwrapRelation } from "@/lib/unwrapRelation";
 
@@ -24,7 +25,7 @@ export default async function RelationshipDetailPage({
   const { data: rel } = await supabase
     .from("relationships")
     .select(
-      "id, label, label_reverse, description, status, creator_id, revoked_at, node_a:nodes!relationships_node_a_id_fkey(id, title, slug), node_b:nodes!relationships_node_b_id_fkey(id, title, slug)",
+      "id, label, label_reverse, description, status, direction, creator_id, revoked_at, node_a:nodes!relationships_node_a_id_fkey(id, title, slug, characters(owner_id)), node_b:nodes!relationships_node_b_id_fkey(id, title, slug, characters(owner_id))",
     )
     .eq("id", id)
     .eq("world_id", world.id)
@@ -33,15 +34,40 @@ export default async function RelationshipDetailPage({
 
   const nodeA = unwrapRelation(rel.node_a);
   const nodeB = unwrapRelation(rel.node_b);
+  const characterA = nodeA ? unwrapRelation(nodeA.characters) : undefined;
+  const characterB = nodeB ? unwrapRelation(nodeB.characters) : undefined;
 
   const { data: isStaff } = await supabase.rpc("is_world_staff", {
     p_world_id: world.id,
   });
 
+  const { data: pendingRequestRow } = await supabase
+    .from("relationship_deletion_requests")
+    .select(
+      "id, reason, requester:profiles!relationship_deletion_requests_requested_by_fkey(display_name, username, email)",
+    )
+    .eq("relationship_id", rel.id)
+    .eq("status", "pending")
+    .maybeSingle();
+  const requester = pendingRequestRow
+    ? unwrapRelation(pendingRequestRow.requester)
+    : undefined;
+  const pendingRequest = pendingRequestRow
+    ? {
+        id: pendingRequestRow.id,
+        reason: pendingRequestRow.reason,
+        requesterLabel:
+          requester?.display_name || requester?.username || requester?.email || "匿名",
+      }
+    : null;
+
   const isCreator = rel.creator_id === user.id;
-  const canEdit = Boolean(isStaff) || isCreator;
+  const isCharacterOwner =
+    characterA?.owner_id === user.id ||
+    (rel.direction === "bi" && characterB?.owner_id === user.id);
+  const canEdit = Boolean(isStaff) || isCreator || isCharacterOwner;
   const canRevoke = canEdit && rel.status === "active";
-  const canDelete = Boolean(isStaff);
+  const canRequestDeletion = canEdit;
 
   return (
     <div className="max-w-2xl">
@@ -62,7 +88,9 @@ export default async function RelationshipDetailPage({
               {nodeA.title}
             </Link>
           )}
-          <span className="mx-2 text-muted-foreground">↔</span>
+          <span className="mx-2 text-muted-foreground">
+            {rel.direction === "uni" ? "→" : "↔"}
+          </span>
           {nodeB && (
             <Link
               href={`/dashboard/worlds/${world.slug}/nodes/${nodeB.slug}`}
@@ -78,6 +106,12 @@ export default async function RelationshipDetailPage({
           </span>
         )}
       </div>
+
+      {rel.direction === "uni" && (
+        <p className="mt-1 text-xs text-muted-foreground">
+          單向關係線:只有 {nodeA?.title} 的角色擁有者能編輯,{nodeB?.title} 的擁有者不行。
+        </p>
+      )}
 
       {(rel.label || rel.label_reverse) && (
         <p className="mt-1 text-sm text-muted-foreground">
@@ -125,14 +159,17 @@ export default async function RelationshipDetailPage({
             </button>
           </form>
         )}
-        {canDelete && (
-          <form action={deleteRelationship.bind(null, rel.id, world.slug)}>
-            <button className="text-sm text-danger underline">
-              強制刪除
-            </button>
-          </form>
-        )}
       </div>
+
+      <RelationshipDeletionForm
+        relationshipId={rel.id}
+        worldId={world.id}
+        worldSlug={world.slug}
+        relationshipSummary={`${nodeA?.title ?? "?"} ↔ ${nodeB?.title ?? "?"}`}
+        canRequest={canRequestDeletion}
+        isStaff={Boolean(isStaff)}
+        pendingRequest={pendingRequest}
+      />
 
       <ReportForm
         targetType="relationship"

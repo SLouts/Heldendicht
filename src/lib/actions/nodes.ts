@@ -172,15 +172,19 @@ export async function updateNodeContent(
 }
 
 /**
- * 審核節點(核准/駁回)。只有世界觀 staff(admin/editor)或 site_admin 能改
- * status/reviewed_by/reviewed_at —— 這是 guard_node_review_fields trigger
- * 強制保證的,不是靠這裡的程式碼把關。
+ * 審核節點(核准/駁回/打回審核中)。只有世界觀 staff(admin/editor)或
+ * site_admin 能改 status/reviewed_by/reviewed_at/review_note —— 這是
+ * guard_node_review_fields trigger 強制保證的,不是靠這裡的程式碼把關。
+ * "pending" 這個決定是給已經 approved 的節點「打回審核中」用的(例如角色
+ * 設定跟世界觀衝突,需要重新審一次),不是原本建立時的預設值。
+ * reviewNote 選填,寫給建立者看的審核意見。
  */
 export async function reviewNode(
   nodeId: string,
   worldSlug: string,
   nodeSlug: string,
-  decision: "approved" | "rejected",
+  decision: "approved" | "rejected" | "pending",
+  reviewNote?: string,
 ): Promise<void> {
   const user = await requireUser();
   const supabase = await createClient();
@@ -192,6 +196,7 @@ export async function reviewNode(
         status: decision,
         reviewed_by: user.id,
         reviewed_at: new Date().toISOString(),
+        review_note: reviewNote?.trim() || null,
       },
       { count: "exact" },
     )
@@ -208,8 +213,10 @@ export async function reviewNode(
 }
 
 /**
- * 刪除節點。一般人只能刪自己還在 pending 的節點(撤回),
- * staff/site_admin 任何狀態都能強制刪除 —— 見 nodes_delete policy。
+ * 刪除節點。一般人只能刪自己還在 pending 的節點(撤回);staff/editor
+ * 只有在「這個節點的建立者自己也是 staff」時才能強制刪除,一般 member
+ * 建立的節點 staff 不能直接刪(只能審核駁回)——見 nodes_delete policy。
+ * site_admin 任何狀態、任何建立者都能強制刪除。
  */
 export async function deleteNode(
   nodeId: string,

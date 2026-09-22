@@ -27,6 +27,9 @@ export type NodeStatus = "pending" | "approved" | "rejected";
 export type EditMode = "owner_only" | "collaborative";
 export type CharacterType = "pc" | "npc";
 export type RelationshipStatus = "active" | "revoked";
+export type RelationshipDirection = "uni" | "bi";
+export type WorldDeletionRequestStatus = "pending" | "approved" | "rejected";
+export type RelationshipDeletionRequestStatus = "pending" | "approved" | "rejected";
 export type NoteVisibility = "private" | "world";
 export type ReportTargetType = "relationship" | "node";
 export type ReportStatus = "open" | "resolved" | "dismissed";
@@ -176,6 +179,44 @@ export type Database = {
           },
         ];
       };
+      world_deletion_requests: {
+        Row: {
+          id: string;
+          world_id: string | null;
+          world_slug: string;
+          world_name: string;
+          requested_by: string;
+          reason: string;
+          status: WorldDeletionRequestStatus;
+          resolved_by: string | null;
+          resolved_at: string | null;
+          created_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["world_deletion_requests"]["Row"]> & {
+          world_id: string;
+          world_slug: string;
+          world_name: string;
+          requested_by: string;
+          reason: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["world_deletion_requests"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "world_deletion_requests_world_id_fkey";
+            columns: ["world_id"];
+            isOneToOne: false;
+            referencedRelation: "worlds";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "world_deletion_requests_requested_by_fkey";
+            columns: ["requested_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       world_memberships: {
         Row: {
           id: string;
@@ -220,6 +261,7 @@ export type Database = {
           creator_id: string;
           reviewed_by: string | null;
           reviewed_at: string | null;
+          review_note: string | null;
           map_layer_id: string | null;
           map_x: number | null;
           map_y: number | null;
@@ -629,6 +671,7 @@ export type Database = {
           label_reverse: string | null;
           description: string | null;
           status: RelationshipStatus;
+          direction: RelationshipDirection;
           creator_id: string;
           created_at: string;
           revoked_by: string | null;
@@ -661,6 +704,59 @@ export type Database = {
             columns: ["node_b_id"];
             isOneToOne: false;
             referencedRelation: "nodes";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      relationship_deletion_requests: {
+        Row: {
+          id: string;
+          relationship_id: string | null;
+          world_id: string;
+          relationship_summary: string;
+          requested_by: string;
+          reason: string | null;
+          status: RelationshipDeletionRequestStatus;
+          resolved_by: string | null;
+          resolved_at: string | null;
+          created_at: string;
+        };
+        Insert: Partial<
+          Database["public"]["Tables"]["relationship_deletion_requests"]["Row"]
+        > & {
+          relationship_id: string;
+          world_id: string;
+          relationship_summary: string;
+          requested_by: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["relationship_deletion_requests"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "relationship_deletion_requests_relationship_id_fkey";
+            columns: ["relationship_id"];
+            isOneToOne: false;
+            referencedRelation: "relationships";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "relationship_deletion_requests_world_id_fkey";
+            columns: ["world_id"];
+            isOneToOne: false;
+            referencedRelation: "worlds";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "relationship_deletion_requests_requested_by_fkey";
+            columns: ["requested_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "relationship_deletion_requests_resolved_by_fkey";
+            columns: ["resolved_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
             referencedColumns: ["id"];
           },
         ];
@@ -936,6 +1032,18 @@ export type Database = {
         Args: { p_node_id: string };
         Returns: boolean;
       };
+      creator_is_world_staff: {
+        Args: { p_creator_id: string; p_world_id: string };
+        Returns: boolean;
+      };
+      resolve_world_deletion_request: {
+        Args: { p_request_id: string; p_approve: boolean };
+        Returns: undefined;
+      };
+      resolve_relationship_deletion_request: {
+        Args: { p_request_id: string; p_approve: boolean };
+        Returns: undefined;
+      };
       redeem_invite_code: { Args: { p_code: string }; Returns: undefined };
       create_character: {
         Args: {
@@ -975,6 +1083,9 @@ export type Database = {
       edit_mode: EditMode;
       character_type: CharacterType;
       relationship_status: RelationshipStatus;
+      relationship_direction: RelationshipDirection;
+      world_deletion_request_status: WorldDeletionRequestStatus;
+      relationship_deletion_request_status: RelationshipDeletionRequestStatus;
       note_visibility: NoteVisibility;
       report_target_type: ReportTargetType;
       report_status: ReportStatus;

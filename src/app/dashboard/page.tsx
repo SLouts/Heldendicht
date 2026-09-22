@@ -90,6 +90,9 @@ export default async function DashboardPage() {
           <Link href="/dashboard/admin/rules" className="ml-3 underline">
             全站規則
           </Link>
+          <Link href="/dashboard/admin/world-deletion-requests" className="ml-3 underline">
+            世界觀刪除申請
+          </Link>
         </p>
       )}
     </div>

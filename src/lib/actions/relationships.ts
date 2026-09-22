@@ -20,6 +20,9 @@ const CreateRelationshipSchema = z
     label: z.string(),
     labelReverse: z.string(),
     description: z.string(),
+    // 'bi'(預設)= A、B 兩端角色擁有者都能編輯;'uni' = 只有 A 端
+    // (發起/指向的一方)的擁有者能編輯,B 端不行。
+    direction: z.union([z.literal("uni"), z.literal("bi")]),
   })
   .refine((data) => data.nodeAId !== data.nodeBId, {
     error: "A、B 兩端不能是同一個節點",
@@ -46,6 +49,7 @@ export async function createRelationship(
     label: formData.get("label") ?? "",
     labelReverse: formData.get("labelReverse") ?? "",
     description: formData.get("description") ?? "",
+    direction: formData.get("direction") === "uni" ? "uni" : "bi",
   });
   if (!parsed.success) {
     return { fieldErrors: parsed.error.flatten().fieldErrors };
@@ -61,6 +65,7 @@ export async function createRelationship(
       label: parsed.data.label || null,
       label_reverse: parsed.data.labelReverse || null,
       description: parsed.data.description || null,
+      direction: parsed.data.direction,
       creator_id: user.id,
     })
     .select("id")
@@ -162,25 +167,76 @@ export async function revokeRelationship(
 }
 
 /**
- * 強制刪除關係線。只有世界觀 staff/site_admin 能做
- * —— relationships_delete policy 沒有開放給一般建立者。
+ * 申請刪除關係線。硬刪除不再開放任何人(含 staff)直接動手,一律走
+ * 「申請 + staff 審核」——誰能發起申請比照能編輯這條關係線的人
+ * (creator/staff/相關角色擁有者),由 relationship_deletion_requests_insert
+ * policy 把關。
  */
-export async function deleteRelationship(
-  relationshipId: string,
+const RequestRelationshipDeletionSchema = z.object({
+  relationshipId: z.uuid(),
+  worldId: z.uuid(),
+  worldSlug: z.string().min(1),
+  relationshipSummary: z.string().min(1),
+  reason: z.string(),
+});
+
+export async function requestRelationshipDeletion(
+  _prevState: RelationshipFormState,
+  formData: FormData,
+): Promise<RelationshipFormState> {
+  const user = await requireUser();
+
+  const parsed = RequestRelationshipDeletionSchema.safeParse({
+    relationshipId: formData.get("relationshipId"),
+    worldId: formData.get("worldId"),
+    worldSlug: formData.get("worldSlug"),
+    relationshipSummary: formData.get("relationshipSummary"),
+    reason: formData.get("reason") ?? "",
+  });
+  if (!parsed.success) {
+    return { fieldErrors: parsed.error.flatten().fieldErrors };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("relationship_deletion_requests").insert({
+    relationship_id: parsed.data.relationshipId,
+    world_id: parsed.data.worldId,
+    relationship_summary: parsed.data.relationshipSummary,
+    requested_by: user.id,
+    reason: parsed.data.reason || null,
+  });
+
+  if (error) {
+    return { error: "申請失敗,請確認你有權限編輯這條關係線" };
+  }
+
+  revalidatePath(
+    `/dashboard/worlds/${parsed.data.worldSlug}/relationships/${parsed.data.relationshipId}`,
+  );
+  return undefined;
+}
+
+/**
+ * 核准/駁回關係線刪除申請。只有這個世界觀的 staff 或 site_admin 能呼叫
+ * ——由 resolve_relationship_deletion_request() RPC 把關,核准的話會在
+ * 同一個交易裡直接刪除該關係線。
+ */
+export async function resolveRelationshipDeletionRequest(
+  requestId: string,
   worldSlug: string,
+  approve: boolean,
 ): Promise<void> {
   await requireUser();
   const supabase = await createClient();
 
-  const { error, count } = await supabase
-    .from("relationships")
-    .delete({ count: "exact" })
-    .eq("id", relationshipId);
+  const { error } = await supabase.rpc("resolve_relationship_deletion_request", {
+    p_request_id: requestId,
+    p_approve: approve,
+  });
 
-  if (error || count === 0) {
-    throw new Error(error?.message ?? "你沒有權限刪除這條關係線");
+  if (error) {
+    throw new Error(error.message);
   }
 
   revalidatePath(`/dashboard/worlds/${worldSlug}`);
-  redirect(`/dashboard/worlds/${worldSlug}`);
 }

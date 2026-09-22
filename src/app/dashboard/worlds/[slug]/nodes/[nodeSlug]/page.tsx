@@ -3,7 +3,8 @@ import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/dal";
 import { createClient } from "@/lib/supabase/server";
 import { getAttachmentSignedUrl } from "@/lib/attachments";
-import { deleteNode, reviewNode } from "@/lib/actions/nodes";
+import { deleteNode } from "@/lib/actions/nodes";
+import { NodeReviewForm } from "./NodeReviewForm";
 import { EditNodeForm } from "./EditNodeForm";
 import { WikiLinkContent } from "./WikiLinkContent";
 import { AttachmentsSection, type AttachmentItem } from "./AttachmentsSection";
@@ -36,7 +37,7 @@ export default async function NodeDetailPage({
   const { data: node } = await supabase
     .from("nodes")
     .select(
-      "id, title, slug, node_type, content, status, edit_mode, is_placeholder, creator_id, category_id, image_path, characters(character_type, owner_id, persona_id, avatar_path, illustration_path, profiles(display_name, username, email))",
+      "id, title, slug, node_type, content, status, edit_mode, is_placeholder, creator_id, category_id, image_path, review_note, characters(character_type, owner_id, persona_id, avatar_path, illustration_path, profiles(display_name, username, email))",
     )
     .eq("world_id", world.id)
     .eq("slug", nodeSlug)
@@ -53,6 +54,7 @@ export default async function NodeDetailPage({
   const [
     { data: isStaff },
     { data: isMember },
+    { data: creatorIsStaff },
     { data: revisions },
     { data: outboundLinks },
     { data: attachments },
@@ -65,6 +67,10 @@ export default async function NodeDetailPage({
   ] = await Promise.all([
     supabase.rpc("is_world_staff", { p_world_id: world.id }),
     supabase.rpc("is_world_member", { p_world_id: world.id }),
+    supabase.rpc("creator_is_world_staff", {
+      p_creator_id: node.creator_id,
+      p_world_id: world.id,
+    }),
     supabase
       .from("node_revisions")
       .select("id, title, editor_id, created_at")
@@ -153,11 +159,16 @@ export default async function NodeDetailPage({
   );
 
   const isCreator = node.creator_id === user.id;
+  // staff「不管是誰建的都能改/刪」這個豁免,只適用在建立者自己也是
+  // staff(admin/editor)的節點——一般 member 建立的節點,staff 只能審核
+  // (核准/駁回/打回審核中),不能直接改內容或直接刪除。
   const canEdit =
-    Boolean(isStaff) ||
     isCreator ||
-    (node.edit_mode === "collaborative" && Boolean(isMember));
-  const canDelete = Boolean(isStaff) || (isCreator && node.status === "pending");
+    (node.edit_mode === "collaborative" && Boolean(isMember)) ||
+    (Boolean(isStaff) && Boolean(creatorIsStaff));
+  const canDelete =
+    (Boolean(isStaff) && Boolean(creatorIsStaff)) ||
+    (isCreator && node.status === "pending");
 
   const attachmentItems: AttachmentItem[] = await Promise.all(
     (attachments ?? []).map(async (a) => {
@@ -344,19 +355,20 @@ export default async function NodeDetailPage({
             />
           )}
 
-          {isStaff && node.status === "pending" && (
-            <div className="mt-4 flex gap-2">
-              <form action={reviewNode.bind(null, node.id, world.slug, node.slug, "approved")}>
-                <button className="rounded-lg bg-success px-3 py-1.5 text-sm text-success-foreground transition hover:bg-success-hover">
-                  核准
-                </button>
-              </form>
-              <form action={reviewNode.bind(null, node.id, world.slug, node.slug, "rejected")}>
-                <button className="rounded-lg bg-danger px-3 py-1.5 text-sm text-danger-foreground transition hover:bg-danger-hover">
-                  駁回
-                </button>
-              </form>
-            </div>
+          {(isCreator || isStaff) && node.review_note && (
+            <p className="mt-4 rounded-lg border border-border bg-surface p-3 text-sm">
+              <span className="font-medium">審核意見:</span> {node.review_note}
+            </p>
+          )}
+
+          {isStaff && (
+            <NodeReviewForm
+              nodeId={node.id}
+              worldSlug={world.slug}
+              nodeSlug={node.slug}
+              status={node.status}
+              existingNote={node.review_note}
+            />
           )}
 
           {canEdit && (

@@ -6,6 +6,7 @@ import * as z from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/dal";
 import { setCharacterFieldValues } from "@/lib/actions/characterFields";
+import { applyCategoryDefaultFields } from "@/lib/actions/nodes";
 import { generateNodeSlug } from "@/lib/slug";
 
 const CreateCharacterSchema = z.object({
@@ -118,6 +119,7 @@ export async function createCharacter(
     if (categoryError) {
       return { error: categoryError.message };
     }
+    await applyCategoryDefaultFields(supabase, nodeId, categoryId);
   }
 
   revalidatePath(`/dashboard/worlds/${worldSlug}`);

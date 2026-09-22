@@ -55,7 +55,7 @@ export async function createNode(
   }
 
   const supabase = await createClient();
-  let data: { slug: string } | null = null;
+  let data: { id: string; slug: string } | null = null;
   let error: { code?: string; message: string } | null = null;
   for (let attempt = 0; attempt < MAX_SLUG_ATTEMPTS; attempt++) {
     const result = await supabase
@@ -70,7 +70,7 @@ export async function createNode(
         creator_id: user.id,
         category_id: parsed.data.categoryId || null,
       })
-      .select("slug")
+      .select("id, slug")
       .single();
     data = result.data;
     error = result.error;
@@ -90,7 +90,39 @@ export async function createNode(
     return { error: "建立失敗,請稍後再試" };
   }
 
+  if (parsed.data.categoryId) {
+    await applyCategoryDefaultFields(supabase, data.id, parsed.data.categoryId);
+  }
+
   redirect(`/dashboard/worlds/${parsed.data.worldSlug}/nodes/${data.slug}`);
+}
+
+/**
+ * 依分類的「預設欄位」定義(world_category_fields),幫剛建立的節點自動
+ * 建立對應的 node_sections 草稿(標題 = label,內容 = default_value)。
+ * 純粹是「預先帶入」——失敗也不影響節點本身已經建立成功,只是少了預帶
+ * 的草稿,不值得讓整個建立流程因此失敗或 rollback。
+ */
+export async function applyCategoryDefaultFields(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  nodeId: string,
+  categoryId: string,
+): Promise<void> {
+  const { data: fields } = await supabase
+    .from("world_category_fields")
+    .select("label, default_value, order_index")
+    .eq("category_id", categoryId)
+    .order("order_index", { ascending: true });
+  if (!fields || fields.length === 0) return;
+
+  await supabase.from("node_sections").insert(
+    fields.map((f) => ({
+      node_id: nodeId,
+      title: f.label,
+      content: f.default_value,
+      order_index: f.order_index,
+    })),
+  );
 }
 
 const UpdateNodeContentSchema = z.object({

@@ -26,6 +26,7 @@ export default async function NewCharacterPage({
     { data: sectionTemplates },
     { data: isStaff },
     { data: categories },
+    { data: categoryFields },
   ] = await Promise.all([
     supabase
       .from("world_character_fields")
@@ -43,11 +44,21 @@ export default async function NewCharacterPage({
       .select("id, name, accepts_submissions")
       .eq("world_id", world.id)
       .order("order_index", { ascending: true }),
+    supabase
+      .from("world_category_fields")
+      .select("category_id, label")
+      .eq("world_id", world.id)
+      .order("order_index", { ascending: true }),
   ]);
 
   const selectableCategories = (categories ?? []).filter(
     (c) => c.accepts_submissions || isStaff,
   );
+
+  const fieldLabelsByCategory: Record<string, string[]> = {};
+  for (const f of categoryFields ?? []) {
+    (fieldLabelsByCategory[f.category_id] ??= []).push(f.label);
+  }
 
   return (
     <div>
@@ -65,6 +76,7 @@ export default async function NewCharacterPage({
             worldSlug={world.slug}
             characterFields={characterFields ?? []}
             categories={selectableCategories}
+            fieldLabelsByCategory={fieldLabelsByCategory}
           />
         }
         importForm={

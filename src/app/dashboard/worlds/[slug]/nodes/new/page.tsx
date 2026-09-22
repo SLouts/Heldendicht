@@ -19,20 +19,33 @@ export default async function NewNodePage({
 
   if (!world) notFound();
 
-  const [{ data: isStaff }, { data: categories }] = await Promise.all([
-    supabase.rpc("is_world_staff", { p_world_id: world.id }),
-    supabase
-      .from("world_content_categories")
-      .select("id, name, accepts_submissions")
-      .eq("world_id", world.id)
-      .order("order_index", { ascending: true }),
-  ]);
+  const [{ data: isStaff }, { data: categories }, { data: categoryFields }] =
+    await Promise.all([
+      supabase.rpc("is_world_staff", { p_world_id: world.id }),
+      supabase
+        .from("world_content_categories")
+        .select("id, name, accepts_submissions")
+        .eq("world_id", world.id)
+        .order("order_index", { ascending: true }),
+      supabase
+        .from("world_category_fields")
+        .select("category_id, label")
+        .eq("world_id", world.id)
+        .order("order_index", { ascending: true }),
+    ]);
 
   // 只列出使用者實際能選的分類:staff 什麼都能選,一般成員只能看到
   // 開放投稿的——避免選了一個送出去一定會被 guard_node_category 擋下的選項。
   const selectableCategories = (categories ?? []).filter(
     (c) => c.accepts_submissions || isStaff,
   );
+
+  // 分組成 { categoryId: [欄位名稱, ...] },給表單依選擇的分類即時顯示
+  // 「建立後會自動帶入哪些預設區塊」,不用另外打 API。
+  const fieldLabelsByCategory: Record<string, string[]> = {};
+  for (const f of categoryFields ?? []) {
+    (fieldLabelsByCategory[f.category_id] ??= []).push(f.label);
+  }
 
   return (
     <div>
@@ -47,6 +60,7 @@ export default async function NewNodePage({
         worldId={world.id}
         worldSlug={world.slug}
         categories={selectableCategories}
+        fieldLabelsByCategory={fieldLabelsByCategory}
       />
     </div>
   );

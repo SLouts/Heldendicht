@@ -3,9 +3,9 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
 
 /**
- * 全站目前有 8 種「同一組底下可以排序的清單」(世界觀規則/全站規則/
+ * 全站目前有 9 種「同一組底下可以排序的清單」(世界觀規則/全站規則/
  * 角色必填欄位/補充區塊範本/節點補充區塊/角色時間線/世界地圖圖層/
- * 內容分類),「上移/下移」都是同一套演算法——依 order_index 排序取出
+ * 內容分類/分類預設欄位),「上移/下移」都是同一套演算法——依 order_index 排序取出
  * 同一組(同 world_id/node_id)的清單,找出目前這筆的位置,跟相鄰一筆
  * 互換 order_index。抽成共用函式,不要每加一種可排序清單就重寫一次。
  *
@@ -16,6 +16,7 @@ type OrderedTableName =
   | "world_rule_fields"
   | "site_rule_fields"
   | "world_character_fields"
+  | "world_category_fields"
   | "world_section_templates"
   | "node_sections"
   | "character_timeline_events"

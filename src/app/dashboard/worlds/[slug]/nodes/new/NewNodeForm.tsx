@@ -1,18 +1,22 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { createNode } from "@/lib/actions/nodes";
 
 export function NewNodeForm({
   worldId,
   worldSlug,
   categories,
+  fieldLabelsByCategory,
 }: {
   worldId: string;
   worldSlug: string;
   categories: { id: string; name: string; accepts_submissions: boolean }[];
+  fieldLabelsByCategory: Record<string, string[]>;
 }) {
   const [state, formAction, pending] = useActionState(createNode, undefined);
+  const [categoryId, setCategoryId] = useState("");
+  const previewFields = fieldLabelsByCategory[categoryId] ?? [];
 
   return (
     <form action={formAction} className="mt-6 flex max-w-xl flex-col gap-4">
@@ -46,7 +50,8 @@ export function NewNodeForm({
           <select
             id="categoryId"
             name="categoryId"
-            defaultValue=""
+            value={categoryId}
+            onChange={(e) => setCategoryId(e.target.value)}
             className="w-56 rounded-lg border border-border bg-surface px-3 py-2"
           >
             <option value="">不掛分類</option>
@@ -56,6 +61,11 @@ export function NewNodeForm({
               </option>
             ))}
           </select>
+          {previewFields.length > 0 && (
+            <p className="text-xs text-muted-foreground">
+              建立後會自動帶入預設區塊:{previewFields.join("、")}(可自由編輯或刪除)
+            </p>
+          )}
         </div>
       )}
 

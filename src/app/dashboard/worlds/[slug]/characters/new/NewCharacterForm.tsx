@@ -8,17 +8,21 @@ export function NewCharacterForm({
   worldSlug,
   characterFields,
   categories,
+  fieldLabelsByCategory,
 }: {
   worldId: string;
   worldSlug: string;
   characterFields: { id: string; label: string; character_type: "pc" | "npc" | null }[];
   categories: { id: string; name: string; accepts_submissions: boolean }[];
+  fieldLabelsByCategory: Record<string, string[]>;
 }) {
   const [state, formAction, pending] = useActionState(
     createCharacter,
     undefined,
   );
   const [characterType, setCharacterType] = useState<"pc" | "npc">("pc");
+  const [categoryId, setCategoryId] = useState("");
+  const previewFields = fieldLabelsByCategory[categoryId] ?? [];
 
   // 共用欄位(character_type 是 NULL)兩邊都出現,'pc'/'npc' 只在對應類型出現。
   const visibleFields = characterFields.filter(
@@ -82,7 +86,8 @@ export function NewCharacterForm({
           <select
             id="categoryId"
             name="categoryId"
-            defaultValue=""
+            value={categoryId}
+            onChange={(e) => setCategoryId(e.target.value)}
             className="w-56 rounded-lg border border-border bg-surface px-3 py-2"
           >
             <option value="">不掛分類</option>
@@ -92,6 +97,11 @@ export function NewCharacterForm({
               </option>
             ))}
           </select>
+          {previewFields.length > 0 && (
+            <p className="text-xs text-muted-foreground">
+              建立後會自動帶入預設區塊:{previewFields.join("、")}(可自由編輯或刪除)
+            </p>
+          )}
         </div>
       )}
 

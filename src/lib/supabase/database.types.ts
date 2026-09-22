@@ -328,6 +328,39 @@ export type Database = {
           },
         ];
       };
+      world_category_fields: {
+        Row: {
+          id: string;
+          world_id: string;
+          category_id: string;
+          label: string;
+          default_value: string;
+          order_index: number;
+          created_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["world_category_fields"]["Row"]> & {
+          world_id: string;
+          category_id: string;
+          label: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["world_category_fields"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "world_category_fields_world_id_fkey";
+            columns: ["world_id"];
+            isOneToOne: false;
+            referencedRelation: "worlds";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "world_category_fields_category_id_fkey";
+            columns: ["category_id"];
+            isOneToOne: false;
+            referencedRelation: "world_content_categories";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       world_map_layers: {
         Row: {
           id: string;

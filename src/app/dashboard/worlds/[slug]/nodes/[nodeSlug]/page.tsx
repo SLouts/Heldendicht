@@ -383,6 +383,7 @@ export default async function NodeDetailPage({
                 nodeType={node.node_type}
                 categories={selectableCategories}
                 currentCategoryId={node.category_id}
+                isStaff={Boolean(isStaff)}
               />
             </div>
           )}

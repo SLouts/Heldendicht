@@ -79,11 +79,13 @@ export async function createNode(
 
   if (error) {
     return {
-      error: error.message.includes("這個分類目前不開放投稿")
-        ? error.message
-        : error.code === "23505"
-          ? "建立失敗,請稍後再試"
-          : "建立失敗,可能是你還不是這個世界觀的成員",
+      error:
+        error.message.includes("這個分類目前不開放投稿") ||
+        error.message.includes("必須選擇一個分類")
+          ? error.message
+          : error.code === "23505"
+            ? "建立失敗,請稍後再試"
+            : "建立失敗,可能是你還不是這個世界觀的成員",
     };
   }
   if (!data) {
@@ -188,9 +190,11 @@ export async function updateNodeContent(
 
   if (error) {
     return {
-      error: error.message.includes("這個分類目前不開放投稿")
-        ? error.message
-        : "更新失敗,請稍後再試",
+      error:
+        error.message.includes("這個分類目前不開放投稿") ||
+        error.message.includes("必須選擇一個分類")
+          ? error.message
+          : "更新失敗,請稍後再試",
     };
   }
   if (count === 0) {

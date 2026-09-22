@@ -22,6 +22,7 @@ export function EditNodeForm({
   nodeType,
   categories,
   currentCategoryId,
+  isStaff,
 }: {
   nodeId: string;
   worldSlug: string;
@@ -32,7 +33,12 @@ export function EditNodeForm({
   nodeType: string;
   categories: { id: string; name: string; accepts_submissions: boolean; parent_id: string | null }[];
   currentCategoryId: string | null;
+  isStaff: boolean;
 }) {
+  // 一般節點(不含角色)一定要選一個分類才能保留/建立(見
+  // guard_node_category trigger),不能改回「不掛分類」——角色節點的分類
+  // 本來就是選填的裝飾用途,不受這條限制。
+  const categoryRequired = !isStaff && nodeType !== "character";
   const [state, formAction, pending] = useActionState(
     updateNodeContent,
     undefined,
@@ -145,17 +151,25 @@ export function EditNodeForm({
       {categories.length > 0 && (
         <div className="flex flex-col gap-1">
           <label htmlFor="categoryId" className="text-sm font-medium">
-            內容分類(選填)
+            內容分類{categoryRequired ? "" : "(選填)"}
           </label>
           <select
             id="categoryId"
             name="categoryId"
+            required={categoryRequired}
             defaultValue={currentCategoryId ?? ""}
             className="w-56 rounded-lg border border-border bg-surface px-3 py-2"
           >
-            <option value="">不掛分類</option>
+            <option value="" disabled={categoryRequired}>
+              {categoryRequired ? "請選擇分類" : "不掛分類"}
+            </option>
             <CategorySelectOptions categories={categories} />
           </select>
+          {categoryRequired && (
+            <p className="text-xs text-muted-foreground">
+              一般節點一定要選一個開放投稿的分類,不能改回不掛分類。
+            </p>
+          )}
         </div>
       )}
 

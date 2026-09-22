@@ -61,6 +61,7 @@ export default async function NewNodePage({
         worldSlug={world.slug}
         categories={selectableCategories}
         fieldLabelsByCategory={fieldLabelsByCategory}
+        isStaff={Boolean(isStaff)}
       />
     </div>
   );

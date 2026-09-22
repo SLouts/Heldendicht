@@ -8,6 +8,7 @@ import {
   finalizeNodeAttachmentUpload,
 } from "@/lib/actions/attachments";
 import { insertTextAtCursor } from "@/lib/insertAtCursor";
+import { CategorySelectOptions } from "@/components/CategorySelectOptions";
 
 const NODE_ATTACHMENTS_BUCKET = "node-attachments";
 
@@ -29,7 +30,7 @@ export function EditNodeForm({
   content: string;
   isPlaceholder: boolean;
   nodeType: string;
-  categories: { id: string; name: string; accepts_submissions: boolean }[];
+  categories: { id: string; name: string; accepts_submissions: boolean; parent_id: string | null }[];
   currentCategoryId: string | null;
 }) {
   const [state, formAction, pending] = useActionState(
@@ -153,11 +154,7 @@ export function EditNodeForm({
             className="w-56 rounded-lg border border-border bg-surface px-3 py-2"
           >
             <option value="">不掛分類</option>
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
+            <CategorySelectOptions categories={categories} />
           </select>
         </div>
       )}

@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { createNode } from "@/lib/actions/nodes";
+import { CategorySelectOptions } from "@/components/CategorySelectOptions";
 
 export function NewNodeForm({
   worldId,
@@ -11,7 +12,7 @@ export function NewNodeForm({
 }: {
   worldId: string;
   worldSlug: string;
-  categories: { id: string; name: string; accepts_submissions: boolean }[];
+  categories: { id: string; name: string; accepts_submissions: boolean; parent_id: string | null }[];
   fieldLabelsByCategory: Record<string, string[]>;
 }) {
   const [state, formAction, pending] = useActionState(createNode, undefined);
@@ -55,11 +56,7 @@ export function NewNodeForm({
             className="w-56 rounded-lg border border-border bg-surface px-3 py-2"
           >
             <option value="">不掛分類</option>
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
+            <CategorySelectOptions categories={categories} />
           </select>
           {previewFields.length > 0 && (
             <p className="text-xs text-muted-foreground">

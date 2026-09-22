@@ -24,7 +24,7 @@ export default async function NewNodePage({
       supabase.rpc("is_world_staff", { p_world_id: world.id }),
       supabase
         .from("world_content_categories")
-        .select("id, name, accepts_submissions")
+        .select("id, name, accepts_submissions, parent_id")
         .eq("world_id", world.id)
         .order("order_index", { ascending: true }),
       supabase

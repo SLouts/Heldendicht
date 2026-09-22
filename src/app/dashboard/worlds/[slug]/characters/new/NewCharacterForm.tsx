@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { createCharacter } from "@/lib/actions/characters";
+import { CategorySelectOptions } from "@/components/CategorySelectOptions";
 
 export function NewCharacterForm({
   worldId,
@@ -13,7 +14,7 @@ export function NewCharacterForm({
   worldId: string;
   worldSlug: string;
   characterFields: { id: string; label: string; character_type: "pc" | "npc" | null }[];
-  categories: { id: string; name: string; accepts_submissions: boolean }[];
+  categories: { id: string; name: string; accepts_submissions: boolean; parent_id: string | null }[];
   fieldLabelsByCategory: Record<string, string[]>;
 }) {
   const [state, formAction, pending] = useActionState(
@@ -91,11 +92,7 @@ export function NewCharacterForm({
             className="w-56 rounded-lg border border-border bg-surface px-3 py-2"
           >
             <option value="">不掛分類</option>
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
+            <CategorySelectOptions categories={categories} />
           </select>
           {previewFields.length > 0 && (
             <p className="text-xs text-muted-foreground">

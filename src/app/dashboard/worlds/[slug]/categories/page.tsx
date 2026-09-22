@@ -33,7 +33,7 @@ export default async function ContentCategoriesPage({
 
   const { data: categories } = await supabase
     .from("world_content_categories")
-    .select("id, name, description, accepts_submissions")
+    .select("id, name, description, accepts_submissions, parent_id")
     .eq("world_id", world.id)
     .order("order_index", { ascending: true });
 

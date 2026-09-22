@@ -310,6 +310,7 @@ export type Database = {
           description: string | null;
           accepts_submissions: boolean;
           order_index: number;
+          parent_id: string | null;
           created_at: string;
         };
         Insert: Partial<
@@ -324,6 +325,13 @@ export type Database = {
             columns: ["world_id"];
             isOneToOne: false;
             referencedRelation: "worlds";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "world_content_categories_parent_id_fkey";
+            columns: ["parent_id"];
+            isOneToOne: false;
+            referencedRelation: "world_content_categories";
             referencedColumns: ["id"];
           },
         ];

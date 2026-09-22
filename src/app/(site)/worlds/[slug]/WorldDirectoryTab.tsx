@@ -34,7 +34,13 @@ export type DirectoryRelationshipRow = Pick<
 };
 
 export type CategoryGroup = {
-  category: { id: string; name: string; description: string | null; accepts_submissions: boolean };
+  category: {
+    id: string;
+    name: string;
+    description: string | null;
+    accepts_submissions: boolean;
+    parent_id: string | null;
+  };
   nodes: DirectoryNodeRow[];
 };
 
@@ -62,33 +68,58 @@ export function WorldDirectoryTab({
 }) {
   const hasCategories = categoryGroups.length > 0;
 
+  // 分類固定兩層:大分類底下的子分類巢狀顯示在同一個收合區塊裡——找不到
+  // 對應大分類的(理論上不該發生,防禦性處理)一律當頂層顯示,不會漏掉。
+  const groupIds = new Set(categoryGroups.map((g) => g.category.id));
+  const topLevelGroups = categoryGroups.filter(
+    (g) => g.category.parent_id === null || !groupIds.has(g.category.parent_id),
+  );
+  const childGroupsByParent = new Map<string, CategoryGroup[]>();
+  for (const g of categoryGroups) {
+    if (g.category.parent_id && groupIds.has(g.category.parent_id)) {
+      const list = childGroupsByParent.get(g.category.parent_id) ?? [];
+      list.push(g);
+      childGroupsByParent.set(g.category.parent_id, list);
+    }
+  }
+
   return (
     <div className="flex flex-col gap-8">
       {hasCategories && (
         <section>
           <h2 className="text-lg font-semibold">分類導覽</h2>
           <div className="mt-3 flex flex-col gap-3">
-            {categoryGroups.map(({ category, nodes: categoryNodes }) => (
-              <CollapsibleSection
-                key={category.id}
-                title={category.name}
-                count={categoryNodes.length}
-                description={category.description ?? undefined}
-                badge={
-                  <span
-                    className={
-                      category.accepts_submissions
-                        ? "rounded-full bg-badge-info-bg px-2 py-0.5 text-xs text-badge-info-fg"
-                        : "rounded-full bg-badge-neutral-bg px-2 py-0.5 text-xs text-badge-neutral-fg"
-                    }
-                  >
-                    {category.accepts_submissions ? "開放投稿" : "未開放"}
-                  </span>
-                }
-              >
-                <NodeList nodes={categoryNodes} worldSlug={worldSlug} />
-              </CollapsibleSection>
-            ))}
+            {topLevelGroups.map(({ category, nodes: categoryNodes }) => {
+              const childGroups = childGroupsByParent.get(category.id) ?? [];
+              const totalCount =
+                categoryNodes.length + childGroups.reduce((sum, g) => sum + g.nodes.length, 0);
+              return (
+                <CollapsibleSection
+                  key={category.id}
+                  title={category.name}
+                  count={totalCount}
+                  description={category.description ?? undefined}
+                  badge={<SubmissionBadge accepts={category.accepts_submissions} />}
+                >
+                  <NodeList nodes={categoryNodes} worldSlug={worldSlug} />
+                  {childGroups.length > 0 && (
+                    <div className="mt-3 flex flex-col gap-3">
+                      {childGroups.map(({ category: child, nodes: childNodes }) => (
+                        <CollapsibleSection
+                          key={child.id}
+                          title={child.name}
+                          count={childNodes.length}
+                          description={child.description ?? undefined}
+                          badge={<SubmissionBadge accepts={child.accepts_submissions} />}
+                        >
+                          <NodeList nodes={childNodes} worldSlug={worldSlug} />
+                        </CollapsibleSection>
+                      ))}
+                    </div>
+                  )}
+                </CollapsibleSection>
+              );
+            })}
           </div>
         </section>
       )}
@@ -124,6 +155,20 @@ export function WorldDirectoryTab({
         </CollapsibleSection>
       </section>
     </div>
+  );
+}
+
+function SubmissionBadge({ accepts }: { accepts: boolean }) {
+  return (
+    <span
+      className={
+        accepts
+          ? "rounded-full bg-badge-info-bg px-2 py-0.5 text-xs text-badge-info-fg"
+          : "rounded-full bg-badge-neutral-bg px-2 py-0.5 text-xs text-badge-neutral-fg"
+      }
+    >
+      {accepts ? "開放投稿" : "未開放"}
+    </span>
   );
 }
 

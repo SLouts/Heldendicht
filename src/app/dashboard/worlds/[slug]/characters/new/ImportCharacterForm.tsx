@@ -3,6 +3,7 @@
 import { useActionState, useMemo, useState } from "react";
 import { importCharacterFromText } from "@/lib/actions/importCharacter";
 import { parseCharacterImportText } from "@/lib/textImport";
+import { CategorySelectOptions } from "@/components/CategorySelectOptions";
 
 export function ImportCharacterForm({
   worldId,
@@ -15,7 +16,7 @@ export function ImportCharacterForm({
   worldSlug: string;
   characterFields: { id: string; label: string; character_type: "pc" | "npc" | null }[];
   sectionTemplates: { id: string; label: string }[];
-  categories: { id: string; name: string; accepts_submissions: boolean }[];
+  categories: { id: string; name: string; accepts_submissions: boolean; parent_id: string | null }[];
 }) {
   const [state, formAction, pending] = useActionState(
     importCharacterFromText,
@@ -97,11 +98,7 @@ export function ImportCharacterForm({
             className="w-56 rounded-lg border border-border bg-surface px-3 py-2"
           >
             <option value="">不掛分類</option>
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
+            <CategorySelectOptions categories={categories} />
           </select>
         </div>
       )}

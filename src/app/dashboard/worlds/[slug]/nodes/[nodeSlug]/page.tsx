@@ -116,7 +116,7 @@ export default async function NodeDetailPage({
       : Promise.resolve({ data: null }),
     supabase
       .from("world_content_categories")
-      .select("id, name, accepts_submissions")
+      .select("id, name, accepts_submissions, parent_id")
       .eq("world_id", world.id)
       .order("order_index", { ascending: true }),
     node.node_type === "character"

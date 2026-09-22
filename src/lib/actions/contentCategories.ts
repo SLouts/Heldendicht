@@ -23,6 +23,11 @@ const DescriptionSchema = z
   .max(300, { error: "簡介最多 300 字" })
   .optional();
 
+/** 空字串代表「不歸類任何大分類」(頂層),不是驗證失敗。 */
+const ParentIdSchema = z
+  .union([z.uuid(), z.literal("")])
+  .transform((v) => (v === "" ? null : v));
+
 async function requireWorldStaff(worldId: string) {
   const supabase = await createClient();
   const { data: isStaff } = await supabase.rpc("is_world_staff", {
@@ -59,16 +64,25 @@ export async function createContentCategory(
     };
   }
   const acceptsSubmissions = formData.get("acceptsSubmissions") === "on";
+  const parentIdParsed = ParentIdSchema.safeParse(formData.get("parentId") ?? "");
+  if (!parentIdParsed.success) {
+    return { error: "選擇的大分類無效" };
+  }
+  const parentId = parentIdParsed.data;
 
   const { supabase, isStaff } = await requireWorldStaff(worldId);
   if (!isStaff) {
     return { error: "只有這個世界觀的主辦/編輯可以新增分類" };
   }
 
-  const { data: last } = await supabase
+  // 排序只在「同一組」裡有意義——沒有大分類的分類彼此排序,某個大分類
+  // 底下的子分類彼此另外排序,兩組不會混在一起比較 order_index。
+  let lastQuery = supabase
     .from("world_content_categories")
     .select("order_index")
-    .eq("world_id", worldId)
+    .eq("world_id", worldId);
+  lastQuery = parentId ? lastQuery.eq("parent_id", parentId) : lastQuery.is("parent_id", null);
+  const { data: last } = await lastQuery
     .order("order_index", { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -78,10 +92,13 @@ export async function createContentCategory(
     name: nameParsed.data,
     description: descriptionParsed.data || null,
     accepts_submissions: acceptsSubmissions,
+    parent_id: parentId,
     order_index: (last?.order_index ?? -1) + 1,
   });
   if (error) {
-    return { error: error.code === "23505" ? "已經有一個同名的分類了" : "新增失敗,請稍後再試" };
+    return {
+      error: error.code === "23505" ? "已經有一個同名的分類了" : error.message,
+    };
   }
 
   revalidatePath(`/dashboard/worlds/${worldSlug}/categories`);
@@ -118,6 +135,10 @@ export async function updateContentCategory(
     };
   }
   const acceptsSubmissions = formData.get("acceptsSubmissions") === "on";
+  const parentIdParsed = ParentIdSchema.safeParse(formData.get("parentId") ?? "");
+  if (!parentIdParsed.success) {
+    return { error: "選擇的大分類無效" };
+  }
 
   const { supabase, isStaff } = await requireWorldStaff(worldId);
   if (!isStaff) {
@@ -130,10 +151,13 @@ export async function updateContentCategory(
       name: nameParsed.data,
       description: descriptionParsed.data || null,
       accepts_submissions: acceptsSubmissions,
+      parent_id: parentIdParsed.data,
     })
     .eq("id", categoryId);
   if (error) {
-    return { error: error.code === "23505" ? "已經有一個同名的分類了" : "更新失敗,請稍後再試" };
+    return {
+      error: error.code === "23505" ? "已經有一個同名的分類了" : error.message,
+    };
   }
 
   revalidatePath(`/dashboard/worlds/${worldSlug}/categories`);
@@ -142,7 +166,11 @@ export async function updateContentCategory(
   return undefined;
 }
 
-/** 刪除分類——底下的節點不會被刪除,只是 category_id 變回 NULL(見 schema 的 on delete set null)。 */
+/**
+ * 刪除分類——底下的節點不會被刪除,只是 category_id 變回 NULL(見 schema
+ * 的 on delete set null);如果這個分類本身是別的分類的大分類,底下的
+ * 子分類也不會被刪除,只是變回沒有大分類的頂層分類。
+ */
 export async function deleteContentCategory(
   categoryId: string,
   worldId: string,
@@ -166,11 +194,16 @@ export async function deleteContentCategory(
   revalidatePath(`/worlds/${worldSlug}`);
 }
 
-/** 分類排序:跟同世界觀裡上/下一個分類交換 order_index。 */
+/**
+ * 分類排序:跟「同一組」的上/下一個分類交換 order_index——沒有大分類的
+ * 分類彼此排序,某個大分類底下的子分類則只跟同一個大分類底下的其他子
+ * 分類排序,兩組不會混在一起。
+ */
 export async function moveContentCategory(
   categoryId: string,
   worldId: string,
   worldSlug: string,
+  parentId: string | null,
   direction: "up" | "down",
 ): Promise<void> {
   const { supabase, isStaff } = await requireWorldStaff(worldId);
@@ -182,7 +215,10 @@ export async function moveContentCategory(
     supabase,
     table: "world_content_categories",
     itemId: categoryId,
-    group: { column: "world_id", value: worldId },
+    group: [
+      { column: "world_id", value: worldId },
+      { column: "parent_id", value: parentId },
+    ],
     direction,
   });
   if (error) throw new Error(error);

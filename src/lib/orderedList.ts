@@ -23,6 +23,8 @@ type OrderedTableName =
   | "world_map_layers"
   | "world_content_categories";
 
+type OrderedGroupFilter = { column: string; value: string | null };
+
 export async function moveOrderedItem({
   supabase,
   table,
@@ -34,13 +36,17 @@ export async function moveOrderedItem({
   table: OrderedTableName;
   itemId: string;
   /** 同一組的分組欄位,例如 { column: "world_id", value: worldId }——
-   * site_rule_fields 這種沒有分組、全站只有一份清單的表可以省略。 */
-  group?: { column: string; value: string };
+   * site_rule_fields 這種沒有分組、全站只有一份清單的表可以省略。可以傳
+   * 一個陣列做多欄位分組(例如內容分類要同時比對 world_id 跟 parent_id
+   * 才能只跟同一個大分類底下的分類互換順序),value 是 null 代表用
+   * `is null` 比對(例如「沒有大分類」這一組),不是單純比對字面上的
+   * null 字串。 */
+  group?: OrderedGroupFilter | OrderedGroupFilter[];
   direction: "up" | "down";
 }): Promise<{ error: string | null }> {
   let query = supabase.from(table).select("id, order_index");
-  if (group) {
-    query = query.eq(group.column, group.value);
+  for (const g of group ? (Array.isArray(group) ? group : [group]) : []) {
+    query = g.value === null ? query.is(g.column, null) : query.eq(g.column, g.value);
   }
   const { data: items } = await query.order("order_index", { ascending: true });
   if (!items) return { error: null };

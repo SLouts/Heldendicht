@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { requireUser } from "@/lib/dal";
+import { requireUser, getCurrentProfile } from "@/lib/dal";
 import { createClient } from "@/lib/supabase/server";
+import { getProfileMediaPublicUrl } from "@/lib/profileMedia";
+import { Avatar } from "@/components/Avatar";
 import { MessageComposeForm } from "./MessageComposeForm";
 
 export default async function MessageThreadPage({
@@ -11,13 +13,19 @@ export default async function MessageThreadPage({
   const user = await requireUser();
   const supabase = await createClient();
 
-  const { data: counterpart } = await supabase
-    .from("profiles")
-    .select("id, username, display_name, email")
-    .eq("id", userId)
-    .maybeSingle();
+  const [{ data: counterpart }, myProfile] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("id, username, display_name, email, avatar_path")
+      .eq("id", userId)
+      .maybeSingle(),
+    getCurrentProfile(),
+  ]);
 
   if (!counterpart) notFound();
+
+  const counterpartAvatarUrl = getProfileMediaPublicUrl(counterpart.avatar_path);
+  const myAvatarUrl = getProfileMediaPublicUrl(myProfile?.avatar_path ?? null);
 
   // 進到對話串就把對方傳給我、還沒讀的訊息標記已讀。
   await supabase
@@ -43,15 +51,18 @@ export default async function MessageThreadPage({
       <Link href="/dashboard/messages" className="text-sm text-muted-foreground hover:underline">
         ← 私訊
       </Link>
-      <h1 className="mt-2 text-2xl font-semibold">
-        {counterpart.username ? (
-          <Link href={`/u/${counterpart.username}`} className="hover:underline">
-            {label}
-          </Link>
-        ) : (
-          label
-        )}
-      </h1>
+      <div className="mt-2 flex items-center gap-2">
+        <Avatar url={counterpartAvatarUrl} />
+        <h1 className="text-2xl font-semibold">
+          {counterpart.username ? (
+            <Link href={`/u/${counterpart.username}`} className="hover:underline">
+              {label}
+            </Link>
+          ) : (
+            label
+          )}
+        </h1>
+      </div>
 
       <div className="mt-6 flex flex-col gap-2">
         {(messages ?? []).length === 0 ? (
@@ -62,7 +73,13 @@ export default async function MessageThreadPage({
           (messages ?? []).map((m) => {
             const isMine = m.sender_id === user.id;
             return (
-              <div key={m.id} className={"flex " + (isMine ? "justify-end" : "justify-start")}>
+              <div
+                key={m.id}
+                className={
+                  "flex items-end gap-2 " + (isMine ? "flex-row-reverse" : "flex-row")
+                }
+              >
+                <Avatar url={isMine ? myAvatarUrl : counterpartAvatarUrl} />
                 <div
                   className={
                     "max-w-md whitespace-pre-wrap rounded-lg px-3 py-2 text-sm " +

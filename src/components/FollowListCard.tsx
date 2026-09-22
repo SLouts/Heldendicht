@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getProfileMediaPublicUrl } from "@/lib/profileMedia";
+import { Avatar } from "./Avatar";
 
 export type FollowProfile = {
   id: string;
@@ -21,16 +22,7 @@ export function FollowListCard({
 
   const content = (
     <>
-      {avatarUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element -- public bucket 網址,無法用 next/image 白名單網域
-        <img
-          src={avatarUrl}
-          alt=""
-          className="h-8 w-8 shrink-0 rounded-full object-cover"
-        />
-      ) : (
-        <div className="h-8 w-8 shrink-0 rounded-full bg-muted" />
-      )}
+      <Avatar url={avatarUrl} />
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium">{label}</p>
         {profile.username && (

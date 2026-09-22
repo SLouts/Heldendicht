@@ -3,12 +3,15 @@ import { requireUser } from "@/lib/dal";
 import { createClient } from "@/lib/supabase/server";
 import { unwrapRelation } from "@/lib/unwrapRelation";
 import { UserSearchBox } from "@/components/UserSearchBox";
+import { Avatar } from "@/components/Avatar";
+import { getProfileMediaPublicUrl } from "@/lib/profileMedia";
 
 type ProfileSummary = {
   id: string;
   username: string | null;
   display_name: string | null;
   email: string | null;
+  avatar_path: string | null;
 };
 
 type MessageRow = {
@@ -34,7 +37,7 @@ export default async function MessagesInboxPage() {
   const { data: rows } = await supabase
     .from("direct_messages")
     .select(
-      "sender_id, recipient_id, content, created_at, read_at, sender:profiles!direct_messages_sender_id_fkey(id, username, display_name, email), recipient:profiles!direct_messages_recipient_id_fkey(id, username, display_name, email)",
+      "sender_id, recipient_id, content, created_at, read_at, sender:profiles!direct_messages_sender_id_fkey(id, username, display_name, email, avatar_path), recipient:profiles!direct_messages_recipient_id_fkey(id, username, display_name, email, avatar_path)",
     )
     .order("created_at", { ascending: false })
     .returns<MessageRow[]>();
@@ -92,6 +95,7 @@ export default async function MessagesInboxPage() {
                 href={`/dashboard/messages/${counterpartId}`}
                 className="flex items-center justify-between gap-3 rounded-lg border border-border bg-surface px-4 py-3 transition hover:border-primary/50"
               >
+                <Avatar url={getProfileMediaPublicUrl(convo.counterpart.avatar_path)} />
                 <div className="min-w-0 flex-1">
                   <p className="font-medium">{label}</p>
                   <p className="truncate text-sm text-muted-foreground">

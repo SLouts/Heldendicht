@@ -342,7 +342,8 @@ export type Database = {
           world_id: string;
           category_id: string;
           label: string;
-          default_value: string;
+          example_value: string;
+          is_required: boolean;
           order_index: number;
           created_at: string;
         };
@@ -662,6 +663,36 @@ export type Database = {
             columns: ["field_id"];
             isOneToOne: false;
             referencedRelation: "world_character_fields";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      category_field_values: {
+        Row: {
+          node_id: string;
+          field_id: string;
+          value: string;
+          updated_at: string;
+        };
+        Insert: Partial<
+          Database["public"]["Tables"]["category_field_values"]["Row"]
+        > & { node_id: string; field_id: string };
+        Update: Partial<
+          Database["public"]["Tables"]["category_field_values"]["Row"]
+        >;
+        Relationships: [
+          {
+            foreignKeyName: "category_field_values_node_id_fkey";
+            columns: ["node_id"];
+            isOneToOne: false;
+            referencedRelation: "nodes";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "category_field_values_field_id_fkey";
+            columns: ["field_id"];
+            isOneToOne: false;
+            referencedRelation: "world_category_fields";
             referencedColumns: ["id"];
           },
         ];

@@ -9,13 +9,13 @@ export function NewCharacterForm({
   worldSlug,
   characterFields,
   categories,
-  fieldLabelsByCategory,
+  fieldsByCategory,
 }: {
   worldId: string;
   worldSlug: string;
   characterFields: { id: string; label: string; character_type: "pc" | "npc" | null }[];
   categories: { id: string; name: string; accepts_submissions: boolean; parent_id: string | null }[];
-  fieldLabelsByCategory: Record<string, string[]>;
+  fieldsByCategory: Record<string, { id: string; label: string; isRequired: boolean }[]>;
 }) {
   const [state, formAction, pending] = useActionState(
     createCharacter,
@@ -23,7 +23,7 @@ export function NewCharacterForm({
   );
   const [characterType, setCharacterType] = useState<"pc" | "npc">("pc");
   const [categoryId, setCategoryId] = useState("");
-  const previewFields = fieldLabelsByCategory[categoryId] ?? [];
+  const categoryFields = fieldsByCategory[categoryId] ?? [];
 
   // 共用欄位(character_type 是 NULL)兩邊都出現,'pc'/'npc' 只在對應類型出現。
   const visibleFields = characterFields.filter(
@@ -94,11 +94,31 @@ export function NewCharacterForm({
             <option value="">不掛分類</option>
             <CategorySelectOptions categories={categories} />
           </select>
-          {previewFields.length > 0 && (
-            <p className="text-xs text-muted-foreground">
-              建立後會自動帶入預設區塊:{previewFields.join("、")}(可自由編輯或刪除)
-            </p>
-          )}
+        </div>
+      )}
+
+      {categoryFields.length > 0 && (
+        <div className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-3">
+          <p className="text-sm font-medium">這個分類要求填以下欄位</p>
+          {categoryFields.map((f) => (
+            <div key={f.id} className="flex flex-col gap-1">
+              <label htmlFor={`field_${f.id}`} className="text-sm font-medium">
+                {f.label}
+                {f.isRequired ? (
+                  <span className="ml-1 text-danger">*</span>
+                ) : (
+                  <span className="ml-1 text-xs font-normal text-muted-foreground">(選填)</span>
+                )}
+              </label>
+              <textarea
+                id={`field_${f.id}`}
+                name={`field_${f.id}`}
+                required={f.isRequired}
+                rows={3}
+                className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
+              />
+            </div>
+          ))}
         </div>
       )}
 

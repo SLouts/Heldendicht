@@ -6,13 +6,17 @@ import {
   updateCategoryField,
   deleteCategoryField,
   moveCategoryField,
+  copyCategoryFields,
 } from "@/lib/actions/categoryFields";
 
 export type CategoryFieldItem = {
   id: string;
   label: string;
-  default_value: string;
+  example_value: string;
+  is_required: boolean;
 };
+
+export type CopySourceCategory = { id: string; name: string; fieldCount: number };
 
 function CategoryFieldRow({
   item,
@@ -46,16 +50,25 @@ function CategoryFieldRow({
           name="label"
           defaultValue={item.label}
           required
-          placeholder="欄位名稱(區塊標題)"
+          placeholder="欄位名稱"
           className="rounded-lg border border-border bg-background px-2 py-1 text-sm"
         />
         <textarea
-          name="defaultValue"
-          defaultValue={item.default_value}
+          name="exampleValue"
+          defaultValue={item.example_value}
           rows={3}
-          placeholder="預設內容(選填)"
+          placeholder="範例值(選填,示範這個欄位該怎麼填給玩家參考)"
           className="rounded-lg border border-border bg-background px-2 py-1 text-sm"
         />
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            name="isRequired"
+            defaultChecked={item.is_required}
+            className="rounded border-border"
+          />
+          必填(留空不能送出)
+        </label>
         <div className="flex gap-2">
           <button
             type="submit"
@@ -84,6 +97,15 @@ function CategoryFieldRow({
     <div className="flex flex-col gap-1 rounded-lg border border-border bg-surface p-3">
       <div className="flex flex-wrap items-center gap-2">
         <span className="font-medium">{item.label}</span>
+        {item.is_required ? (
+          <span className="rounded-full bg-badge-danger-bg px-2 py-0.5 text-xs text-badge-danger-fg">
+            必填
+          </span>
+        ) : (
+          <span className="rounded-full bg-badge-neutral-bg px-2 py-0.5 text-xs text-badge-neutral-fg">
+            選填
+          </span>
+        )}
         <div className="ml-auto flex gap-3 text-xs">
           <button type="button" onClick={() => setIsEditing(true)} className="underline">
             編輯
@@ -107,7 +129,7 @@ function CategoryFieldRow({
           <button
             type="button"
             onClick={() => {
-              if (confirm(`確定要刪除「${item.label}」這個預設欄位嗎?`)) {
+              if (confirm(`確定要刪除「${item.label}」這個欄位嗎?`)) {
                 void deleteCategoryField(item.id, categoryId, worldSlug);
               }
             }}
@@ -117,10 +139,80 @@ function CategoryFieldRow({
           </button>
         </div>
       </div>
-      {item.default_value && (
+      {item.example_value && (
         <p className="whitespace-pre-wrap text-sm text-muted-foreground">
-          {item.default_value}
+          範例:{item.example_value}
         </p>
+      )}
+    </div>
+  );
+}
+
+function CopyFieldsForm({
+  worldId,
+  worldSlug,
+  categoryId,
+  copySources,
+}: {
+  worldId: string;
+  worldSlug: string;
+  categoryId: string;
+  copySources: CopySourceCategory[];
+}) {
+  const [sourceId, setSourceId] = useState(copySources[0]?.id ?? "");
+  const [pending, setPending] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [isError, setIsError] = useState(false);
+
+  if (copySources.length === 0) return null;
+
+  async function handleCopy() {
+    if (!sourceId) return;
+    setPending(true);
+    setMessage(null);
+    try {
+      const result = await copyCategoryFields(sourceId, categoryId, worldId, worldSlug);
+      if ("error" in result) {
+        setIsError(true);
+        setMessage(result.error);
+      } else {
+        setIsError(false);
+        setMessage(`已複製 ${result.copiedCount} 個欄位,可以在上面繼續編輯。`);
+      }
+    } finally {
+      setPending(false);
+    }
+  }
+
+  return (
+    <div className="mt-4 flex flex-col gap-2 rounded-lg border border-dashed border-border p-3">
+      <p className="text-sm font-medium">複製已有格式</p>
+      <p className="text-xs text-muted-foreground">
+        把另一個分類已經設定好的欄位複製過來當起點,再繼續編輯——同名的欄位會略過,不會重複。
+      </p>
+      <div className="flex flex-wrap items-center gap-2">
+        <select
+          value={sourceId}
+          onChange={(e) => setSourceId(e.target.value)}
+          className="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm"
+        >
+          {copySources.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}({c.fieldCount} 個欄位)
+            </option>
+          ))}
+        </select>
+        <button
+          type="button"
+          onClick={() => void handleCopy()}
+          disabled={pending}
+          className="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm transition hover:bg-muted disabled:opacity-50"
+        >
+          {pending ? "複製中…" : "複製過來"}
+        </button>
+      </div>
+      {message && (
+        <p className={`text-sm ${isError ? "text-danger" : "text-muted-foreground"}`}>{message}</p>
       )}
     </div>
   );
@@ -131,11 +223,13 @@ export function CategoryFieldsEditor({
   worldSlug,
   categoryId,
   fields,
+  copySources,
 }: {
   worldId: string;
   worldSlug: string;
   categoryId: string;
   fields: CategoryFieldItem[];
+  copySources: CopySourceCategory[];
 }) {
   const [createState, createAction, createPending] = useActionState(
     createCategoryField,
@@ -157,9 +251,16 @@ export function CategoryFieldsEditor({
           />
         ))}
         {fields.length === 0 && (
-          <p className="text-sm text-muted-foreground">這個分類還沒有設定任何預設欄位。</p>
+          <p className="text-sm text-muted-foreground">這個分類還沒有設定任何欄位。</p>
         )}
       </div>
+
+      <CopyFieldsForm
+        worldId={worldId}
+        worldSlug={worldSlug}
+        categoryId={categoryId}
+        copySources={copySources}
+      />
 
       <form
         ref={formRef}
@@ -185,11 +286,15 @@ export function CategoryFieldsEditor({
           />
         </div>
         <textarea
-          name="defaultValue"
+          name="exampleValue"
           rows={3}
-          placeholder="預設內容(選填,建立節點時會先帶入這段文字)"
+          placeholder="範例值(選填,示範這個欄位該怎麼填給玩家參考)"
           className="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm"
         />
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" name="isRequired" className="rounded border-border" />
+          必填(留空不能送出)
+        </label>
         <button
           type="submit"
           disabled={createPending}

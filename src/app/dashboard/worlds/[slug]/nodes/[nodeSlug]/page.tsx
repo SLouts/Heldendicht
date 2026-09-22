@@ -10,6 +10,7 @@ import { WikiLinkContent } from "./WikiLinkContent";
 import { AttachmentsSection, type AttachmentItem } from "./AttachmentsSection";
 import { CharacterPersonaForm } from "./CharacterPersonaForm";
 import { CharacterFieldsForm, CharacterFieldsDisplay } from "./CharacterFieldsForm";
+import { CategoryFieldsForm, CategoryFieldsDisplay } from "./CategoryFieldsForm";
 import { NodeSectionsEditor } from "./NodeSectionsEditor";
 import { CharacterTimelineEditor } from "./CharacterTimelineEditor";
 import { CharacterTimelineDisplay } from "./CharacterTimelineDisplay";
@@ -64,6 +65,8 @@ export default async function NodeDetailPage({
     { data: characterFieldValues },
     { data: categories },
     { data: timelineEvents },
+    { data: categoryFieldDefs },
+    { data: categoryFieldValues },
   ] = await Promise.all([
     supabase.rpc("is_world_staff", { p_world_id: world.id }),
     supabase.rpc("is_world_member", { p_world_id: world.id }),
@@ -126,6 +129,19 @@ export default async function NodeDetailPage({
           .eq("node_id", node.id)
           .order("order_index", { ascending: true })
       : Promise.resolve({ data: null }),
+    node.category_id
+      ? supabase
+          .from("world_category_fields")
+          .select("id, label, is_required")
+          .eq("category_id", node.category_id)
+          .order("order_index", { ascending: true })
+      : Promise.resolve({ data: null }),
+    node.category_id
+      ? supabase
+          .from("category_field_values")
+          .select("field_id, value")
+          .eq("node_id", node.id)
+      : Promise.resolve({ data: null }),
   ]);
 
   // 一般成員只能改選開放投稿的分類,或是節點目前已經掛著的那個分類
@@ -147,6 +163,16 @@ export default async function NodeDetailPage({
       label: f.label,
       value: valueByFieldId.get(f.id) ?? "",
     }));
+
+  const valueByCategoryFieldId = new Map(
+    (categoryFieldValues ?? []).map((v) => [v.field_id, v.value]),
+  );
+  const categoryFields = (categoryFieldDefs ?? []).map((f) => ({
+    id: f.id,
+    label: f.label,
+    isRequired: f.is_required,
+    value: valueByCategoryFieldId.get(f.id) ?? "",
+  }));
 
   const wikiLinkMap = new Map(
     (outboundLinks ?? []).map((link) => {
@@ -386,6 +412,16 @@ export default async function NodeDetailPage({
                 isStaff={Boolean(isStaff)}
               />
             </div>
+          )}
+
+          {canEdit ? (
+            <CategoryFieldsForm
+              nodeId={node.id}
+              worldSlug={world.slug}
+              fields={categoryFields}
+            />
+          ) : (
+            <CategoryFieldsDisplay fields={categoryFields} />
           )}
 
           <AttachmentsSection

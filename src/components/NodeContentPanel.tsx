@@ -2,6 +2,10 @@ import Link from "next/link";
 import { WikiLinkContent } from "@/app/dashboard/worlds/[slug]/nodes/[nodeSlug]/WikiLinkContent";
 import { NodeSectionsEditor } from "@/app/dashboard/worlds/[slug]/nodes/[nodeSlug]/NodeSectionsEditor";
 import { CharacterTimelineDisplay } from "@/app/dashboard/worlds/[slug]/nodes/[nodeSlug]/CharacterTimelineDisplay";
+import {
+  CategoryFieldsDisplay,
+  type CategoryFieldWithValue,
+} from "@/app/dashboard/worlds/[slug]/nodes/[nodeSlug]/CategoryFieldsForm";
 import { NodeTabs, type NodeTab } from "@/app/(site)/worlds/[slug]/nodes/[nodeSlug]/NodeTabs";
 import type { Database } from "@/lib/supabase/database.types";
 import { unwrapRelation } from "@/lib/unwrapRelation";
@@ -55,6 +59,7 @@ export function NodeContentPanel({
   sections,
   timelineEventItems,
   relationships,
+  categoryFields,
 }: {
   nodeId: string;
   nodeContent: string;
@@ -65,6 +70,7 @@ export function NodeContentPanel({
   sections: NodeSectionItem[];
   timelineEventItems: NodeTimelineEventItem[];
   relationships: NodeRelationshipRow[];
+  categoryFields?: CategoryFieldWithValue[];
 }) {
   const tabs: NodeTab[] = [
     {
@@ -81,6 +87,10 @@ export function NodeContentPanel({
             />
           ) : (
             <p className="text-sm text-muted-foreground">還沒有內文。</p>
+          )}
+
+          {categoryFields && categoryFields.length > 0 && (
+            <CategoryFieldsDisplay fields={categoryFields} />
           )}
 
           {fileAttachments.length > 0 && (

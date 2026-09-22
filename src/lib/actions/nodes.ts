@@ -6,6 +6,7 @@ import * as z from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/dal";
 import { generateNodeSlug } from "@/lib/slug";
+import { setCategoryFieldValues } from "@/lib/actions/categoryFields";
 
 export type NodeFormState =
   | { error: string }
@@ -55,6 +56,29 @@ export async function createNode(
   }
 
   const supabase = await createClient();
+
+  // 這個分類要求填的欄位——用當下資料庫的清單重新驗證,不信任表單自己
+  // 夾帶的欄位 id/是否必填,避免有人繞過瀏覽器端的 required 屬性送出
+  // 空值。在真的建立節點之前就先擋下,不要留下必填欄位沒填的節點。
+  let categoryFields: { id: string; label: string; is_required: boolean }[] = [];
+  if (parsed.data.categoryId) {
+    const { data: fields } = await supabase
+      .from("world_category_fields")
+      .select("id, label, is_required")
+      .eq("category_id", parsed.data.categoryId)
+      .order("order_index", { ascending: true });
+    categoryFields = fields ?? [];
+  }
+  const fieldValues: Record<string, string> = {};
+  for (const f of categoryFields) {
+    const v = formData.get(`field_${f.id}`);
+    const value = typeof v === "string" ? v : "";
+    if (f.is_required && value.trim() === "") {
+      return { error: `請填寫「${f.label}」` };
+    }
+    fieldValues[f.id] = value;
+  }
+
   let data: { id: string; slug: string } | null = null;
   let error: { code?: string; message: string } | null = null;
   for (let attempt = 0; attempt < MAX_SLUG_ATTEMPTS; attempt++) {
@@ -92,39 +116,16 @@ export async function createNode(
     return { error: "建立失敗,請稍後再試" };
   }
 
-  if (parsed.data.categoryId) {
-    await applyCategoryDefaultFields(supabase, data.id, parsed.data.categoryId);
+  if (categoryFields.length > 0) {
+    await setCategoryFieldValues(
+      data.id,
+      parsed.data.worldSlug,
+      categoryFields.map((f) => ({ id: f.id, label: f.label, isRequired: f.is_required })),
+      fieldValues,
+    );
   }
 
   redirect(`/dashboard/worlds/${parsed.data.worldSlug}/nodes/${data.slug}`);
-}
-
-/**
- * 依分類的「預設欄位」定義(world_category_fields),幫剛建立的節點自動
- * 建立對應的 node_sections 草稿(標題 = label,內容 = default_value)。
- * 純粹是「預先帶入」——失敗也不影響節點本身已經建立成功,只是少了預帶
- * 的草稿,不值得讓整個建立流程因此失敗或 rollback。
- */
-export async function applyCategoryDefaultFields(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  nodeId: string,
-  categoryId: string,
-): Promise<void> {
-  const { data: fields } = await supabase
-    .from("world_category_fields")
-    .select("label, default_value, order_index")
-    .eq("category_id", categoryId)
-    .order("order_index", { ascending: true });
-  if (!fields || fields.length === 0) return;
-
-  await supabase.from("node_sections").insert(
-    fields.map((f) => ({
-      node_id: nodeId,
-      title: f.label,
-      content: f.default_value,
-      order_index: f.order_index,
-    })),
-  );
 }
 
 const UpdateNodeContentSchema = z.object({

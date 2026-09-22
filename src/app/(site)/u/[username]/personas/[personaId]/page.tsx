@@ -49,7 +49,7 @@ export default async function PersonaDetailPage({
   const { data: linkRows } = await supabase
     .from("characters")
     .select(
-      "avatar_path, illustration_path, nodes(id, slug, title, status, content, world_id, worlds(slug, name))",
+      "avatar_path, illustration_path, nodes(id, slug, title, status, content, world_id, category_id, worlds(slug, name))",
     )
     .eq("persona_id", persona.id);
 
@@ -70,6 +70,9 @@ export default async function PersonaDetailPage({
 
   const nodeIds = links.map((l) => l.node.id);
   const worldIds = [...new Set(links.map((l) => l.node.world_id))];
+  const categoryIds = [
+    ...new Set(links.map((l) => l.node.category_id).filter((id): id is string => id != null)),
+  ];
 
   const [
     { data: wikilinkRows },
@@ -79,6 +82,8 @@ export default async function PersonaDetailPage({
     { data: relationshipRows },
     { data: fieldValueRows },
     { data: fieldDefRows },
+    { data: categoryFieldValueRows },
+    { data: categoryFieldDefRows },
   ] =
     // .in() 帶空陣列時 PostgREST 直接回傳空結果(不會出錯),所以這裡不用
     // 為了「這個 persona 還沒連結任何節點」的情況另外寫一套 fallback 型別,
@@ -124,6 +129,15 @@ export default async function PersonaDetailPage({
         .from("world_character_fields")
         .select("id, label, character_type, world_id")
         .in("world_id", worldIds)
+        .order("order_index", { ascending: true }),
+      supabase
+        .from("category_field_values")
+        .select("node_id, field_id, value")
+        .in("node_id", nodeIds),
+      supabase
+        .from("world_category_fields")
+        .select("id, label, is_required, category_id")
+        .in("category_id", categoryIds)
         .order("order_index", { ascending: true }),
     ]);
 
@@ -183,6 +197,20 @@ export default async function PersonaDetailPage({
     const list = fieldDefsByWorld.get(row.world_id) ?? [];
     list.push(row);
     fieldDefsByWorld.set(row.world_id, list);
+  }
+
+  const categoryFieldValuesByNode = new Map<string, Map<string, string>>();
+  for (const row of categoryFieldValueRows ?? []) {
+    const map = categoryFieldValuesByNode.get(row.node_id) ?? new Map();
+    map.set(row.field_id, row.value);
+    categoryFieldValuesByNode.set(row.node_id, map);
+  }
+
+  const categoryFieldDefsByCategory = new Map<string, NonNullable<typeof categoryFieldDefRows>>();
+  for (const row of categoryFieldDefRows ?? []) {
+    const list = categoryFieldDefsByCategory.get(row.category_id) ?? [];
+    list.push(row);
+    categoryFieldDefsByCategory.set(row.category_id, list);
   }
 
   const tabs: NodeTab[] = [
@@ -262,6 +290,17 @@ export default async function PersonaDetailPage({
       .filter((f) => f.character_type === null || f.character_type === "pc")
       .map((f) => ({ id: f.id, label: f.label, value: fieldValues.get(f.id) ?? "" }));
 
+    const categoryFieldValues =
+      categoryFieldValuesByNode.get(node.id) ?? new Map<string, string>();
+    const categoryFields = node.category_id
+      ? (categoryFieldDefsByCategory.get(node.category_id) ?? []).map((f) => ({
+          id: f.id,
+          label: f.label,
+          isRequired: f.is_required,
+          value: categoryFieldValues.get(f.id) ?? "",
+        }))
+      : [];
+
     tabs.push({
       key: node.id,
       label: `${node.title} · ${world.name}`,
@@ -278,6 +317,7 @@ export default async function PersonaDetailPage({
               sections={sectionsByNode.get(node.id) ?? []}
               timelineEventItems={timelineEventItems}
               relationships={relationshipsByNode.get(node.id) ?? []}
+              categoryFields={categoryFields}
             />
           }
           sidebar={

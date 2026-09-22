@@ -6,7 +6,7 @@ import * as z from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/dal";
 import { setCharacterFieldValues } from "@/lib/actions/characterFields";
-import { applyCategoryDefaultFields } from "@/lib/actions/nodes";
+import { setCategoryFieldValues } from "@/lib/actions/categoryFields";
 import { generateNodeSlug } from "@/lib/slug";
 
 const CreateCharacterSchema = z.object({
@@ -79,6 +79,28 @@ export async function createCharacter(
     fieldValues[f.id] = v;
   }
 
+  // 分類欄位(world_category_fields)跟角色必填欄位是兩套獨立的模板,
+  // 角色節點掛了分類一樣要遵守該分類的必填/選填規則——理由同上,一律
+  // 用當下資料庫查到的欄位清單為準,不信任表單夾帶的欄位 id/是否必填。
+  let categoryFields: { id: string; label: string; is_required: boolean }[] = [];
+  if (categoryId) {
+    const { data: fields } = await supabase
+      .from("world_category_fields")
+      .select("id, label, is_required")
+      .eq("category_id", categoryId)
+      .order("order_index", { ascending: true });
+    categoryFields = fields ?? [];
+  }
+  const categoryFieldValues: Record<string, string> = {};
+  for (const f of categoryFields) {
+    const v = formData.get(`field_${f.id}`);
+    const value = typeof v === "string" ? v : "";
+    if (f.is_required && value.trim() === "") {
+      return { error: `請填寫「${f.label}」` };
+    }
+    categoryFieldValues[f.id] = value;
+  }
+
   // slug 不讓使用者自己填(理由跟 lib/actions/nodes.ts 的 createNode 一樣),
   // 自動產生,撞號時重試幾次即可。
   let nodeId: string | null = null;
@@ -119,7 +141,14 @@ export async function createCharacter(
     if (categoryError) {
       return { error: categoryError.message };
     }
-    await applyCategoryDefaultFields(supabase, nodeId, categoryId);
+    if (categoryFields.length > 0) {
+      await setCategoryFieldValues(
+        nodeId,
+        worldSlug,
+        categoryFields.map((f) => ({ id: f.id, label: f.label, isRequired: f.is_required })),
+        categoryFieldValues,
+      );
+    }
   }
 
   revalidatePath(`/dashboard/worlds/${worldSlug}`);

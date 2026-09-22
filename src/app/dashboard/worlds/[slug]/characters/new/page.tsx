@@ -47,7 +47,7 @@ export default async function NewCharacterPage({
       .order("order_index", { ascending: true }),
     supabase
       .from("world_category_fields")
-      .select("category_id, label")
+      .select("id, category_id, label, is_required")
       .eq("world_id", world.id)
       .order("order_index", { ascending: true }),
   ]);
@@ -56,9 +56,16 @@ export default async function NewCharacterPage({
     (c) => c.accepts_submissions || isStaff,
   );
 
-  const fieldLabelsByCategory: Record<string, string[]> = {};
+  const fieldsByCategory: Record<
+    string,
+    { id: string; label: string; isRequired: boolean }[]
+  > = {};
   for (const f of categoryFields ?? []) {
-    (fieldLabelsByCategory[f.category_id] ??= []).push(f.label);
+    (fieldsByCategory[f.category_id] ??= []).push({
+      id: f.id,
+      label: f.label,
+      isRequired: f.is_required,
+    });
   }
 
   return (
@@ -81,7 +88,7 @@ export default async function NewCharacterPage({
             worldSlug={world.slug}
             characterFields={characterFields ?? []}
             categories={selectableCategories}
-            fieldLabelsByCategory={fieldLabelsByCategory}
+            fieldsByCategory={fieldsByCategory}
           />
         }
         importForm={

@@ -55,6 +55,8 @@ export default async function PublicNodeDetailPage({
     { data: characterFieldDefs },
     { data: characterFieldValues },
     { data: category },
+    { data: categoryFieldDefs },
+    { data: categoryFieldValues },
     { data: timelineEvents },
     { data: relationships },
   ] = await Promise.all([
@@ -94,6 +96,19 @@ export default async function PublicNodeDetailPage({
           .eq("id", node.category_id)
           .maybeSingle()
       : Promise.resolve({ data: null }),
+    node.category_id
+      ? supabase
+          .from("world_category_fields")
+          .select("id, label, is_required")
+          .eq("category_id", node.category_id)
+          .order("order_index", { ascending: true })
+      : Promise.resolve({ data: null }),
+    node.category_id
+      ? supabase
+          .from("category_field_values")
+          .select("field_id, value")
+          .eq("node_id", node.id)
+      : Promise.resolve({ data: null }),
     node.node_type === "character"
       ? supabase
           .from("character_timeline_events")
@@ -124,6 +139,16 @@ export default async function PublicNodeDetailPage({
       label: f.label,
       value: valueByFieldId.get(f.id) ?? "",
     }));
+
+  const valueByCategoryFieldId = new Map(
+    (categoryFieldValues ?? []).map((v) => [v.field_id, v.value]),
+  );
+  const categoryFields = (categoryFieldDefs ?? []).map((f) => ({
+    id: f.id,
+    label: f.label,
+    isRequired: f.is_required,
+    value: valueByCategoryFieldId.get(f.id) ?? "",
+  }));
 
   // wikilinks_select RLS 已經確保這裡拿到的 target 都是訪客看得到的節點
   // (rejected 的節點對非 creator/staff 一律不可見,不會出現在這裡)——
@@ -248,6 +273,7 @@ export default async function PublicNodeDetailPage({
             sections={sections ?? []}
             timelineEventItems={timelineEventItems}
             relationships={relationships ?? []}
+            categoryFields={categoryFields}
           />
         </div>
       </div>

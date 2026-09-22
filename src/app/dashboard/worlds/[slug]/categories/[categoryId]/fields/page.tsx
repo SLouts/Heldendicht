@@ -39,26 +39,39 @@ export default async function CategoryFieldsPage({
     );
   }
 
-  const { data: fields } = await supabase
-    .from("world_category_fields")
-    .select("id, label, default_value")
-    .eq("category_id", category.id)
-    .order("order_index", { ascending: true });
+  const [{ data: fields }, { data: otherCategories }] = await Promise.all([
+    supabase
+      .from("world_category_fields")
+      .select("id, label, example_value, is_required")
+      .eq("category_id", category.id)
+      .order("order_index", { ascending: true }),
+    supabase
+      .from("world_content_categories")
+      .select("id, name, world_category_fields(id)")
+      .eq("world_id", world.id)
+      .neq("id", category.id)
+      .order("order_index", { ascending: true }),
+  ]);
+
+  const copySources = (otherCategories ?? [])
+    .map((c) => ({ id: c.id, name: c.name, fieldCount: c.world_category_fields.length }))
+    .filter((c) => c.fieldCount > 0);
 
   return (
     <div>
       <BackLink slug={slug} />
-      <h1 className="mt-2 text-2xl font-semibold">「{category.name}」的預設欄位</h1>
+      <h1 className="mt-2 text-2xl font-semibold">「{category.name}」的欄位</h1>
       <p className="mt-1 text-sm text-muted-foreground">
-        建立這個分類底下的節點時,會自動依下面的欄位建立對應的補充區塊(標題
-        + 預設內容),純粹是先幫使用者打好草稿——可以留空、覆蓋或整段刪除,
-        不會擋節點送出。
+        建立/編輯這個分類底下的節點時(不分節點類型,角色節點也適用),
+        會出現下面的欄位讓玩家填答——標記必填的欄位不能留空才能送出,
+        選填的可以留空。
       </p>
       <CategoryFieldsEditor
         worldId={world.id}
         worldSlug={world.slug}
         categoryId={category.id}
         fields={fields ?? []}
+        copySources={copySources}
       />
     </div>
   );

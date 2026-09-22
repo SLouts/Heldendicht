@@ -8,18 +8,18 @@ export function NewNodeForm({
   worldId,
   worldSlug,
   categories,
-  fieldLabelsByCategory,
+  fieldsByCategory,
   isStaff,
 }: {
   worldId: string;
   worldSlug: string;
   categories: { id: string; name: string; accepts_submissions: boolean; parent_id: string | null }[];
-  fieldLabelsByCategory: Record<string, string[]>;
+  fieldsByCategory: Record<string, { id: string; label: string; isRequired: boolean }[]>;
   isStaff: boolean;
 }) {
   const [state, formAction, pending] = useActionState(createNode, undefined);
   const [categoryId, setCategoryId] = useState("");
-  const previewFields = fieldLabelsByCategory[categoryId] ?? [];
+  const categoryFields = fieldsByCategory[categoryId] ?? [];
 
   // 一般成員一定要選一個開放投稿的分類才能建立節點(見 guard_node_category
   // trigger),不能不選——如果這個世界觀連一個開放投稿的分類都沒有,一般
@@ -79,11 +79,31 @@ export function NewNodeForm({
               一般成員建立節點一定要選一個開放投稿的分類。
             </p>
           )}
-          {previewFields.length > 0 && (
-            <p className="text-xs text-muted-foreground">
-              建立後會自動帶入預設區塊:{previewFields.join("、")}(可自由編輯或刪除)
-            </p>
-          )}
+        </div>
+      )}
+
+      {categoryFields.length > 0 && (
+        <div className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-3">
+          <p className="text-sm font-medium">這個分類要求填以下欄位</p>
+          {categoryFields.map((f) => (
+            <div key={f.id} className="flex flex-col gap-1">
+              <label htmlFor={`field_${f.id}`} className="text-sm font-medium">
+                {f.label}
+                {f.isRequired ? (
+                  <span className="ml-1 text-danger">*</span>
+                ) : (
+                  <span className="ml-1 text-xs font-normal text-muted-foreground">(選填)</span>
+                )}
+              </label>
+              <textarea
+                id={`field_${f.id}`}
+                name={`field_${f.id}`}
+                required={f.isRequired}
+                rows={3}
+                className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
+              />
+            </div>
+          ))}
         </div>
       )}
 

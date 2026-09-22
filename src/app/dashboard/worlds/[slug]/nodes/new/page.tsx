@@ -29,7 +29,7 @@ export default async function NewNodePage({
         .order("order_index", { ascending: true }),
       supabase
         .from("world_category_fields")
-        .select("category_id, label")
+        .select("id, category_id, label, is_required")
         .eq("world_id", world.id)
         .order("order_index", { ascending: true }),
     ]);
@@ -40,11 +40,18 @@ export default async function NewNodePage({
     (c) => c.accepts_submissions || isStaff,
   );
 
-  // 分組成 { categoryId: [欄位名稱, ...] },給表單依選擇的分類即時顯示
-  // 「建立後會自動帶入哪些預設區塊」,不用另外打 API。
-  const fieldLabelsByCategory: Record<string, string[]> = {};
+  // 分組成 { categoryId: [欄位, ...] },給表單依選擇的分類即時顯示對應的
+  // 必填/選填欄位輸入框,不用另外打 API。
+  const fieldsByCategory: Record<
+    string,
+    { id: string; label: string; isRequired: boolean }[]
+  > = {};
   for (const f of categoryFields ?? []) {
-    (fieldLabelsByCategory[f.category_id] ??= []).push(f.label);
+    (fieldsByCategory[f.category_id] ??= []).push({
+      id: f.id,
+      label: f.label,
+      isRequired: f.is_required,
+    });
   }
 
   return (
@@ -60,7 +67,7 @@ export default async function NewNodePage({
         worldId={world.id}
         worldSlug={world.slug}
         categories={selectableCategories}
-        fieldLabelsByCategory={fieldLabelsByCategory}
+        fieldsByCategory={fieldsByCategory}
         isStaff={Boolean(isStaff)}
       />
     </div>

@@ -2,8 +2,18 @@
 
 import { useState } from "react";
 import { setCharacterFieldValues } from "@/lib/actions/characterFields";
+import { DynamicFieldInput } from "@/components/DynamicFieldInput";
 
-export type CharacterFieldWithValue = { id: string; label: string; value: string };
+export type CharacterFieldWithValue = {
+  id: string;
+  label: string;
+  value: string;
+  fieldType: "text" | "select" | "range";
+  options: string[];
+  rangeMin: number | null;
+  rangeMax: number | null;
+  rangeStep: number | null;
+};
 
 export function CharacterFieldsForm({
   nodeId,
@@ -32,7 +42,14 @@ export function CharacterFieldsForm({
       const result = await setCharacterFieldValues(
         nodeId,
         worldSlug,
-        fields.map((f) => ({ id: f.id, label: f.label })),
+        fields.map((f) => ({
+          id: f.id,
+          label: f.label,
+          fieldType: f.fieldType,
+          options: f.options,
+          rangeMin: f.rangeMin,
+          rangeMax: f.rangeMax,
+        })),
         values,
       );
       if ("error" in result) {
@@ -54,12 +71,16 @@ export function CharacterFieldsForm({
           <label htmlFor={`field_${f.id}`} className="text-sm font-medium">
             {f.label}
           </label>
-          <input
+          <DynamicFieldInput
             id={`field_${f.id}`}
             name={`field_${f.id}`}
             defaultValue={f.value}
             required
-            className="rounded-lg border border-border bg-background px-3 py-1.5 text-sm"
+            fieldType={f.fieldType}
+            options={f.options}
+            rangeMin={f.rangeMin}
+            rangeMax={f.rangeMax}
+            rangeStep={f.rangeStep}
           />
         </div>
       ))}

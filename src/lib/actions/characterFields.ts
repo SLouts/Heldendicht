@@ -5,6 +5,8 @@ import * as z from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/dal";
 import { moveOrderedItem } from "@/lib/orderedList";
+import { parseFieldTypeConfig } from "@/lib/fieldTypeConfig";
+import { buildFieldValueSchema } from "@/lib/fieldValueValidation";
 
 export type CharacterFieldFormState =
   | { error: string }
@@ -60,6 +62,10 @@ export async function createCharacterField(
       fieldErrors: { exampleValue: [exampleValueParsed.error.issues[0].message] },
     };
   }
+  const typeConfig = parseFieldTypeConfig(formData);
+  if ("error" in typeConfig) {
+    return { error: typeConfig.error };
+  }
 
   const supabase = await createClient();
   const { data: last } = await supabase
@@ -75,6 +81,11 @@ export async function createCharacterField(
     label: parsed.data,
     character_type: characterType,
     example_value: exampleValueParsed.data,
+    field_type: typeConfig.fieldType,
+    options: typeConfig.options,
+    range_min: typeConfig.rangeMin,
+    range_max: typeConfig.rangeMax,
+    range_step: typeConfig.rangeStep,
     order_index: (last?.order_index ?? -1) + 1,
   });
   if (error) {
@@ -120,6 +131,10 @@ export async function updateCharacterField(
       fieldErrors: { exampleValue: [exampleValueParsed.error.issues[0].message] },
     };
   }
+  const typeConfig = parseFieldTypeConfig(formData);
+  if ("error" in typeConfig) {
+    return { error: typeConfig.error };
+  }
 
   const supabase = await createClient();
   const { error, count } = await supabase
@@ -129,6 +144,11 @@ export async function updateCharacterField(
         label: parsed.data,
         character_type: characterType,
         example_value: exampleValueParsed.data,
+        field_type: typeConfig.fieldType,
+        options: typeConfig.options,
+        range_min: typeConfig.rangeMin,
+        range_max: typeConfig.rangeMax,
+        range_step: typeConfig.rangeStep,
       },
       { count: "exact" },
     )
@@ -195,20 +215,35 @@ export type SetFieldValuesResult = { error: string } | { ok: true };
  * 不能留空(因為每一筆 world_character_fields 就代表一個必填欄位,
  * 沒有另外做「選填」的旗標)。
  */
+export type CharacterFieldForValue = {
+  id: string;
+  label: string;
+  fieldType: "text" | "select" | "range";
+  options: string[];
+  rangeMin: number | null;
+  rangeMax: number | null;
+};
+
 export async function setCharacterFieldValues(
   nodeId: string,
   worldSlug: string,
-  fields: { id: string; label: string }[],
+  fields: CharacterFieldForValue[],
   values: Record<string, string>,
 ): Promise<SetFieldValuesResult> {
   await requireUser();
 
-  const shape: Record<string, z.ZodString> = {};
+  const shape: Record<string, z.ZodType<string>> = {};
   for (const f of fields) {
-    shape[f.id] = z
-      .string()
-      .trim()
-      .min(1, { error: `請填寫「${f.label}」` });
+    shape[f.id] = buildFieldValueSchema({
+      label: f.label,
+      // 角色必填欄位一律必填,沒有選填的概念(跟分類欄位不同)。
+      isRequired: true,
+      fieldType: f.fieldType,
+      options: f.options,
+      rangeMin: f.rangeMin,
+      rangeMax: f.rangeMax,
+      maxLen: 200,
+    });
   }
   const parsed = z.object(shape).safeParse(values);
   if (!parsed.success) {

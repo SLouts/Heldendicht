@@ -8,12 +8,24 @@ import {
   moveCategoryField,
   copyCategoryFields,
 } from "@/lib/actions/categoryFields";
+import { FieldTypeConfigFields } from "@/components/FieldTypeConfigFields";
 
 export type CategoryFieldItem = {
   id: string;
   label: string;
   example_value: string;
   is_required: boolean;
+  field_type: "text" | "select" | "range";
+  options: string[];
+  range_min: number | null;
+  range_max: number | null;
+  range_step: number | null;
+};
+
+const FIELD_TYPE_BADGE: Record<"text" | "select" | "range", string> = {
+  text: "簡答",
+  select: "下拉選單",
+  range: "橫條拉桿",
 };
 
 export type CopySourceCategory = { id: string; name: string; fieldCount: number };
@@ -60,6 +72,14 @@ function CategoryFieldRow({
           placeholder="範例值(選填,示範這個欄位該怎麼填給玩家參考)"
           className="rounded-lg border border-border bg-background px-2 py-1 text-sm"
         />
+        <FieldTypeConfigFields
+          idPrefix={`category-field-${item.id}`}
+          defaultFieldType={item.field_type}
+          defaultOptions={item.options}
+          defaultRangeMin={item.range_min}
+          defaultRangeMax={item.range_max}
+          defaultRangeStep={item.range_step}
+        />
         <label className="flex items-center gap-2 text-sm">
           <input
             type="checkbox"
@@ -67,7 +87,7 @@ function CategoryFieldRow({
             defaultChecked={item.is_required}
             className="rounded border-border"
           />
-          必填(留空不能送出)
+          必填(留空不能送出;橫條拉桿一定有值,勾選這個不會有效果)
         </label>
         <div className="flex gap-2">
           <button
@@ -106,6 +126,9 @@ function CategoryFieldRow({
             選填
           </span>
         )}
+        <span className="rounded-full bg-badge-info-bg px-2 py-0.5 text-xs text-badge-info-fg">
+          {FIELD_TYPE_BADGE[item.field_type]}
+        </span>
         <div className="ml-auto flex gap-3 text-xs">
           <button type="button" onClick={() => setIsEditing(true)} className="underline">
             編輯
@@ -139,6 +162,14 @@ function CategoryFieldRow({
           </button>
         </div>
       </div>
+      {item.field_type === "select" && (
+        <p className="text-sm text-muted-foreground">選項:{item.options.join("、")}</p>
+      )}
+      {item.field_type === "range" && (
+        <p className="text-sm text-muted-foreground">
+          範圍:{item.range_min} ~ {item.range_max}(間距 {item.range_step})
+        </p>
+      )}
       {item.example_value && (
         <p className="whitespace-pre-wrap text-sm text-muted-foreground">
           範例:{item.example_value}
@@ -291,9 +322,10 @@ export function CategoryFieldsEditor({
           placeholder="範例值(選填,示範這個欄位該怎麼填給玩家參考)"
           className="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm"
         />
+        <FieldTypeConfigFields idPrefix="new-category-field" />
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" name="isRequired" className="rounded border-border" />
-          必填(留空不能送出)
+          必填(留空不能送出;橫條拉桿一定有值,勾選這個不會有效果)
         </label>
         <button
           type="submit"

@@ -2,18 +2,25 @@
 
 import { useState } from "react";
 import { setCategoryFieldValues } from "@/lib/actions/categoryFields";
+import { DynamicFieldInput } from "@/components/DynamicFieldInput";
 
 export type CategoryFieldWithValue = {
   id: string;
   label: string;
   value: string;
   isRequired: boolean;
+  fieldType: "text" | "select" | "range";
+  options: string[];
+  rangeMin: number | null;
+  rangeMax: number | null;
+  rangeStep: number | null;
 };
 
 /**
- * 分類欄位的內容通常比角色欄位長(段落式說明,不是「性別」這種單行
- * 事實),所以用 textarea 逐欄位編輯、區塊式顯示,不像 CharacterFieldsForm
- * 那樣用單行 input + dl 兩三欄並排。
+ * 分類欄位的簡答內容通常比角色欄位長(段落式說明,不是「性別」這種單行
+ * 事實),所以簡答類型用 textarea 逐欄位編輯、區塊式顯示,不像
+ * CharacterFieldsForm 那樣用單行 input + dl 兩三欄並排。下拉選單/橫條
+ * 拉桿兩種類型的輸入元件是共用的(DynamicFieldInput),跟角色欄位一致。
  */
 export function CategoryFieldsForm({
   nodeId,
@@ -42,7 +49,15 @@ export function CategoryFieldsForm({
       const result = await setCategoryFieldValues(
         nodeId,
         worldSlug,
-        fields.map((f) => ({ id: f.id, label: f.label, isRequired: f.isRequired })),
+        fields.map((f) => ({
+          id: f.id,
+          label: f.label,
+          isRequired: f.isRequired,
+          fieldType: f.fieldType,
+          options: f.options,
+          rangeMin: f.rangeMin,
+          rangeMax: f.rangeMax,
+        })),
         values,
       );
       if ("error" in result) {
@@ -69,13 +84,17 @@ export function CategoryFieldsForm({
               <span className="ml-1 text-xs font-normal text-muted-foreground">(選填)</span>
             )}
           </label>
-          <textarea
+          <DynamicFieldInput
             id={`field_${f.id}`}
             name={`field_${f.id}`}
             defaultValue={f.value}
             required={f.isRequired}
-            rows={3}
-            className="rounded-lg border border-border bg-background px-3 py-1.5 text-sm"
+            fieldType={f.fieldType}
+            options={f.options}
+            rangeMin={f.rangeMin}
+            rangeMax={f.rangeMax}
+            rangeStep={f.rangeStep}
+            multiline
           />
         </div>
       ))}

@@ -7,12 +7,24 @@ import {
   deleteCharacterField,
   moveCharacterField,
 } from "@/lib/actions/characterFields";
+import { FieldTypeConfigFields } from "@/components/FieldTypeConfigFields";
 
 export type CharacterFieldItem = {
   id: string;
   label: string;
   character_type: "pc" | "npc" | null;
   example_value: string;
+  field_type: "text" | "select" | "range";
+  options: string[];
+  range_min: number | null;
+  range_max: number | null;
+  range_step: number | null;
+};
+
+const FIELD_TYPE_BADGE: Record<"text" | "select" | "range", string> = {
+  text: "簡答",
+  select: "下拉選單",
+  range: "橫條拉桿",
 };
 
 const TYPE_LABEL: Record<"pc" | "npc" | "", string> = {
@@ -117,6 +129,7 @@ export function CharacterFieldsSection({
             className="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm"
           />
         </div>
+        <FieldTypeConfigFields idPrefix="new-character-field" />
         {createState && "error" in createState && (
           <p className="text-sm text-danger">{createState.error}</p>
         )}
@@ -183,6 +196,14 @@ function CharacterFieldRow({
           placeholder="範例值(選填)"
           className="rounded-lg border border-border bg-background px-2 py-1 text-sm"
         />
+        <FieldTypeConfigFields
+          idPrefix={`character-field-${item.id}`}
+          defaultFieldType={item.field_type}
+          defaultOptions={item.options}
+          defaultRangeMin={item.range_min}
+          defaultRangeMax={item.range_max}
+          defaultRangeStep={item.range_step}
+        />
         <div className="flex items-center gap-2">
           <button
             type="submit"
@@ -217,6 +238,9 @@ function CharacterFieldRow({
         <span className="font-medium">{item.label}</span>
         <span className="rounded-full bg-badge-neutral-bg px-2 py-0.5 text-xs text-badge-neutral-fg">
           {TYPE_LABEL[item.character_type ?? ""]}
+        </span>
+        <span className="rounded-full bg-badge-info-bg px-2 py-0.5 text-xs text-badge-info-fg">
+          {FIELD_TYPE_BADGE[item.field_type]}
         </span>
         <div className="ml-auto flex gap-3 text-xs">
           <button type="button" onClick={() => setIsEditing(true)} className="underline">
@@ -255,6 +279,14 @@ function CharacterFieldRow({
           </button>
         </div>
       </div>
+      {item.field_type === "select" && (
+        <p className="text-sm text-muted-foreground">選項:{item.options.join("、")}</p>
+      )}
+      {item.field_type === "range" && (
+        <p className="text-sm text-muted-foreground">
+          範圍:{item.range_min} ~ {item.range_max}(間距 {item.range_step})
+        </p>
+      )}
       {item.example_value && (
         <p className="text-sm text-muted-foreground">範例值:{item.example_value}</p>
       )}

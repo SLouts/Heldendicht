@@ -42,7 +42,7 @@ export default async function CategoryFieldsPage({
   const [{ data: fields }, { data: otherCategories }] = await Promise.all([
     supabase
       .from("world_category_fields")
-      .select("id, label, example_value, is_required")
+      .select("id, label, example_value, is_required, field_type, options, range_min, range_max, range_step")
       .eq("category_id", category.id)
       .order("order_index", { ascending: true }),
     supabase

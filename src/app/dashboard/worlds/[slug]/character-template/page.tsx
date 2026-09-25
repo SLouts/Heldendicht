@@ -35,7 +35,9 @@ export default async function CharacterTemplatePage({
   const [{ data: fields }, { data: sectionTemplates }] = await Promise.all([
     supabase
       .from("world_character_fields")
-      .select("id, label, character_type, example_value")
+      .select(
+        "id, label, character_type, example_value, field_type, options, range_min, range_max, range_step",
+      )
       .eq("world_id", world.id)
       .order("order_index", { ascending: true }),
     supabase

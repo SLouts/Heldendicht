@@ -3,6 +3,32 @@
 import { useActionState, useState } from "react";
 import { createCharacter } from "@/lib/actions/characters";
 import { CategorySelectOptions } from "@/components/CategorySelectOptions";
+import { DynamicFieldInput } from "@/components/DynamicFieldInput";
+
+type CategoryFieldOption = {
+  id: string;
+  label: string;
+  isRequired: boolean;
+  fieldType: "text" | "select" | "range";
+  options: string[];
+  rangeMin: number | null;
+  rangeMax: number | null;
+  rangeStep: number | null;
+};
+
+/** 角色欄位定義是查詢結果直接傳下來的原始 row,維持跟 character_type 一樣的
+ * snake_case 命名,不特地轉成 camelCase(分類欄位的 fieldsByCategory 是另外
+ * group 過的衍生結構,才會用 camelCase)。 */
+type CharacterFieldOption = {
+  id: string;
+  label: string;
+  character_type: "pc" | "npc" | null;
+  field_type: "text" | "select" | "range";
+  options: string[];
+  range_min: number | null;
+  range_max: number | null;
+  range_step: number | null;
+};
 
 export function NewCharacterForm({
   worldId,
@@ -13,9 +39,9 @@ export function NewCharacterForm({
 }: {
   worldId: string;
   worldSlug: string;
-  characterFields: { id: string; label: string; character_type: "pc" | "npc" | null }[];
+  characterFields: CharacterFieldOption[];
   categories: { id: string; name: string; accepts_submissions: boolean; parent_id: string | null }[];
-  fieldsByCategory: Record<string, { id: string; label: string; isRequired: boolean }[]>;
+  fieldsByCategory: Record<string, CategoryFieldOption[]>;
 }) {
   const [state, formAction, pending] = useActionState(
     createCharacter,
@@ -110,12 +136,17 @@ export function NewCharacterForm({
                   <span className="ml-1 text-xs font-normal text-muted-foreground">(選填)</span>
                 )}
               </label>
-              <textarea
+              <DynamicFieldInput
                 id={`field_${f.id}`}
                 name={`field_${f.id}`}
+                defaultValue=""
                 required={f.isRequired}
-                rows={3}
-                className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                fieldType={f.fieldType}
+                options={f.options}
+                rangeMin={f.rangeMin}
+                rangeMax={f.rangeMax}
+                rangeStep={f.rangeStep}
+                multiline
               />
             </div>
           ))}
@@ -132,11 +163,16 @@ export function NewCharacterForm({
               <label htmlFor={`field_${f.id}`} className="text-sm font-medium">
                 {f.label}
               </label>
-              <input
+              <DynamicFieldInput
                 id={`field_${f.id}`}
                 name={`field_${f.id}`}
+                defaultValue=""
                 required
-                className="rounded-lg border border-border bg-background px-3 py-2"
+                fieldType={f.field_type}
+                options={f.options}
+                rangeMin={f.range_min}
+                rangeMax={f.range_max}
+                rangeStep={f.range_step}
               />
             </div>
           ))}

@@ -127,7 +127,9 @@ export default async function PersonaDetailPage({
         .in("node_id", nodeIds),
       supabase
         .from("world_character_fields")
-        .select("id, label, character_type, world_id")
+        .select(
+          "id, label, character_type, world_id, field_type, options, range_min, range_max, range_step",
+        )
         .in("world_id", worldIds)
         .order("order_index", { ascending: true }),
       supabase
@@ -136,7 +138,9 @@ export default async function PersonaDetailPage({
         .in("node_id", nodeIds),
       supabase
         .from("world_category_fields")
-        .select("id, label, is_required, category_id")
+        .select(
+          "id, label, is_required, category_id, field_type, options, range_min, range_max, range_step",
+        )
         .in("category_id", categoryIds)
         .order("order_index", { ascending: true }),
     ]);
@@ -298,6 +302,11 @@ export default async function PersonaDetailPage({
           label: f.label,
           isRequired: f.is_required,
           value: categoryFieldValues.get(f.id) ?? "",
+          fieldType: f.field_type,
+          options: f.options,
+          rangeMin: f.range_min,
+          rangeMax: f.range_max,
+          rangeStep: f.range_step,
         }))
       : [];
 

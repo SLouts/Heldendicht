@@ -61,7 +61,7 @@ export async function createCharacter(
   // 屬性送出空值。在真的建立節點之前就先擋下,不要留下欄位沒填的角色。
   const { data: allCharacterFields } = await supabase
     .from("world_character_fields")
-    .select("id, label, character_type")
+    .select("id, label, character_type, field_type, options, range_min, range_max")
     .eq("world_id", worldId)
     .order("order_index", { ascending: true });
 
@@ -82,11 +82,19 @@ export async function createCharacter(
   // 分類欄位(world_category_fields)跟角色必填欄位是兩套獨立的模板,
   // 角色節點掛了分類一樣要遵守該分類的必填/選填規則——理由同上,一律
   // 用當下資料庫查到的欄位清單為準,不信任表單夾帶的欄位 id/是否必填。
-  let categoryFields: { id: string; label: string; is_required: boolean }[] = [];
+  let categoryFields: {
+    id: string;
+    label: string;
+    is_required: boolean;
+    field_type: "text" | "select" | "range";
+    options: string[];
+    range_min: number | null;
+    range_max: number | null;
+  }[] = [];
   if (categoryId) {
     const { data: fields } = await supabase
       .from("world_category_fields")
-      .select("id, label, is_required")
+      .select("id, label, is_required, field_type, options, range_min, range_max")
       .eq("category_id", categoryId)
       .order("order_index", { ascending: true });
     categoryFields = fields ?? [];
@@ -127,7 +135,19 @@ export async function createCharacter(
   }
 
   if (characterFields.length > 0 && nodeId) {
-    await setCharacterFieldValues(nodeId, worldSlug, characterFields, fieldValues);
+    await setCharacterFieldValues(
+      nodeId,
+      worldSlug,
+      characterFields.map((f) => ({
+        id: f.id,
+        label: f.label,
+        fieldType: f.field_type,
+        options: f.options,
+        rangeMin: f.range_min,
+        rangeMax: f.range_max,
+      })),
+      fieldValues,
+    );
   }
 
   // create_character RPC 沒有 category_id 參數,所以用一次額外的 update 補上——
@@ -145,7 +165,15 @@ export async function createCharacter(
       await setCategoryFieldValues(
         nodeId,
         worldSlug,
-        categoryFields.map((f) => ({ id: f.id, label: f.label, isRequired: f.is_required })),
+        categoryFields.map((f) => ({
+          id: f.id,
+          label: f.label,
+          isRequired: f.is_required,
+          fieldType: f.field_type,
+          options: f.options,
+          rangeMin: f.range_min,
+          rangeMax: f.range_max,
+        })),
         categoryFieldValues,
       );
     }

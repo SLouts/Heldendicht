@@ -5,6 +5,8 @@ import * as z from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/dal";
 import { moveOrderedItem } from "@/lib/orderedList";
+import { parseFieldTypeConfig } from "@/lib/fieldTypeConfig";
+import { buildFieldValueSchema } from "@/lib/fieldValueValidation";
 
 export type CategoryFieldFormState =
   | { error: string }
@@ -64,6 +66,10 @@ export async function createCategoryField(
     };
   }
   const isRequired = formData.get("isRequired") === "on";
+  const typeConfig = parseFieldTypeConfig(formData);
+  if ("error" in typeConfig) {
+    return { error: typeConfig.error };
+  }
 
   const { supabase, isStaff } = await requireWorldStaff(worldId);
   if (!isStaff) {
@@ -84,6 +90,11 @@ export async function createCategoryField(
     label: labelParsed.data,
     example_value: exampleValueParsed.data,
     is_required: isRequired,
+    field_type: typeConfig.fieldType,
+    options: typeConfig.options,
+    range_min: typeConfig.rangeMin,
+    range_max: typeConfig.rangeMax,
+    range_step: typeConfig.rangeStep,
     order_index: (last?.order_index ?? -1) + 1,
   });
   if (error) {
@@ -126,6 +137,10 @@ export async function updateCategoryField(
     };
   }
   const isRequired = formData.get("isRequired") === "on";
+  const typeConfig = parseFieldTypeConfig(formData);
+  if ("error" in typeConfig) {
+    return { error: typeConfig.error };
+  }
 
   const supabase = await createClient();
   const { error, count } = await supabase
@@ -135,6 +150,11 @@ export async function updateCategoryField(
         label: labelParsed.data,
         example_value: exampleValueParsed.data,
         is_required: isRequired,
+        field_type: typeConfig.fieldType,
+        options: typeConfig.options,
+        range_min: typeConfig.rangeMin,
+        range_max: typeConfig.rangeMax,
+        range_step: typeConfig.rangeStep,
       },
       { count: "exact" },
     )
@@ -221,7 +241,9 @@ export async function copyCategoryFields(
   const [{ data: sourceFields }, { data: existingFields }, { data: last }] = await Promise.all([
     supabase
       .from("world_category_fields")
-      .select("label, example_value, is_required, order_index")
+      .select(
+        "label, example_value, is_required, field_type, options, range_min, range_max, range_step, order_index",
+      )
       .eq("category_id", fromCategoryId)
       .order("order_index", { ascending: true }),
     supabase
@@ -254,6 +276,11 @@ export async function copyCategoryFields(
     label: f.label,
     example_value: f.example_value,
     is_required: f.is_required,
+    field_type: f.field_type,
+    options: f.options,
+    range_min: f.range_min,
+    range_max: f.range_max,
+    range_step: f.range_step,
     order_index: nextOrderIndex++,
   }));
 
@@ -275,19 +302,34 @@ export type SetCategoryFieldValuesResult = { error: string } | { ok: true };
  * 信任表單自己夾帶的欄位 id/是否必填,一律用當下資料庫查到的 fields
  * 清單為準。
  */
+export type CategoryFieldForValue = {
+  id: string;
+  label: string;
+  isRequired: boolean;
+  fieldType: "text" | "select" | "range";
+  options: string[];
+  rangeMin: number | null;
+  rangeMax: number | null;
+};
+
 export async function setCategoryFieldValues(
   nodeId: string,
   worldSlug: string,
-  fields: { id: string; label: string; isRequired: boolean }[],
+  fields: CategoryFieldForValue[],
   values: Record<string, string>,
 ): Promise<SetCategoryFieldValuesResult> {
   await requireUser();
 
   const shape: Record<string, z.ZodType<string>> = {};
   for (const f of fields) {
-    shape[f.id] = f.isRequired
-      ? z.string().trim().min(1, { error: `請填寫「${f.label}」` })
-      : z.string().trim().max(2000, { error: `「${f.label}」最多 2000 字` });
+    shape[f.id] = buildFieldValueSchema({
+      label: f.label,
+      isRequired: f.isRequired,
+      fieldType: f.fieldType,
+      options: f.options,
+      rangeMin: f.rangeMin,
+      rangeMax: f.rangeMax,
+    });
   }
   const parsed = z.object(shape).safeParse(values);
   if (!parsed.success) {

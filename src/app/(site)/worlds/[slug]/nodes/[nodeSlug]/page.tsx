@@ -79,7 +79,9 @@ export default async function PublicNodeDetailPage({
     node.node_type === "character"
       ? supabase
           .from("world_character_fields")
-          .select("id, label, character_type")
+          .select(
+            "id, label, character_type, field_type, options, range_min, range_max, range_step",
+          )
           .eq("world_id", world.id)
           .order("order_index", { ascending: true })
       : Promise.resolve({ data: null }),
@@ -99,7 +101,9 @@ export default async function PublicNodeDetailPage({
     node.category_id
       ? supabase
           .from("world_category_fields")
-          .select("id, label, is_required")
+          .select(
+            "id, label, is_required, field_type, options, range_min, range_max, range_step",
+          )
           .eq("category_id", node.category_id)
           .order("order_index", { ascending: true })
       : Promise.resolve({ data: null }),
@@ -138,6 +142,11 @@ export default async function PublicNodeDetailPage({
       id: f.id,
       label: f.label,
       value: valueByFieldId.get(f.id) ?? "",
+      fieldType: f.field_type,
+      options: f.options,
+      rangeMin: f.range_min,
+      rangeMax: f.range_max,
+      rangeStep: f.range_step,
     }));
 
   const valueByCategoryFieldId = new Map(
@@ -148,6 +157,11 @@ export default async function PublicNodeDetailPage({
     label: f.label,
     isRequired: f.is_required,
     value: valueByCategoryFieldId.get(f.id) ?? "",
+    fieldType: f.field_type,
+    options: f.options,
+    rangeMin: f.range_min,
+    rangeMax: f.range_max,
+    rangeStep: f.range_step,
   }));
 
   // wikilinks_select RLS 已經確保這裡拿到的 target 都是訪客看得到的節點

@@ -60,11 +60,19 @@ export async function createNode(
   // 這個分類要求填的欄位——用當下資料庫的清單重新驗證,不信任表單自己
   // 夾帶的欄位 id/是否必填,避免有人繞過瀏覽器端的 required 屬性送出
   // 空值。在真的建立節點之前就先擋下,不要留下必填欄位沒填的節點。
-  let categoryFields: { id: string; label: string; is_required: boolean }[] = [];
+  let categoryFields: {
+    id: string;
+    label: string;
+    is_required: boolean;
+    field_type: "text" | "select" | "range";
+    options: string[];
+    range_min: number | null;
+    range_max: number | null;
+  }[] = [];
   if (parsed.data.categoryId) {
     const { data: fields } = await supabase
       .from("world_category_fields")
-      .select("id, label, is_required")
+      .select("id, label, is_required, field_type, options, range_min, range_max")
       .eq("category_id", parsed.data.categoryId)
       .order("order_index", { ascending: true });
     categoryFields = fields ?? [];
@@ -120,7 +128,15 @@ export async function createNode(
     await setCategoryFieldValues(
       data.id,
       parsed.data.worldSlug,
-      categoryFields.map((f) => ({ id: f.id, label: f.label, isRequired: f.is_required })),
+      categoryFields.map((f) => ({
+        id: f.id,
+        label: f.label,
+        isRequired: f.is_required,
+        fieldType: f.field_type,
+        options: f.options,
+        rangeMin: f.range_min,
+        rangeMax: f.range_max,
+      })),
       fieldValues,
     );
   }

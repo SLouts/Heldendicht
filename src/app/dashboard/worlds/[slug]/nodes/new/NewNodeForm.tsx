@@ -3,6 +3,18 @@
 import { useActionState, useState } from "react";
 import { createNode } from "@/lib/actions/nodes";
 import { CategorySelectOptions } from "@/components/CategorySelectOptions";
+import { DynamicFieldInput } from "@/components/DynamicFieldInput";
+
+type CategoryFieldOption = {
+  id: string;
+  label: string;
+  isRequired: boolean;
+  fieldType: "text" | "select" | "range";
+  options: string[];
+  rangeMin: number | null;
+  rangeMax: number | null;
+  rangeStep: number | null;
+};
 
 export function NewNodeForm({
   worldId,
@@ -14,7 +26,7 @@ export function NewNodeForm({
   worldId: string;
   worldSlug: string;
   categories: { id: string; name: string; accepts_submissions: boolean; parent_id: string | null }[];
-  fieldsByCategory: Record<string, { id: string; label: string; isRequired: boolean }[]>;
+  fieldsByCategory: Record<string, CategoryFieldOption[]>;
   isStaff: boolean;
 }) {
   const [state, formAction, pending] = useActionState(createNode, undefined);
@@ -95,12 +107,17 @@ export function NewNodeForm({
                   <span className="ml-1 text-xs font-normal text-muted-foreground">(選填)</span>
                 )}
               </label>
-              <textarea
+              <DynamicFieldInput
                 id={`field_${f.id}`}
                 name={`field_${f.id}`}
+                defaultValue=""
                 required={f.isRequired}
-                rows={3}
-                className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                fieldType={f.fieldType}
+                options={f.options}
+                rangeMin={f.rangeMin}
+                rangeMax={f.rangeMax}
+                rangeStep={f.rangeStep}
+                multiline
               />
             </div>
           ))}

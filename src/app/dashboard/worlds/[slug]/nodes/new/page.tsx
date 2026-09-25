@@ -29,7 +29,9 @@ export default async function NewNodePage({
         .order("order_index", { ascending: true }),
       supabase
         .from("world_category_fields")
-        .select("id, category_id, label, is_required")
+        .select(
+          "id, category_id, label, is_required, field_type, options, range_min, range_max, range_step",
+        )
         .eq("world_id", world.id)
         .order("order_index", { ascending: true }),
     ]);
@@ -44,13 +46,27 @@ export default async function NewNodePage({
   // 必填/選填欄位輸入框,不用另外打 API。
   const fieldsByCategory: Record<
     string,
-    { id: string; label: string; isRequired: boolean }[]
+    {
+      id: string;
+      label: string;
+      isRequired: boolean;
+      fieldType: "text" | "select" | "range";
+      options: string[];
+      rangeMin: number | null;
+      rangeMax: number | null;
+      rangeStep: number | null;
+    }[]
   > = {};
   for (const f of categoryFields ?? []) {
     (fieldsByCategory[f.category_id] ??= []).push({
       id: f.id,
       label: f.label,
       isRequired: f.is_required,
+      fieldType: f.field_type,
+      options: f.options,
+      rangeMin: f.range_min,
+      rangeMax: f.range_max,
+      rangeStep: f.range_step,
     });
   }
 

@@ -39,6 +39,7 @@ export type NotificationType =
   | "new_follower"
   | "followed_node"
   | "followed_world_join";
+export type FieldInputType = "text" | "select" | "range";
 
 export type Database = {
   public: {
@@ -344,6 +345,11 @@ export type Database = {
           label: string;
           example_value: string;
           is_required: boolean;
+          field_type: FieldInputType;
+          options: string[];
+          range_min: number | null;
+          range_max: number | null;
+          range_step: number | null;
           order_index: number;
           created_at: string;
         };
@@ -593,6 +599,11 @@ export type Database = {
           label: string;
           character_type: CharacterType | null;
           example_value: string;
+          field_type: FieldInputType;
+          options: string[];
+          range_min: number | null;
+          range_max: number | null;
+          range_step: number | null;
           order_index: number;
           created_at: string;
         };

@@ -158,27 +158,63 @@ export async function deletePersona(personaId: string): Promise<void> {
   revalidatePath("/dashboard/profile");
 }
 
-export async function uploadPersonaAvatar(
-  _prevState: PersonaFormState,
-  formData: FormData,
-): Promise<PersonaFormState> {
+export type UploadTicketResult =
+  | { error: string }
+  | { path: string; token: string };
+
+/**
+ * 跟個人頁面頭貼/橫幅同一套兩段式簽名上傳流程(見 lib/actions/profile.ts
+ * 的說明):先跟這裡要簽名上傳票券,瀏覽器直接把檔案傳到 Supabase
+ * Storage,不經過我們自己的 server,避免大圖片撞到 Vercel serverless
+ * function 的 request body 大小限制。
+ */
+export async function createPersonaAvatarUploadTicket(
+  personaId: string,
+  contentType: string,
+  fileSize: number,
+): Promise<UploadTicketResult> {
   const user = await requireUser();
 
-  const personaId = formData.get("personaId");
-  const file = formData.get("file");
-  if (typeof personaId !== "string" || !(file instanceof File)) {
-    return { error: "缺少必要欄位" };
-  }
-  if (file.size === 0) {
+  if (fileSize <= 0) {
     return { error: "請選擇一張圖片" };
   }
-  if (file.size > PROFILE_MEDIA_MAX_BYTES) {
+  if (fileSize > PROFILE_MEDIA_MAX_BYTES) {
     return { error: "圖片不能超過 5MB" };
   }
-  const ext = PROFILE_MEDIA_ALLOWED_TYPES[file.type];
+  const ext = PROFILE_MEDIA_ALLOWED_TYPES[contentType];
   if (!ext) {
     return { error: "只接受 PNG / JPEG / WebP 圖片" };
   }
+
+  const supabase = await createClient();
+  const { data: persona } = await supabase
+    .from("character_personas")
+    .select("owner_id")
+    .eq("id", personaId)
+    .maybeSingle();
+  if (!persona || persona.owner_id !== user.id) {
+    return { error: "找不到這個角色,或這不是你的角色" };
+  }
+
+  const admin = createAdminClient();
+  const path = `${user.id}/persona-${personaId}-${Date.now()}.${ext}`;
+  const { data, error } = await admin.storage
+    .from(PROFILE_MEDIA_BUCKET)
+    .createSignedUploadUrl(path);
+  if (error || !data) {
+    console.error("createPersonaAvatarUploadTicket", error);
+    return { error: "無法建立上傳票券,請稍後再試" };
+  }
+
+  return { path: data.path, token: data.token };
+}
+
+/** 瀏覽器直接把檔案傳到 Supabase Storage 成功後,呼叫這裡把路徑寫回角色資料。 */
+export async function finalizePersonaAvatarUpload(
+  personaId: string,
+  path: string,
+): Promise<PersonaFormState> {
+  const user = await requireUser();
 
   const supabase = await createClient();
   const { data: persona } = await supabase
@@ -190,28 +226,20 @@ export async function uploadPersonaAvatar(
     return { error: "找不到這個角色,或這不是你的角色" };
   }
 
-  const admin = createAdminClient();
-  const path = `${user.id}/persona-${personaId}-${Date.now()}.${ext}`;
-  const bytes = new Uint8Array(await file.arrayBuffer());
-
-  const { error: uploadError } = await admin.storage
-    .from(PROFILE_MEDIA_BUCKET)
-    .upload(path, bytes, { contentType: file.type, upsert: false });
-  if (uploadError) {
-    return { error: "上傳失敗,請稍後再試" };
-  }
-
   const { error: updateError, count } = await supabase
     .from("character_personas")
     .update({ avatar_path: path }, { count: "exact" })
     .eq("id", personaId)
     .eq("owner_id", user.id);
   if (updateError || count === 0) {
+    const admin = createAdminClient();
     await admin.storage.from(PROFILE_MEDIA_BUCKET).remove([path]);
+    console.error("finalizePersonaAvatarUpload", updateError);
     return { error: "更新失敗,請稍後再試" };
   }
 
   if (persona.avatar_path) {
+    const admin = createAdminClient();
     await admin.storage.from(PROFILE_MEDIA_BUCKET).remove([persona.avatar_path]);
   }
 

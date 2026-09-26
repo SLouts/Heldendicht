@@ -2,7 +2,6 @@ import Link from "next/link";
 import { requireUser } from "@/lib/dal";
 import { createClient } from "@/lib/supabase/server";
 import { getProfileMediaPublicUrl } from "@/lib/profileMedia";
-import { uploadAvatar, uploadBanner } from "@/lib/actions/profile";
 import { ProfileDetailsForm } from "./ProfileDetailsForm";
 import { ChangePasswordForm } from "./ChangePasswordForm";
 import { ProfileImageForm } from "./ProfileImageForm";
@@ -84,14 +83,14 @@ export default async function ProfilePage() {
 
       <div className="mt-6 flex flex-wrap gap-6">
         <ProfileImageForm
+          kind="banner"
           label="橫幅"
-          action={uploadBanner}
           currentUrl={bannerUrl}
           previewClassName="h-32 w-full max-w-md rounded-lg border border-border object-cover sm:w-80"
         />
         <ProfileImageForm
+          kind="avatar"
           label="頭貼"
-          action={uploadAvatar}
           currentUrl={avatarUrl}
           previewClassName="h-24 w-24 rounded-full border border-border object-cover"
         />

@@ -1,24 +1,73 @@
 "use client";
 
-import { useActionState, useRef } from "react";
-import type { ProfileFormState } from "@/lib/actions/profile";
+import { useRef, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
+import { downscaleImageIfNeeded } from "@/lib/imageResize";
+import {
+  createProfileMediaUploadTicket,
+  finalizeProfileMediaUpload,
+  type ProfileMediaKind,
+} from "@/lib/actions/profile";
+
+const PROFILE_MEDIA_BUCKET = "profile-media";
 
 export function ProfileImageForm({
+  kind,
   label,
-  action,
   currentUrl,
   previewClassName,
 }: {
+  kind: ProfileMediaKind;
   label: string;
-  action: (
-    prevState: ProfileFormState,
-    formData: FormData,
-  ) => Promise<ProfileFormState>;
   currentUrl: string | null;
   previewClassName: string;
 }) {
-  const [state, formAction, isPending] = useActionState(action, undefined);
+  const [error, setError] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const fileInput = e.currentTarget.elements.namedItem("file") as HTMLInputElement;
+    const originalFile = fileInput.files?.[0];
+    if (!originalFile) {
+      setError("請選擇一張圖片");
+      return;
+    }
+
+    setError(null);
+    setPending(true);
+    try {
+      const file = await downscaleImageIfNeeded(originalFile);
+
+      const ticket = await createProfileMediaUploadTicket(kind, file.type, file.size);
+      if ("error" in ticket) {
+        setError(ticket.error);
+        return;
+      }
+
+      const supabase = createClient();
+      const { error: uploadError } = await supabase.storage
+        .from(PROFILE_MEDIA_BUCKET)
+        .uploadToSignedUrl(ticket.path, ticket.token, file, { contentType: file.type });
+      if (uploadError) {
+        setError("上傳失敗,請稍後再試");
+        return;
+      }
+
+      const result = await finalizeProfileMediaUpload(kind, ticket.path);
+      if (result && "error" in result) {
+        setError(result.error);
+        return;
+      }
+
+      formRef.current?.reset();
+    } catch {
+      setError("上傳失敗,請稍後再試");
+    } finally {
+      setPending(false);
+    }
+  }
 
   return (
     <div className="flex flex-col gap-2">
@@ -35,10 +84,7 @@ export function ProfileImageForm({
       )}
       <form
         ref={formRef}
-        action={async (formData) => {
-          await formAction(formData);
-          formRef.current?.reset();
-        }}
+        onSubmit={handleSubmit}
         className="flex flex-wrap items-center gap-2"
       >
         <input
@@ -50,15 +96,13 @@ export function ProfileImageForm({
         />
         <button
           type="submit"
-          disabled={isPending}
+          disabled={pending}
           className="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm hover:bg-muted disabled:opacity-50"
         >
-          {isPending ? "上傳中…" : "上傳"}
+          {pending ? "上傳中…" : "上傳"}
         </button>
       </form>
-      {state && "error" in state && (
-        <p className="text-sm text-danger">{state.error}</p>
-      )}
+      {error && <p className="text-sm text-danger">{error}</p>}
     </div>
   );
 }

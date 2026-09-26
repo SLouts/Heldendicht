@@ -1,17 +1,22 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useRef } from "react";
+import { useActionState, useRef, useState } from "react";
 import {
   deletePersona,
   unlinkCharacterPersona,
   updatePersona,
-  uploadPersonaAvatar,
+  createPersonaAvatarUploadTicket,
+  finalizePersonaAvatarUpload,
   type PersonaField,
 } from "@/lib/actions/personas";
+import { createClient } from "@/lib/supabase/client";
+import { downscaleImageIfNeeded } from "@/lib/imageResize";
 import { PersonaFieldsEditor } from "./PersonaFieldsEditor";
 import { NODE_STATUS_LABEL } from "@/lib/nodeTypeLabels";
 import type { NodeStatus } from "@/lib/supabase/database.types";
+
+const PROFILE_MEDIA_BUCKET = "profile-media";
 
 export type PersonaLink = {
   nodeId: string;
@@ -43,11 +48,52 @@ export function PersonaCard({
     updatePersona,
     undefined,
   );
-  const [avatarState, avatarAction, avatarPending] = useActionState(
-    uploadPersonaAvatar,
-    undefined,
-  );
+  const [avatarError, setAvatarError] = useState<string | null>(null);
+  const [avatarPending, setAvatarPending] = useState(false);
   const avatarFormRef = useRef<HTMLFormElement>(null);
+
+  async function handleAvatarSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const fileInput = e.currentTarget.elements.namedItem("file") as HTMLInputElement;
+    const originalFile = fileInput.files?.[0];
+    if (!originalFile) {
+      setAvatarError("請選擇一張圖片");
+      return;
+    }
+
+    setAvatarError(null);
+    setAvatarPending(true);
+    try {
+      const file = await downscaleImageIfNeeded(originalFile);
+
+      const ticket = await createPersonaAvatarUploadTicket(id, file.type, file.size);
+      if ("error" in ticket) {
+        setAvatarError(ticket.error);
+        return;
+      }
+
+      const supabase = createClient();
+      const { error: uploadError } = await supabase.storage
+        .from(PROFILE_MEDIA_BUCKET)
+        .uploadToSignedUrl(ticket.path, ticket.token, file, { contentType: file.type });
+      if (uploadError) {
+        setAvatarError("上傳失敗,請稍後再試");
+        return;
+      }
+
+      const result = await finalizePersonaAvatarUpload(id, ticket.path);
+      if (result && "error" in result) {
+        setAvatarError(result.error);
+        return;
+      }
+
+      avatarFormRef.current?.reset();
+    } catch {
+      setAvatarError("上傳失敗,請稍後再試");
+    } finally {
+      setAvatarPending(false);
+    }
+  }
 
   return (
     <div className="flex flex-col gap-4 rounded-lg border border-border bg-surface p-4 sm:flex-row">
@@ -64,13 +110,9 @@ export function PersonaCard({
         )}
         <form
           ref={avatarFormRef}
-          action={async (formData) => {
-            await avatarAction(formData);
-            avatarFormRef.current?.reset();
-          }}
+          onSubmit={handleAvatarSubmit}
           className="flex flex-col items-center gap-1"
         >
-          <input type="hidden" name="personaId" value={id} />
           <input
             type="file"
             name="file"
@@ -84,9 +126,7 @@ export function PersonaCard({
           >
             {avatarPending ? "上傳中…" : "換頭像"}
           </button>
-          {avatarState && "error" in avatarState && (
-            <p className="text-xs text-danger">{avatarState.error}</p>
-          )}
+          {avatarError && <p className="text-xs text-danger">{avatarError}</p>}
         </form>
       </div>
 

@@ -1,9 +1,9 @@
 import type { TimelineEventItem } from "./CharacterTimelineEditor";
 
 /**
- * 角色節點的生平時間線——正式的八主題顯示版型,搭配 CharacterTimelineEditor
+ * 角色節點的生平時間線——正式的六主題顯示版型,搭配 CharacterTimelineEditor
  * 那個陽春的編輯清單(負責新增/編輯/排序/刪除,不分主題)。跟 NodeIdentityCard
- * 同一個慣例:八份都會渲染,globals.css 依 <html data-art-theme> 決定哪份可見。
+ * 同一個慣例:六份都會渲染,globals.css 依 <html data-art-theme> 決定哪份可見。
  *
  * 沒有任何時間點就整塊不顯示(跟頭貼/立繪「不填就不顯示」同一套邏輯)。
  *
@@ -73,7 +73,7 @@ function ExpandableDescription({
   );
 }
 
-/** 五個版型共用的「直線+圓點」時間軸,只有 dot 形狀跟文字排版是可調的。 */
+/** 三個版型共用的「直線+圓點」時間軸,只有 dot 形狀跟文字排版是可調的。 */
 function DotTimeline({
   events,
   dotStyle = "circle",
@@ -136,19 +136,7 @@ export function CharacterTimelineDisplay({ events }: { events: TimelineEventItem
 
   return (
     <>
-      {/* ---------- 01 泥金手抄本 ---------- */}
-      <div className="char-timeline-variant char-timeline-illuminated rounded-lg border border-border bg-surface p-5">
-        <h2 className="font-display mb-3 text-lg text-primary">生平時間線</h2>
-        <DotTimeline
-          events={events}
-          labelClassName="text-sm italic text-muted-foreground"
-          currentLabelClassName="text-sm italic text-primary"
-          descriptionClassName="text-sm"
-          currentDescriptionClassName="text-sm text-primary"
-        />
-      </div>
-
-      {/* ---------- 02 劇本手稿:日誌表格 ---------- */}
+      {/* ---------- 01 劇本手稿:日誌表格(預設) ---------- */}
       <div className="char-timeline-variant char-timeline-script border border-border bg-surface p-4">
         <h2 className="font-display mb-3 text-sm">生平時間線</h2>
         <table className="w-full border-collapse text-sm">
@@ -178,7 +166,7 @@ export function CharacterTimelineDisplay({ events }: { events: TimelineEventItem
         </table>
       </div>
 
-      {/* ---------- 03 田野筆記:點格紙 ---------- */}
+      {/* ---------- 02 田野筆記:點格紙 ---------- */}
       <div className="char-timeline-variant char-timeline-field hero-field-dots rounded-lg border border-border p-5">
         <h2 className="font-display mb-3 text-lg">生平時間線</h2>
         <DotTimeline
@@ -190,35 +178,7 @@ export function CharacterTimelineDisplay({ events }: { events: TimelineEventItem
         />
       </div>
 
-      {/* ---------- 04 角色卡牌:卡框footer ---------- */}
-      <div className="char-timeline-variant char-timeline-card rounded-lg border border-border bg-surface px-4 py-3">
-        <h2 className="font-display mb-2 text-sm">生平時間線</h2>
-        <div className="flex flex-col gap-2 text-sm">
-          {events.map((event, i) => {
-            const isCurrent = i === events.length - 1;
-            return (
-              <div key={event.id} className="flex gap-3">
-                <b
-                  className={
-                    "w-24 shrink-0 text-xs font-normal " +
-                    (isCurrent ? "text-primary" : "text-muted-foreground")
-                  }
-                >
-                  {event.label}
-                </b>
-                <div className="flex-1">
-                  <ExpandableDescription
-                    event={event}
-                    className={isCurrent ? "text-primary" : ""}
-                  />
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* ---------- 05 東方玄幻:硃砂印 ---------- */}
+      {/* ---------- 03 東方玄幻:硃砂印 ---------- */}
       <div className="char-timeline-variant char-timeline-wuxia rounded-none border border-border bg-surface p-5">
         <h2 className="font-display mb-3 text-lg">生平時間線</h2>
         <DotTimeline
@@ -230,10 +190,10 @@ export function CharacterTimelineDisplay({ events }: { events: TimelineEventItem
         />
       </div>
 
-      {/* ---------- 06 羊皮紙卷軸:攤開的卷軸 ---------- */}
+      {/* ---------- 04 羊皮紙卷軸:攤開的卷軸 ---------- */}
       <div className="char-timeline-variant char-timeline-scroll">
         <div className="hero-scroll-rod" />
-        <div className="bg-surface px-5 py-6 text-center">
+        <div className="bg-surface scroll-foxing px-5 py-6 text-center">
           <h2 className="font-display mb-4 text-lg">生平時間線</h2>
           <div className="flex flex-col gap-3">
             {events.map((event, i) => {
@@ -260,7 +220,7 @@ export function CharacterTimelineDisplay({ events }: { events: TimelineEventItem
         <div className="hero-scroll-rod" />
       </div>
 
-      {/* ---------- 07 製圖師手記:方格野帳 ---------- */}
+      {/* ---------- 05 製圖師手記:方格野帳 ---------- */}
       <div className="char-timeline-variant char-timeline-cartographer hero-cartographer-grid relative rounded-none border-2 border-border p-5">
         <h2 className="font-display mb-3 text-lg">生平時間線</h2>
         <div className="flex flex-col gap-2">
@@ -292,7 +252,7 @@ export function CharacterTimelineDisplay({ events }: { events: TimelineEventItem
         </div>
       </div>
 
-      {/* ---------- 08 占星曆書:星點夜色 ---------- */}
+      {/* ---------- 06 占星曆書:星點夜色 ---------- */}
       <div className="char-timeline-variant char-timeline-almanac rounded border border-border bg-surface p-5">
         <h2 className="font-display mb-3 text-lg">生平時間線</h2>
         <DotTimeline

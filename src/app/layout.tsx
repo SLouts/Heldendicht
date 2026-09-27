@@ -2,10 +2,8 @@ import type { Metadata } from "next";
 import {
   Geist,
   Geist_Mono,
-  Cinzel,
   Courier_Prime,
   Kalam,
-  Bebas_Neue,
   IM_Fell_English_SC,
   Playfair_Display,
   Cormorant_Garamond,
@@ -26,15 +24,10 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-// 各美術方向各自的標題顯示字,只涵蓋拉丁字母——中文標題一律靠
+// 各主題各自的標題顯示字,只涵蓋拉丁字母——中文標題一律靠
 // globals.css 裡的系統襯線字型堆疊(Songti TC / PMingLiU 等)接手顯示,
 // 不特地為每個方向多載入一套大型中文 webfont。實際套用哪一個交給
 // globals.css 的 --font-display 依 data-art-theme 切換。
-const illuminated = Cinzel({
-  variable: "--font-illuminated",
-  subsets: ["latin"],
-  weight: ["500", "600", "700"],
-});
 const script = Courier_Prime({
   variable: "--font-script",
   subsets: ["latin"],
@@ -44,11 +37,6 @@ const field = Kalam({
   variable: "--font-field",
   subsets: ["latin"],
   weight: ["400", "700"],
-});
-const card = Bebas_Neue({
-  variable: "--font-card",
-  subsets: ["latin"],
-  weight: ["400"],
 });
 const scroll = IM_Fell_English_SC({
   variable: "--font-scroll",
@@ -81,7 +69,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} ${illuminated.variable} ${script.variable} ${field.variable} ${card.variable} ${scroll.variable} ${cartographer.variable} ${almanac.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${script.variable} ${field.variable} ${scroll.variable} ${cartographer.variable} ${almanac.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <Script id="art-theme-bootstrap" strategy="beforeInteractive">

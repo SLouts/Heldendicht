@@ -1,7 +1,7 @@
 /**
  * 節點頁面最上方的「身分橫幅」——封面橫跨全寬、頭貼疊在橫幅底部(壓一半
  * 在圖上、一半露到下面的白底區),標題跟引言(節點內文)在橫幅下面,
- * 依美術方向切換版型。跟 WorldHero.tsx 同一個慣例:八份 <div> 都會
+ * 依主題切換版型。跟 WorldHero.tsx 同一個慣例:六份 <div> 都會
  * 渲染,實際顯示哪一份交給 globals.css 依 <html data-art-theme> 用 CSS
  * 切換。手機/PC 共用同一份 DOM,靠 Tailwind 響應式 class 微調,不用
  * 像身分卡卡片時代那樣另外渲染一份 desktop 專用 DOM。
@@ -17,9 +17,7 @@
  * wikilink/嵌入圖片),這裡只負責包引言框的樣式——編輯模式不會傳這個,
  * 因為編輯者在下面的表單就看得到內文,不需要在橫幅重複顯示一次。
  *
- * 七個版型(除了卡牌)結構相同,抽成 HeroFrame 共用;卡牌牌面沿用
- * WorldHero.tsx 既有的深色卡框+標題列+16:6 橫幅裁切,結構差太多維持
- * 獨立手寫。
+ * 六個版型結構相同,抽成 HeroFrame 共用。
  */
 
 function Avatar({ url, className }: { url: string | null; className: string }) {
@@ -141,27 +139,7 @@ export function NodeHero({
 
   return (
     <>
-      {/* ---------- 01 泥金手抄本(預設) ---------- */}
-      <HeroFrame
-        outerClassName="node-hero-variant node-hero-illuminated overflow-hidden rounded-lg border border-border bg-surface"
-        coverUrl={coverUrl}
-        coverWrapperClassName="relative aspect-[16/5] w-full overflow-hidden"
-        coverImgClassName="absolute inset-0 h-full w-full object-cover"
-        avatarUrl={avatarUrl}
-        avatarOverlapClassName="absolute z-10 -bottom-8 left-6 h-20 w-20 rounded-full border-4 border-surface object-cover shadow-sm"
-        avatarInlineClassName="mb-3 h-16 w-16 rounded-full border-2 border-border object-cover"
-        bodyClassName="px-6 py-6"
-        bodyWithOverlapClassName="px-6 pb-6 pt-12"
-        name={name}
-        nameClassName="font-display text-2xl font-semibold text-primary sm:text-3xl"
-        typeBadge={typeBadge}
-        statusBadges={statusBadges}
-        metaLine={metaLine}
-        metaClassName="mt-1 text-sm text-muted-foreground italic"
-        quote={quote}
-      />
-
-      {/* ---------- 02 劇本手稿:標題頁(標題列在橫幅上方) ---------- */}
+      {/* ---------- 01 劇本手稿:標題頁(標題列在橫幅上方,預設) ---------- */}
       <div className="node-hero-variant node-hero-script overflow-hidden border border-border bg-surface">
         <div className="node-hero-script-masthead">
           {characterType ? "Character Sheet" : "Field Record"}
@@ -186,7 +164,7 @@ export function NodeHero({
         />
       </div>
 
-      {/* ---------- 03 田野筆記:點格紙 ---------- */}
+      {/* ---------- 02 田野筆記:點格紙 ---------- */}
       <HeroFrame
         outerClassName="node-hero-variant node-hero-field hero-field-dots overflow-hidden rounded-lg border border-border"
         coverUrl={coverUrl}
@@ -206,39 +184,7 @@ export function NodeHero({
         quote={quote}
       />
 
-      {/* ---------- 04 角色卡牌:卡框(跟 WorldHero.tsx 的卡牌 hero 同一套
-           深色卡框+16:6 橫幅裁切,結構差太多維持獨立手寫) ---------- */}
-      <div className="node-hero-variant node-hero-card">
-        <div className="hero-card-frame">
-          <div className="hero-card-titlebar">
-            <div className="flex items-center gap-2">
-              <Avatar
-                url={avatarUrl}
-                className="h-9 w-9 shrink-0 rounded-full border border-[#b6912f] object-cover"
-              />
-              <b className="font-display">{name}</b>
-            </div>
-            {characterType && (
-              <span className="rounded border border-[#b6912f] bg-[#241f14] px-2 py-0.5 text-xs text-[#e9dfc4]">
-                {characterType === "pc" ? "PC" : "NPC"}
-              </span>
-            )}
-          </div>
-          {coverUrl && (
-            <div className="hero-card-art">
-              {/* eslint-disable-next-line @next/next/no-img-element -- signed URL,無法用 next/image 白名單網域 */}
-              <img src={coverUrl} alt="" />
-            </div>
-          )}
-        </div>
-        <div className="rounded-b-lg border border-t-0 border-border bg-surface px-4 py-3">
-          <p className="text-xs text-muted-foreground">{metaLine}</p>
-          {statusBadges && <div className="mt-2 flex flex-wrap gap-2">{statusBadges}</div>}
-          {quote && <div className="mt-3 border-t border-border pt-3">{quote}</div>}
-        </div>
-      </div>
-
-      {/* ---------- 05 東方玄幻:硃砂印 ---------- */}
+      {/* ---------- 03 東方玄幻:硃砂印 ---------- */}
       <HeroFrame
         outerClassName="node-hero-variant node-hero-wuxia overflow-hidden rounded-none border border-border bg-surface"
         coverUrl={coverUrl}
@@ -258,17 +204,17 @@ export function NodeHero({
         quote={quote}
       />
 
-      {/* ---------- 06 羊皮紙卷軸:攤開的卷軸 ---------- */}
+      {/* ---------- 04 羊皮紙卷軸:攤開的卷軸 ---------- */}
       <div className="node-hero-variant node-hero-scroll">
         <div className="hero-scroll-rod" />
         <HeroFrame
-          outerClassName="bg-surface"
+          outerClassName="bg-surface scroll-foxing"
           coverUrl={coverUrl}
           coverWrapperClassName="relative aspect-[16/5] w-full overflow-hidden"
           coverImgClassName="absolute inset-0 h-full w-full object-cover"
           avatarUrl={avatarUrl}
-          avatarOverlapClassName="absolute z-10 -bottom-8 left-6 h-20 w-20 rounded-full border-4 border-surface object-cover shadow-sm"
-          avatarInlineClassName="mb-3 h-16 w-16 rounded-full border border-border object-cover"
+          avatarOverlapClassName="scroll-wax-glow absolute z-10 -bottom-8 left-6 h-20 w-20 rounded-full border-4 border-surface object-cover shadow-sm"
+          avatarInlineClassName="scroll-wax-glow mb-3 h-16 w-16 rounded-full border border-border object-cover"
           bodyClassName="px-6 py-6 text-center"
           bodyWithOverlapClassName="px-6 pb-6 pt-12 text-center"
           name={name}
@@ -282,7 +228,7 @@ export function NodeHero({
         <div className="hero-scroll-rod" />
       </div>
 
-      {/* ---------- 07 製圖師手記:方格野帳 + 羅盤 ---------- */}
+      {/* ---------- 05 製圖師手記:方格野帳 + 羅盤 ---------- */}
       <div className="node-hero-variant node-hero-cartographer hero-cartographer-grid relative overflow-hidden rounded-none border-2 border-border">
         <svg
           className="hero-cartographer-compass"
@@ -314,7 +260,7 @@ export function NodeHero({
         />
       </div>
 
-      {/* ---------- 08 占星曆書:星點夜色(星空背景只包文字區,封面橫幅
+      {/* ---------- 06 占星曆書:星點夜色(星空背景只包文字區,封面橫幅
            邊到邊、不吃 hero-almanac-sky 自己的 padding) ---------- */}
       <div className="node-hero-variant node-hero-almanac overflow-hidden rounded-lg">
         {coverUrl && (

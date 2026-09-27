@@ -62,7 +62,7 @@ export function NewCharacterForm({
       <input type="hidden" name="worldSlug" value={worldSlug} />
 
       <div className="flex flex-col gap-1">
-        <label htmlFor="characterType" className="text-sm font-medium">
+        <label htmlFor="characterType" className="font-display text-sm font-medium">
           類型
         </label>
         <select
@@ -78,7 +78,7 @@ export function NewCharacterForm({
       </div>
 
       <div className="flex flex-col gap-1">
-        <label htmlFor="title" className="text-sm font-medium">
+        <label htmlFor="title" className="font-display text-sm font-medium">
           角色名稱
         </label>
         <input
@@ -93,7 +93,7 @@ export function NewCharacterForm({
       </div>
 
       <div className="flex flex-col gap-1">
-        <label htmlFor="content" className="text-sm font-medium">
+        <label htmlFor="content" className="font-display text-sm font-medium">
           角色正史 / 設定
         </label>
         <textarea
@@ -107,7 +107,7 @@ export function NewCharacterForm({
 
       {categories.length > 0 && (
         <div className="flex flex-col gap-1">
-          <label htmlFor="categoryId" className="text-sm font-medium">
+          <label htmlFor="categoryId" className="font-display text-sm font-medium">
             分類(選填)
           </label>
           <select
@@ -125,10 +125,10 @@ export function NewCharacterForm({
 
       {categoryFields.length > 0 && (
         <div className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-3">
-          <p className="text-sm font-medium">這個分類要求填以下欄位</p>
+          <p className="font-display text-sm font-medium">這個分類要求填以下欄位</p>
           {categoryFields.map((f) => (
             <div key={f.id} className="flex flex-col gap-1">
-              <label htmlFor={`field_${f.id}`} className="text-sm font-medium">
+              <label htmlFor={`field_${f.id}`} className="font-display text-sm font-medium">
                 {f.label}
                 {f.isRequired ? (
                   <span className="ml-1 text-danger">*</span>
@@ -155,12 +155,12 @@ export function NewCharacterForm({
 
       {visibleFields.length > 0 && (
         <div className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-3">
-          <p className="text-sm font-medium">
+          <p className="font-display text-sm font-medium">
             這個世界觀要求角色都要填以下基本資料
           </p>
           {visibleFields.map((f) => (
             <div key={f.id} className="flex flex-col gap-1">
-              <label htmlFor={`field_${f.id}`} className="text-sm font-medium">
+              <label htmlFor={`field_${f.id}`} className="font-display text-sm font-medium">
                 {f.label}
               </label>
               <DynamicFieldInput

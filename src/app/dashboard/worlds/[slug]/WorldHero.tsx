@@ -3,7 +3,7 @@
  * (/dashboard/worlds/[slug])共用——跟 worldmap/WorldMapView.tsx 一樣的
  * 「元件放在 dashboard 底下、公開頁面跨路徑 import」慣例。
  *
- * 五個 <div> 都會渲染,實際顯示哪一個交給 globals.css 依
+ * 六個 <div> 都會渲染,實際顯示哪一個交給 globals.css 依
  * <html data-art-theme> 用 CSS 切換(見「Hero 依美術方向切換」那段)——
  * 這樣切換美術方向不用重新整理頁面,也不用在這裡多寫一次 client
  * component 去讀 localStorage。
@@ -38,43 +38,7 @@ export function WorldHero({
 }) {
   return (
     <>
-      {/* ---------- 01 泥金手抄本(預設) ---------- */}
-      <div className="hero-variant hero-illuminated">
-        {!bannerUrl ? (
-          <div className="flex items-center gap-3">
-            {iconUrl && (
-              // eslint-disable-next-line @next/next/no-img-element -- signed URL,無法用 next/image 白名單網域
-              <img
-                src={iconUrl}
-                alt=""
-                className="h-12 w-12 shrink-0 rounded-full border border-border object-cover"
-              />
-            )}
-            <h1 className="text-3xl font-semibold tracking-tight">{name}</h1>
-          </div>
-        ) : (
-          <div className="relative aspect-[16/6] overflow-hidden rounded-lg border border-border">
-            {/* eslint-disable-next-line @next/next/no-img-element -- signed URL,無法用 next/image 白名單網域 */}
-            <img src={bannerUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
-            <div className="absolute inset-x-0 bottom-0 flex items-center gap-3 p-4 sm:p-6">
-              {iconUrl && (
-                // eslint-disable-next-line @next/next/no-img-element -- signed URL,無法用 next/image 白名單網域
-                <img
-                  src={iconUrl}
-                  alt=""
-                  className="h-12 w-12 shrink-0 rounded-full border-2 border-white/80 object-cover shadow-sm"
-                />
-              )}
-              <h1 className="font-display text-2xl font-semibold tracking-wide text-white drop-shadow-sm sm:text-3xl">
-                {name}
-              </h1>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* ---------- 02 劇本手稿:標題頁 ---------- */}
+      {/* ---------- 01 劇本手稿:標題頁(預設) ---------- */}
       <div className="hero-variant hero-script rounded-lg border border-border bg-surface px-6 py-10 text-center">
         {iconUrl && !bannerUrl && (
           // eslint-disable-next-line @next/next/no-img-element -- signed URL,無法用 next/image 白名單網域
@@ -97,7 +61,7 @@ export function WorldHero({
         )}
       </div>
 
-      {/* ---------- 03 田野筆記:點格紙扉頁 ---------- */}
+      {/* ---------- 02 田野筆記:點格紙扉頁 ---------- */}
       <div className="hero-variant hero-field hero-field-dots rounded-lg border border-border px-6 py-8">
         <div className="flex items-center gap-4">
           {iconUrl ? (
@@ -134,26 +98,7 @@ export function WorldHero({
         )}
       </div>
 
-      {/* ---------- 04 角色卡牌:卡框 ---------- */}
-      <div className="hero-variant hero-card">
-        <div className="hero-card-frame">
-          <div className="hero-card-titlebar">
-            <b className="font-display">{name}</b>
-            <svg width="18" height="18" viewBox="0 0 18 18">
-              <polygon fill="#4fae8c" points="9,1 16,6 13,17 5,17 2,6" />
-            </svg>
-          </div>
-          {/* 沒有橫幅或頭像時,卡框只留標題列,不再用一塊固定色卡當佔位 */}
-          {(bannerUrl || iconUrl) && (
-            <div className="hero-card-art">
-              {/* eslint-disable-next-line @next/next/no-img-element -- signed URL,無法用 next/image 白名單網域 */}
-              <img src={bannerUrl ?? iconUrl ?? undefined} alt="" />
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* ---------- 05 東方玄幻:硃砂印 ---------- */}
+      {/* ---------- 03 東方玄幻:硃砂印 ---------- */}
       <div className="hero-variant hero-wuxia">
         <div className="hero-wuxia-wrap">
           {bannerUrl && (
@@ -184,7 +129,7 @@ export function WorldHero({
         </div>
       </div>
 
-      {/* ---------- 06 羊皮紙卷軸:攤開的卷軸 ---------- */}
+      {/* ---------- 04 羊皮紙卷軸:攤開的卷軸 ---------- */}
       <div className="hero-variant hero-scroll">
         <div className="hero-scroll-rod" />
         <div className="hero-scroll-body">
@@ -194,7 +139,7 @@ export function WorldHero({
               <img
                 src={iconUrl}
                 alt=""
-                className="h-12 w-12 shrink-0 rounded-full border border-border object-cover"
+                className="scroll-wax-glow h-12 w-12 shrink-0 rounded-full border border-border object-cover"
               />
             )}
             <h1 className="font-display text-3xl">{name}</h1>
@@ -212,8 +157,8 @@ export function WorldHero({
         <div className="hero-scroll-rod" />
       </div>
 
-      {/* ---------- 07 製圖師手記:方格野帳 + 羅盤 ---------- */}
-      <div className="hero-variant hero-cartographer hero-cartographer-grid relative rounded-lg border-2 border-border px-6 py-8">
+      {/* ---------- 05 製圖師手記:方格野帳 + 羅盤 + 座標刻度 ---------- */}
+      <div className="hero-variant hero-cartographer hero-cartographer-grid cartographer-ruler relative rounded-lg border-2 border-border px-6 py-8">
         <svg
           className="hero-cartographer-compass"
           viewBox="0 0 34 34"
@@ -250,7 +195,7 @@ export function WorldHero({
         )}
       </div>
 
-      {/* ---------- 08 占星曆書:星圖 ---------- */}
+      {/* ---------- 06 占星曆書:星圖 ---------- */}
       <div className="hero-variant hero-almanac">
         <div className="hero-almanac-sky">
           {bannerUrl && (

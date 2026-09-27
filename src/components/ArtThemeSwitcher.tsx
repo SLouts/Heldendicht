@@ -18,8 +18,8 @@ export function ArtThemeSwitcher() {
   // 惰性初始值直接讀 DOM——bootstrap script 已經在 hydrate 之前把屬性
   // 設好了,這裡不用另外開一個 effect 去同步,避免多一次 render。
   const [current, setCurrent] = useState<ArtTheme>(() => {
-    if (typeof document === "undefined") return "illuminated";
-    return (document.documentElement.getAttribute(ART_THEME_ATTR) as ArtTheme) || "illuminated";
+    if (typeof document === "undefined") return "script";
+    return (document.documentElement.getAttribute(ART_THEME_ATTR) as ArtTheme) || "script";
   });
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -71,10 +71,10 @@ export function ArtThemeSwitcher() {
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        aria-label="切換美術方向"
+        aria-label="切換主題"
         className="rounded-full border border-border bg-surface px-3 py-2 shadow-lg hover:bg-muted"
       >
-        美術方向
+        主題
       </button>
     </div>
   );

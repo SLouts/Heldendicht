@@ -7,6 +7,7 @@ import { ChangePasswordForm } from "./ChangePasswordForm";
 import { ProfileImageForm } from "./ProfileImageForm";
 import { CreatePersonaForm } from "./CreatePersonaForm";
 import { PersonaCard, type PersonaLink } from "./PersonaCard";
+import { FeaturedWorldForm } from "./FeaturedWorldForm";
 import type { PersonaField } from "@/lib/actions/personas";
 import { unwrapRelation, toRelationArray } from "@/lib/unwrapRelation";
 
@@ -18,12 +19,14 @@ export default async function ProfilePage() {
     await Promise.all([
       supabase
         .from("profiles")
-        .select("display_name, username, bio, avatar_path, banner_path")
+        .select(
+          "display_name, username, bio, avatar_path, banner_path, featured_world_id",
+        )
         .eq("id", user.id)
         .single(),
       supabase
         .from("world_memberships")
-        .select("role, worlds(slug, name, is_public)")
+        .select("role, status, worlds(id, slug, name, is_public)")
         .eq("user_id", user.id),
       supabase
         .from("character_personas")
@@ -36,6 +39,11 @@ export default async function ProfilePage() {
 
   const avatarUrl = getProfileMediaPublicUrl(profile?.avatar_path ?? null);
   const bannerUrl = getProfileMediaPublicUrl(profile?.banner_path ?? null);
+
+  const adminWorlds = (memberships ?? [])
+    .filter((m) => m.role === "admin" && m.status === "active")
+    .map((m) => unwrapRelation(m.worlds))
+    .filter((w): w is { id: string; slug: string; name: string; is_public: boolean } => w != null);
 
   const personaCards = (personas ?? []).map((p) => {
     const characterRows = toRelationArray(p.characters);
@@ -144,6 +152,18 @@ export default async function ProfilePage() {
             </p>
           )}
         </ul>
+      </section>
+
+      <section className="mt-10">
+        <h2 className="text-lg font-semibold">精選世界觀</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          在公開個人頁面最上方用完整橫幅展示一個你主辦的世界觀。只能選你以
+          admin 身分主辦的世界觀,訪客看不看得到則跟其他世界觀連結一樣,交給該世界觀本身的可見度設定。
+        </p>
+        <FeaturedWorldForm
+          worlds={adminWorlds}
+          currentFeaturedWorldId={profile?.featured_world_id ?? null}
+        />
       </section>
 
       <section className="mt-10">

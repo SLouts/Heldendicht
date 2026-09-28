@@ -28,3 +28,20 @@ export async function getWorldMediaSignedUrl(
     .createSignedUrl(path, 300);
   return data?.signedUrl ?? null;
 }
+
+/**
+ * 一次幫多個世界觀簽橫幅/Icon 的 URL——個人頁面的世界觀卡片清單、
+ * /u/[username]/worlds 整頁展示都要簽一整批,不要各自重寫一次
+ * Promise.all(worlds.map(...)) 展開/對齊的邏輯。呼叫端一樣要先確認過
+ * 這批世界觀是自己看得到的(見 getWorldMediaSignedUrl 的說明)。
+ */
+export async function getWorldMediaSignedUrls(
+  worlds: { banner_path: string | null; icon_path: string | null }[],
+): Promise<{ bannerUrl: string | null; iconUrl: string | null }[]> {
+  return Promise.all(
+    worlds.map(async (w) => ({
+      bannerUrl: await getWorldMediaSignedUrl(w.banner_path),
+      iconUrl: await getWorldMediaSignedUrl(w.icon_path),
+    })),
+  );
+}

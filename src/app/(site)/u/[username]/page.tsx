@@ -3,11 +3,16 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/dal";
 import { getProfileMediaPublicUrl } from "@/lib/profileMedia";
+import { getWorldMediaSignedUrls } from "@/lib/worldMedia";
+import { WorldHero } from "@/app/dashboard/worlds/[slug]/WorldHero";
+import { WorldCard } from "@/components/WorldCard";
 import type { PersonaField } from "@/lib/actions/personas";
 import { FollowButton } from "@/components/FollowButton";
 import { FollowListCard, type FollowProfile } from "@/components/FollowListCard";
 import { UnfollowButton } from "./UnfollowButton";
 import { unwrapRelation, toRelationArray } from "@/lib/unwrapRelation";
+
+const WORLD_CARDS_PREVIEW_LIMIT = 6;
 
 export default async function PublicProfilePage({
   params,
@@ -18,7 +23,9 @@ export default async function PublicProfilePage({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("id, username, display_name, bio, avatar_path, banner_path")
+    .select(
+      "id, username, display_name, bio, avatar_path, banner_path, featured_world_id",
+    )
     .eq("username", username)
     .maybeSingle();
 
@@ -69,6 +76,16 @@ export default async function PublicProfilePage({
   ]);
 
   const isOwnProfile = currentUser?.id === profile.id;
+
+  const worldMediaUrls = await getWorldMediaSignedUrls(worlds ?? []);
+  const worldCards = (worlds ?? []).map((w, i) => ({
+    ...w,
+    ...worldMediaUrls[i],
+  }));
+  const featuredWorld = worldCards.find(
+    (w) => w.world_id === profile.featured_world_id,
+  );
+
   const followerProfiles = (followerRows ?? [])
     .map((r) => (unwrapRelation(r.follower)))
     .filter((p): p is FollowProfile => p != null);
@@ -190,6 +207,20 @@ export default async function PublicProfilePage({
           </p>
         )}
 
+        {featuredWorld && (
+          <div className="mt-8">
+            <h2 className="text-lg font-semibold">精選世界觀</h2>
+            <Link href={`/worlds/${featuredWorld.slug}`} className="mt-3 block">
+              <WorldHero
+                name={featuredWorld.name}
+                tagline={featuredWorld.tagline}
+                bannerUrl={featuredWorld.bannerUrl}
+                iconUrl={featuredWorld.iconUrl}
+              />
+            </Link>
+          </div>
+        )}
+
         <div className="mt-10 grid gap-8 sm:grid-cols-2">
           <div>
             <h2 className="text-lg font-semibold">追蹤者 ({followerProfiles.length})</h2>
@@ -226,19 +257,27 @@ export default async function PublicProfilePage({
           </div>
         </div>
 
-        <h2 className="mt-10 text-lg font-semibold">參加的企劃</h2>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          {worlds?.map((w) => (
-            <Link
-              key={w.world_id}
-              href={`/worlds/${w.slug}`}
-              className="flex items-center justify-between rounded-lg border border-border bg-surface px-4 py-3 transition hover:border-primary/50"
-            >
-              <span className="font-medium">{w.name}</span>
-              <span className="text-xs text-muted-foreground">{w.role}</span>
+        <div className="mt-10 flex items-center justify-between">
+          <h2 className="text-lg font-semibold">參加的企劃</h2>
+          {worldCards.length > WORLD_CARDS_PREVIEW_LIMIT && (
+            <Link href={`/u/${username}/worlds`} className="text-sm underline">
+              查看全部 →
             </Link>
+          )}
+        </div>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          {worldCards.slice(0, WORLD_CARDS_PREVIEW_LIMIT).map((w) => (
+            <WorldCard
+              key={w.world_id}
+              slug={w.slug}
+              name={w.name}
+              tagline={w.tagline}
+              bannerUrl={w.bannerUrl}
+              iconUrl={w.iconUrl}
+              badge={w.is_owner ? "主辦" : w.role}
+            />
           ))}
-          {(!worlds || worlds.length === 0) && (
+          {worldCards.length === 0 && (
             <p className="text-sm text-muted-foreground">
               目前沒有公開的參加紀錄。
             </p>

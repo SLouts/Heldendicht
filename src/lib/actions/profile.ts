@@ -66,6 +66,43 @@ export async function updateProfileDetails(
   return undefined;
 }
 
+/**
+ * 更新個人頁面「精選世界觀」——只是展示選項,不是新的權限系統,能不能
+ * 精選成功完全交給 guard_profile_featured_world trigger(必須是自己以
+ * admin 身分主辦的世界觀)在資料庫層把關,這裡不重複檢查一次。
+ */
+export async function updateFeaturedWorld(
+  _prevState: ProfileFormState,
+  formData: FormData,
+): Promise<ProfileFormState> {
+  const user = await requireUser();
+  const raw = formData.get("featuredWorldId");
+  const featuredWorldId = typeof raw === "string" && raw ? raw : null;
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("profiles")
+    .update({ featured_world_id: featuredWorldId })
+    .eq("id", user.id);
+
+  if (error) {
+    return {
+      error: error.message.includes("只能精選自己以 admin 身分主辦的世界觀")
+        ? error.message
+        : "更新失敗,請稍後再試",
+    };
+  }
+
+  revalidatePath("/dashboard/profile");
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("username")
+    .eq("id", user.id)
+    .maybeSingle();
+  if (profile?.username) revalidatePath(`/u/${profile.username}`);
+  return undefined;
+}
+
 export type ProfileMediaKind = "avatar" | "banner";
 export type UploadTicketResult =
   | { error: string }

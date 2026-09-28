@@ -54,6 +54,7 @@ export type Database = {
           avatar_path: string | null;
           banner_path: string | null;
           site_role: SiteRole;
+          featured_world_id: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -61,7 +62,15 @@ export type Database = {
           id: string;
         };
         Update: Partial<Database["public"]["Tables"]["profiles"]["Row"]>;
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "profiles_featured_world_id_fkey";
+            columns: ["featured_world_id"];
+            isOneToOne: false;
+            referencedRelation: "worlds";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       invite_codes: {
         Row: {
@@ -1149,6 +1158,9 @@ export type Database = {
           name: string;
           tagline: string | null;
           role: WorldRole;
+          banner_path: string | null;
+          icon_path: string | null;
+          is_owner: boolean;
         }[];
       };
       staff_review_summary: {

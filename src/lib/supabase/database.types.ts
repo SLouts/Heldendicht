@@ -1106,6 +1106,49 @@ export type Database = {
           },
         ];
       };
+      direct_message_attachments: {
+        Row: {
+          id: string;
+          message_id: string;
+          storage_path: string;
+          file_name: string;
+          content_type: string;
+          file_size: number;
+          kind: AttachmentKind;
+          uploader_id: string;
+          created_at: string;
+        };
+        Insert: Partial<
+          Database["public"]["Tables"]["direct_message_attachments"]["Row"]
+        > & {
+          message_id: string;
+          storage_path: string;
+          file_name: string;
+          content_type: string;
+          file_size: number;
+          kind: AttachmentKind;
+          uploader_id: string;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["direct_message_attachments"]["Row"]
+        >;
+        Relationships: [
+          {
+            foreignKeyName: "direct_message_attachments_message_id_fkey";
+            columns: ["message_id"];
+            isOneToOne: false;
+            referencedRelation: "direct_messages";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "direct_message_attachments_uploader_id_fkey";
+            columns: ["uploader_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -1162,6 +1205,7 @@ export type Database = {
           banner_path: string | null;
           icon_path: string | null;
           is_owner: boolean;
+          viewer_can_view: boolean;
         }[];
       };
       staff_review_summary: {

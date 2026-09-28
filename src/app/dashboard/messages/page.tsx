@@ -99,7 +99,7 @@ export default async function MessagesInboxPage() {
                 <div className="min-w-0 flex-1">
                   <p className="font-medium">{label}</p>
                   <p className="truncate text-sm text-muted-foreground">
-                    {convo.lastContent}
+                    {convo.lastContent || "[附件]"}
                   </p>
                 </div>
                 <div className="flex shrink-0 flex-col items-end gap-1">

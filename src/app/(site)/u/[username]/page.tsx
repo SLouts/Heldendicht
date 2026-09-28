@@ -210,14 +210,26 @@ export default async function PublicProfilePage({
         {featuredWorld && (
           <div className="mt-8">
             <h2 className="text-lg font-semibold">精選世界觀</h2>
-            <Link href={`/worlds/${featuredWorld.slug}`} className="mt-3 block">
-              <WorldHero
-                name={featuredWorld.name}
-                tagline={featuredWorld.tagline}
-                bannerUrl={featuredWorld.bannerUrl}
-                iconUrl={featuredWorld.iconUrl}
-              />
-            </Link>
+            {featuredWorld.viewer_can_view ? (
+              <Link href={`/worlds/${featuredWorld.slug}`} className="mt-3 block">
+                <WorldHero
+                  name={featuredWorld.name}
+                  tagline={featuredWorld.tagline}
+                  bannerUrl={featuredWorld.bannerUrl}
+                  iconUrl={featuredWorld.iconUrl}
+                />
+              </Link>
+            ) : (
+              <div className="mt-3">
+                <WorldHero
+                  name={featuredWorld.name}
+                  tagline={featuredWorld.tagline}
+                  bannerUrl={featuredWorld.bannerUrl}
+                  iconUrl={featuredWorld.iconUrl}
+                />
+                <p className="mt-1 text-xs text-muted-foreground">私人世界觀,你目前看不到內容</p>
+              </div>
+            )}
           </div>
         )}
 
@@ -275,6 +287,7 @@ export default async function PublicProfilePage({
               bannerUrl={w.bannerUrl}
               iconUrl={w.iconUrl}
               badge={w.is_owner ? "主辦" : w.role}
+              viewable={w.viewer_can_view}
             />
           ))}
           {worldCards.length === 0 && (

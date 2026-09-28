@@ -59,6 +59,7 @@ export default async function PublicWorldsPage({
                 bannerUrl={w.bannerUrl}
                 iconUrl={w.iconUrl}
                 badge="主辦"
+                viewable={w.viewer_can_view}
               />
             ))}
           </div>
@@ -80,6 +81,7 @@ export default async function PublicWorldsPage({
                 bannerUrl={w.bannerUrl}
                 iconUrl={w.iconUrl}
                 badge={w.role}
+                viewable={w.viewer_can_view}
               />
             ))}
           </div>

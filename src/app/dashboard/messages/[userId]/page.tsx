@@ -3,8 +3,15 @@ import { notFound } from "next/navigation";
 import { requireUser, getCurrentProfile } from "@/lib/dal";
 import { createClient } from "@/lib/supabase/server";
 import { getProfileMediaPublicUrl } from "@/lib/profileMedia";
+import { getMessageAttachmentSignedUrl } from "@/lib/messageAttachments";
 import { Avatar } from "@/components/Avatar";
 import { MessageComposeForm } from "./MessageComposeForm";
+
+function formatSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
 
 export default async function MessageThreadPage({
   params,
@@ -37,11 +44,28 @@ export default async function MessageThreadPage({
 
   const { data: messages } = await supabase
     .from("direct_messages")
-    .select("id, sender_id, content, created_at")
+    .select(
+      "id, sender_id, content, created_at, direct_message_attachments(id, storage_path, file_name, content_type, file_size, kind)",
+    )
     .or(
       `and(sender_id.eq.${user.id},recipient_id.eq.${counterpart.id}),and(sender_id.eq.${counterpart.id},recipient_id.eq.${user.id})`,
     )
     .order("created_at", { ascending: true });
+
+  const messagesWithAttachmentUrls = await Promise.all(
+    (messages ?? []).map(async (m) => ({
+      ...m,
+      attachments: await Promise.all(
+        m.direct_message_attachments.map(async (a) => ({
+          ...a,
+          url: await getMessageAttachmentSignedUrl(
+            a.storage_path,
+            a.kind === "file" ? a.file_name : undefined,
+          ),
+        })),
+      ),
+    })),
+  );
 
   const label =
     counterpart.display_name || counterpart.username || counterpart.email || "未知使用者";
@@ -65,12 +89,12 @@ export default async function MessageThreadPage({
       </div>
 
       <div className="mt-6 flex flex-col gap-2">
-        {(messages ?? []).length === 0 ? (
+        {messagesWithAttachmentUrls.length === 0 ? (
           <p className="text-sm text-muted-foreground">
             目前還沒有訊息,傳第一則打招呼吧。
           </p>
         ) : (
-          (messages ?? []).map((m) => {
+          messagesWithAttachmentUrls.map((m) => {
             const isMine = m.sender_id === user.id;
             return (
               <div
@@ -88,7 +112,37 @@ export default async function MessageThreadPage({
                       : "border border-border bg-surface")
                   }
                 >
-                  <p>{m.content}</p>
+                  {m.content && <p>{m.content}</p>}
+                  {m.attachments.length > 0 && (
+                    <div className={"flex flex-wrap gap-2" + (m.content ? " mt-2" : "")}>
+                      {m.attachments.map((a) =>
+                        a.kind === "image" ? (
+                          <a key={a.id} href={a.url ?? undefined} target="_blank" rel="noreferrer">
+                            {/* eslint-disable-next-line @next/next/no-img-element -- signed URL,無法用 next/image 白名單網域 */}
+                            <img
+                              src={a.url ?? undefined}
+                              alt={a.file_name}
+                              className="h-32 w-32 rounded-md object-cover"
+                            />
+                          </a>
+                        ) : (
+                          <a
+                            key={a.id}
+                            href={a.url ?? undefined}
+                            target="_blank"
+                            rel="noreferrer"
+                            className={
+                              "flex items-center gap-2 rounded-md border px-2 py-1.5 text-xs underline " +
+                              (isMine ? "border-primary-foreground/30" : "border-border")
+                            }
+                          >
+                            <span className="truncate">{a.file_name}</span>
+                            <span className="shrink-0 opacity-70">{formatSize(a.file_size)}</span>
+                          </a>
+                        ),
+                      )}
+                    </div>
+                  )}
                   <p
                     className={
                       "mt-1 text-[10px] " +

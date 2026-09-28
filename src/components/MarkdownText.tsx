@@ -3,10 +3,14 @@ import { Fragment, type ReactNode } from "react";
 
 type Block =
   | { type: "paragraph"; lines: string[] }
-  | { type: "list"; ordered: boolean; items: string[] };
+  | { type: "list"; ordered: boolean; items: string[] }
+  | { type: "heading"; level: number; text: string }
+  | { type: "hr" };
 
 const ORDERED_ITEM = /^\s*\d+\.\s+(.*)$/;
 const UNORDERED_ITEM = /^\s*[-*+]\s+(.*)$/;
+const HEADING = /^(#{1,6})\s+(.*)$/;
+const HR = /^\s*(?:-{3,}|\*{3,}|_{3,})\s*$/;
 
 function parseBlocks(text: string): Block[] {
   const rawLines = text.split(/\r?\n/);
@@ -16,6 +20,19 @@ function parseBlocks(text: string): Block[] {
   while (i < rawLines.length) {
     const line = rawLines[i];
     if (line.trim() === "") {
+      i++;
+      continue;
+    }
+
+    const heading = HEADING.exec(line);
+    if (heading) {
+      blocks.push({ type: "heading", level: heading[1].length, text: heading[2] });
+      i++;
+      continue;
+    }
+
+    if (HR.test(line)) {
+      blocks.push({ type: "hr" });
       i++;
       continue;
     }
@@ -43,7 +60,9 @@ function parseBlocks(text: string): Block[] {
       i < rawLines.length &&
       rawLines[i].trim() !== "" &&
       !ORDERED_ITEM.test(rawLines[i]) &&
-      !UNORDERED_ITEM.test(rawLines[i])
+      !UNORDERED_ITEM.test(rawLines[i]) &&
+      !HEADING.test(rawLines[i]) &&
+      !HR.test(rawLines[i])
     ) {
       lines.push(rawLines[i]);
       i++;
@@ -123,23 +142,46 @@ function renderInline(text: string): ReactNode[] {
 /**
  * 規則欄位(site_rule_fields/world_rule_fields)內文用的簡易 Markdown 渲染
  * ——不是完整的單一世界觀內容,所以不支援 [[節點名稱]] WikiLink 語法(那
- * 需要指定要在哪個世界觀底下比對標題)。支援段落、- / 1. 清單、**粗體**、
- * *斜體*、[文字](網址) 連結;渲染出的是段落/清單這種區塊元素,呼叫端不要
- * 再包一層 <p>。
+ * 需要指定要在哪個世界觀底下比對標題)。支援段落、- / 1. 清單、# 到 ###### 標題、
+ * 三個以上連續 - 或 _ 的分隔線、粗體、斜體、[文字](網址) 連結;渲染出的
+ * 是標題/段落/清單/分隔線這種區塊元素,呼叫端不要再包一層 <p>。
  */
 export function MarkdownText({ text }: { text: string }) {
   const blocks = parseBlocks(text);
 
   return (
     <>
-      {blocks.map((block, i) =>
-        block.type === "list" ? (
-          <List key={i} ordered={block.ordered} items={block.items} />
-        ) : (
-          <Paragraph key={i} lines={block.lines} />
-        ),
-      )}
+      {blocks.map((block, i) => {
+        switch (block.type) {
+          case "list":
+            return <List key={i} ordered={block.ordered} items={block.items} />;
+          case "heading":
+            return <Heading key={i} level={block.level} text={block.text} />;
+          case "hr":
+            return <hr key={i} className="mt-4 border-border first:mt-0" />;
+          case "paragraph":
+            return <Paragraph key={i} lines={block.lines} />;
+        }
+      })}
     </>
+  );
+}
+
+const HEADING_SIZE: Record<number, string> = {
+  1: "text-lg font-semibold",
+  2: "text-base font-semibold",
+  3: "text-sm font-semibold",
+  4: "text-sm font-semibold",
+  5: "text-sm font-semibold",
+  6: "text-sm font-semibold",
+};
+
+function Heading({ level, text }: { level: number; text: string }) {
+  const Tag = `h${Math.min(Math.max(level, 1), 6)}` as "h1" | "h2" | "h3" | "h4" | "h5" | "h6";
+  return (
+    <Tag className={`mt-4 first:mt-0 ${HEADING_SIZE[level]}`}>
+      {renderInline(text)}
+    </Tag>
   );
 }
 

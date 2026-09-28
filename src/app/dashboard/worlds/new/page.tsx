@@ -84,6 +84,28 @@ export default function NewWorldPage() {
           )}
         </div>
 
+        <fieldset className="flex flex-col gap-2">
+          <legend className="text-sm font-medium">模式</legend>
+          <label className="flex items-start gap-2 text-sm">
+            <input type="radio" name="isSolo" value="off" defaultChecked className="mt-1" />
+            <span>
+              多人共筆
+              <span className="block text-xs text-muted-foreground">
+                可以邀請其他人加入,一起投稿/審核內容。
+              </span>
+            </span>
+          </label>
+          <label className="flex items-start gap-2 text-sm">
+            <input type="radio" name="isSolo" value="on" className="mt-1" />
+            <span>
+              個人寫作(帕罗)
+              <span className="block text-xs text-muted-foreground">
+                只有自己一個人寫,不開放別人加入,所有內容建立後直接生效,不用審核。
+              </span>
+            </span>
+          </label>
+        </fieldset>
+
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" name="isPublic" defaultChecked />
           公開(訪客不登入也能看到企劃介紹)

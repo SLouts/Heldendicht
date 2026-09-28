@@ -23,6 +23,9 @@ const CreateWorldSchema = z.object({
   description: z.string(),
   defaultPcQuota: z.coerce.number().int().min(0, { error: "配額不能是負數" }),
   isPublic: z.boolean(),
+  // 「個人寫作」(帕罗/AU):一個人自己寫、不開放別人加入,所有節點自動
+  // 過審,見 guard_node_solo_auto_approve/guard_solo_world_single_member。
+  isSolo: z.boolean(),
 });
 
 /**
@@ -43,6 +46,7 @@ export async function createWorld(
     description: formData.get("description") ?? "",
     defaultPcQuota: formData.get("defaultPcQuota") || 3,
     isPublic: formData.get("isPublic") === "on",
+    isSolo: formData.get("isSolo") === "on",
   });
   if (!parsed.success) {
     return { fieldErrors: parsed.error.flatten().fieldErrors };
@@ -58,6 +62,7 @@ export async function createWorld(
       description: parsed.data.description || null,
       default_pc_quota: parsed.data.defaultPcQuota,
       is_public: parsed.data.isPublic,
+      is_solo: parsed.data.isSolo,
       owner_id: user.id,
     })
     .select("slug")
@@ -103,6 +108,7 @@ export async function updateWorldSettings(
     isPublic: formData.get("isPublic") === "on",
     pcAutoApprove: formData.get("pcAutoApprove") === "on",
     npcAutoApprove: formData.get("npcAutoApprove") === "on",
+    isSolo: formData.get("isSolo") === "on",
   });
   if (!parsed.success) {
     return { fieldErrors: parsed.error.flatten().fieldErrors };
@@ -120,13 +126,18 @@ export async function updateWorldSettings(
         is_public: parsed.data.isPublic,
         pc_auto_approve: parsed.data.pcAutoApprove,
         npc_auto_approve: parsed.data.npcAutoApprove,
+        is_solo: parsed.data.isSolo,
       },
       { count: "exact" },
     )
     .eq("id", parsed.data.worldId);
 
   if (error) {
-    return { error: "更新失敗,請稍後再試" };
+    return {
+      error: error.message.includes("沒辦法切換成個人寫作模式")
+        ? error.message
+        : "更新失敗,請稍後再試",
+    };
   }
   if (count === 0) {
     return { error: "你沒有權限修改這個世界觀的設定" };

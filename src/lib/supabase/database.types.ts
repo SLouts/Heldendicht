@@ -170,6 +170,7 @@ export type Database = {
           is_public: boolean;
           pc_auto_approve: boolean;
           npc_auto_approve: boolean;
+          is_solo: boolean;
           created_at: string;
           updated_at: string;
         };

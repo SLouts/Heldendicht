@@ -11,7 +11,13 @@ type Step = { href: string; title: string; description: string };
  * 資料庫記「看過了」,反正這個參數只會在建立完成那一次出現,離開這個
  * 網址之後就不會再帶著)。
  */
-export function NewWorldOnboarding({ worldSlug }: { worldSlug: string }) {
+export function NewWorldOnboarding({
+  worldSlug,
+  isSolo,
+}: {
+  worldSlug: string;
+  isSolo: boolean;
+}) {
   const [visible, setVisible] = useState(true);
   if (!visible) return null;
 
@@ -36,11 +42,15 @@ export function NewWorldOnboarding({ worldSlug }: { worldSlug: string }) {
       title: "規劃內容分類",
       description: "幫條目分組導覽,例如「宗門」「地誌」——不分類的話會照節點類型自動分組。",
     },
-    {
-      href: `/dashboard/worlds/${worldSlug}/members`,
-      title: "邀請成員加入",
-      description: "邀請共筆的夥伴,設定各自是編輯還是一般成員。",
-    },
+    ...(isSolo
+      ? []
+      : [
+          {
+            href: `/dashboard/worlds/${worldSlug}/members`,
+            title: "邀請成員加入",
+            description: "邀請共筆的夥伴,設定各自是編輯還是一般成員。",
+          },
+        ]),
     {
       href: `/dashboard/worlds/${worldSlug}/characters/new`,
       title: "建立第一個角色或條目",

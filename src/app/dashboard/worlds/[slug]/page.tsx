@@ -37,7 +37,7 @@ export default async function WorldDashboardPage({
   const { data: world } = await supabase
     .from("worlds")
     .select(
-      "id, slug, name, tagline, description, default_pc_quota, is_public, banner_path, icon_path, owner_id, profiles(display_name, username, email)",
+      "id, slug, name, tagline, description, default_pc_quota, is_public, is_solo, banner_path, icon_path, owner_id, profiles(display_name, username, email)",
     )
     .eq("slug", slug)
     .maybeSingle();
@@ -222,7 +222,9 @@ export default async function WorldDashboardPage({
         <WorldHero name={world.name} tagline={world.tagline} bannerUrl={bannerUrl} iconUrl={iconUrl} />
       </div>
 
-      {isNewlyCreated && <NewWorldOnboarding worldSlug={world.slug} />}
+      {isNewlyCreated && (
+        <NewWorldOnboarding worldSlug={world.slug} isSolo={world.is_solo} />
+      )}
 
       <WorldQuickBar worldSlug={world.slug} />
 
@@ -276,7 +278,7 @@ export default async function WorldDashboardPage({
                     內容分類
                   </Link>
                 )}
-                {isStaff && (
+                {isStaff && !world.is_solo && (
                   <Link
                     href={`/dashboard/worlds/${world.slug}/reports`}
                     className="rounded-md px-3 py-1.5 hover:bg-surface hover:underline"
@@ -284,7 +286,7 @@ export default async function WorldDashboardPage({
                     檢舉列表
                   </Link>
                 )}
-                {isAdmin && (
+                {isAdmin && !world.is_solo && (
                   <Link
                     href={`/dashboard/worlds/${world.slug}/members`}
                     className="rounded-md px-3 py-1.5 hover:bg-surface hover:underline"

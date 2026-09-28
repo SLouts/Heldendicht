@@ -27,7 +27,7 @@ export default async function WorldPage({
   const { data: world } = await supabase
     .from("worlds")
     .select(
-      "id, name, tagline, description, default_pc_quota, banner_path, icon_path, owner_id, profiles(display_name, username)",
+      "id, name, tagline, description, default_pc_quota, banner_path, icon_path, owner_id, profiles!worlds_owner_id_fkey(display_name, username)",
     )
     .eq("slug", slug)
     .maybeSingle();

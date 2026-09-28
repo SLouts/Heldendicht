@@ -37,7 +37,7 @@ export default async function WorldDashboardPage({
   const { data: world } = await supabase
     .from("worlds")
     .select(
-      "id, slug, name, tagline, description, default_pc_quota, is_public, is_solo, banner_path, icon_path, owner_id, profiles(display_name, username, email)",
+      "id, slug, name, tagline, description, default_pc_quota, is_public, is_solo, banner_path, icon_path, owner_id, profiles!worlds_owner_id_fkey(display_name, username, email)",
     )
     .eq("slug", slug)
     .maybeSingle();

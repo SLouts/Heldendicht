@@ -119,7 +119,7 @@ export function SettingsForm({
             className="mt-1"
           />
           <span>
-            個人寫作(帕罗)
+            個人寫作(paro)
             <span className="block text-xs text-muted-foreground">
               只有自己一個人寫,不開放別人加入,所有內容建立後直接生效,不用審核。要切換成這個模式,世界觀裡不能有除了自己以外的其他成員。
             </span>

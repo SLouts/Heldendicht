@@ -98,7 +98,7 @@ export default function NewWorldPage() {
           <label className="flex items-start gap-2 text-sm">
             <input type="radio" name="isSolo" value="on" className="mt-1" />
             <span>
-              個人寫作(帕罗)
+              個人寫作(paro)
               <span className="block text-xs text-muted-foreground">
                 只有自己一個人寫,不開放別人加入,所有內容建立後直接生效,不用審核。
               </span>

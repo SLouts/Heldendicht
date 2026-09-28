@@ -23,7 +23,7 @@ const CreateWorldSchema = z.object({
   description: z.string(),
   defaultPcQuota: z.coerce.number().int().min(0, { error: "配額不能是負數" }),
   isPublic: z.boolean(),
-  // 「個人寫作」(帕罗/AU):一個人自己寫、不開放別人加入,所有節點自動
+  // 「個人寫作」(paro/AU):一個人自己寫、不開放別人加入,所有節點自動
   // 過審,見 guard_node_solo_auto_approve/guard_solo_world_single_member。
   isSolo: z.boolean(),
 });

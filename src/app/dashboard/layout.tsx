@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireUser, getCurrentProfile } from "@/lib/dal";
 import { logout } from "@/lib/actions/auth";
 import { createClient } from "@/lib/supabase/server";
+import { MobileMenu } from "@/components/MobileMenu";
 import {
   NotificationBell,
   type NotificationItem,
@@ -143,23 +144,25 @@ export default async function DashboardLayout({
             </span>
             <span className="text-xs text-muted-foreground">後台</span>
           </span>
-          <div className="flex items-center gap-4 text-sm">
+          <div className="flex items-center gap-2 text-sm">
             <NotificationBell
               notifications={notifications}
               unreadCount={unreadCount ?? 0}
               reviewSummaries={reviewSummaries}
             />
-            <Link href="/dashboard/messages" className="hover:underline">
-              私訊
-            </Link>
-            <Link href="/dashboard/profile" className="hover:underline">
-              {profile?.display_name ?? profile?.email}
-            </Link>
-            <form action={logout}>
-              <button type="submit" className="underline">
-                登出
-              </button>
-            </form>
+            <MobileMenu>
+              <Link href="/dashboard/messages" className="hover:underline">
+                私訊
+              </Link>
+              <Link href="/dashboard/profile" className="hover:underline">
+                {profile?.display_name ?? profile?.email}
+              </Link>
+              <form action={logout}>
+                <button type="submit" className="underline">
+                  登出
+                </button>
+              </form>
+            </MobileMenu>
           </div>
         </div>
       </header>

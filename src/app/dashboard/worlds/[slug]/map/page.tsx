@@ -1,8 +1,8 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/dal";
 import { createClient } from "@/lib/supabase/server";
 import { computeGraphLayout } from "@/lib/storymap-layout";
+import { WorldMainTabs } from "@/components/WorldMainTabs";
 import StoryMapGraph, {
   type RelEdge,
   type WikiEdge,
@@ -119,13 +119,7 @@ export default async function StoryMapPage({
 
   return (
     <div>
-      <Link
-        href={`/dashboard/worlds/${world.slug}`}
-        className="text-sm text-muted-foreground hover:underline"
-      >
-        ← 返回世界觀
-      </Link>
-      <h1 className="mt-2 text-2xl font-semibold">{world.name} 的關係圖</h1>
+      <WorldMainTabs basePath={`/dashboard/worlds/${world.slug}`} />
 
       {graphNodes.length === 0 ? (
         <p className="mt-6 text-sm text-muted-foreground">這個世界觀還沒有節點。</p>

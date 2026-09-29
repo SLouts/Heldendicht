@@ -1,5 +1,4 @@
 import { notFound } from "next/navigation";
-import { requireUser } from "@/lib/dal";
 import { createClient } from "@/lib/supabase/server";
 import { getWorldMapSignedUrl } from "@/lib/worldmap";
 import { WorldMainTabs } from "@/components/WorldMainTabs";
@@ -7,14 +6,17 @@ import WorldMapView, {
   type MapLayer,
   type MapNode,
   type UnplacedNode,
-} from "./WorldMapView";
+} from "@/app/dashboard/worlds/[slug]/worldmap/WorldMapView";
 import { unwrapRelation } from "@/lib/unwrapRelation";
 
-export default async function WorldMapPage({
+/**
+ * 公開版世界地圖,唯讀——邏輯比照後台版(dashboard/worlds/[slug]/worldmap),
+ * 只是不需要登入、沒有編輯標點/管理圖層的入口,可見度交給 RLS。
+ */
+export default async function PublicWorldMapPage({
   params,
-}: PageProps<"/dashboard/worlds/[slug]/worldmap">) {
+}: PageProps<"/worlds/[slug]/worldmap">) {
   const { slug } = await params;
-  await requireUser();
   const supabase = await createClient();
 
   const { data: world } = await supabase
@@ -24,24 +26,21 @@ export default async function WorldMapPage({
     .maybeSingle();
   if (!world) notFound();
 
-  const [{ data: isStaff }, { data: isAdmin }, { data: layers }, { data: nodes }] =
-    await Promise.all([
-      supabase.rpc("is_world_staff", { p_world_id: world.id }),
-      supabase.rpc("is_world_admin", { p_world_id: world.id }),
-      supabase
-        .from("world_map_layers")
-        .select("id, name, image_path")
-        .eq("world_id", world.id)
-        .order("order_index", { ascending: true }),
-      supabase
-        .from("nodes")
-        .select(
-          "id, title, slug, node_type, status, is_placeholder, map_layer_id, map_x, map_y, characters(character_type)",
-        )
-        .eq("world_id", world.id)
-        .order("node_type")
-        .order("title"),
-    ]);
+  const [{ data: layers }, { data: nodes }] = await Promise.all([
+    supabase
+      .from("world_map_layers")
+      .select("id, name, image_path")
+      .eq("world_id", world.id)
+      .order("order_index", { ascending: true }),
+    supabase
+      .from("nodes")
+      .select(
+        "id, title, slug, node_type, status, is_placeholder, map_layer_id, map_x, map_y, characters(character_type)",
+      )
+      .eq("world_id", world.id)
+      .order("node_type")
+      .order("title"),
+  ]);
 
   const mapLayers: MapLayer[] = await Promise.all(
     (layers ?? []).map(async (l) => ({
@@ -73,20 +72,17 @@ export default async function WorldMapPage({
   }
 
   return (
-    <div>
-      <WorldMainTabs basePath={`/dashboard/worlds/${world.slug}`} />
+    <div className="mx-auto w-full max-w-5xl flex-1 px-6 py-12">
+      <WorldMainTabs basePath={`/worlds/${world.slug}`} />
 
       <WorldMapView
         layers={mapLayers}
         nodes={placedNodes}
         unplacedNodes={unplacedNodes}
-        isStaff={Boolean(isStaff)}
-        manageLayersHref={
-          isAdmin ? `/dashboard/worlds/${world.slug}/worldmap/layers` : undefined
-        }
+        isStaff={false}
         worldId={world.id}
         worldSlug={world.slug}
-        basePath={`/dashboard/worlds/${world.slug}/nodes`}
+        basePath={`/worlds/${world.slug}/nodes`}
       />
     </div>
   );

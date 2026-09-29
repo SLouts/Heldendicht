@@ -11,15 +11,15 @@ export function NodeCategoryFilter({
   onToggle: (category: NodeCategory) => void;
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-1">
-      <span className="mr-1 text-xs text-muted-foreground">篩選:</span>
+    <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-2">
+      <span className="shrink-0 text-xs text-muted-foreground">篩選:</span>
       {NODE_CATEGORIES.map((cat) => (
         <button
           key={cat}
           type="button"
           onClick={() => onToggle(cat)}
           className={
-            "rounded-full border px-3 py-1 text-xs transition " +
+            "shrink-0 rounded-full border px-3 py-1.5 text-xs transition " +
             (visible.has(cat)
               ? "border-primary bg-primary text-primary-foreground"
               : "border-border bg-surface text-muted-foreground hover:bg-muted")

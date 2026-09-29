@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { CollapsibleSection } from "@/components/CollapsibleSection";
+import { EmptyState } from "@/components/EmptyState";
 import { NODE_TYPE_LABEL, NODE_STATUS_LABEL } from "@/lib/nodeTypeLabels";
 import type { Database, NodeType } from "@/lib/supabase/database.types";
 import { unwrapRelation } from "@/lib/unwrapRelation";
@@ -67,6 +68,11 @@ export function WorldDirectoryTab({
   worldSlug: string;
 }) {
   const hasCategories = categoryGroups.length > 0;
+  const isCompletelyEmpty =
+    categoryGroups.length === 0 &&
+    uncategorizedByType.length === 0 &&
+    characterNodes.length === 0 &&
+    (relationships?.length ?? 0) === 0;
 
   // 分類固定兩層:大分類底下的子分類巢狀顯示在同一個收合區塊裡——找不到
   // 對應大分類的(理論上不該發生,防禦性處理)一律當頂層顯示,不會漏掉。
@@ -81,6 +87,10 @@ export function WorldDirectoryTab({
       list.push(g);
       childGroupsByParent.set(g.category.parent_id, list);
     }
+  }
+
+  if (isCompletelyEmpty) {
+    return <EmptyState title="這個世界觀還沒有任何節點" description="主辦還沒有新增任何地點、角色或條目。" />;
   }
 
   return (

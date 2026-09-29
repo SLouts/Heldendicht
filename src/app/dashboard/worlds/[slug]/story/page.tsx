@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/dal";
 import { createClient } from "@/lib/supabase/server";
+import { WorldMainTabs } from "@/components/WorldMainTabs";
+import { EmptyState } from "@/components/EmptyState";
 import { unwrapRelation } from "@/lib/unwrapRelation";
 
 type CharacterOption = { id: string; title: string; ownerId: string | null };
@@ -87,13 +89,7 @@ export default async function StoryPage({
 
   return (
     <div>
-      <Link
-        href={`/dashboard/worlds/${world.slug}`}
-        className="text-sm text-muted-foreground hover:underline"
-      >
-        ← 返回世界觀
-      </Link>
-      <h1 className="mt-2 text-2xl font-semibold">{world.name} 的故事時間軸</h1>
+      <WorldMainTabs basePath={`/dashboard/worlds/${world.slug}`} />
 
       <div className="mt-4 flex gap-2 border-b border-border">
         <Link
@@ -159,29 +155,41 @@ export default async function StoryPage({
         )}
       </div>
 
-      <ul className="mt-3 divide-y divide-border">
-        {chapters.map((chapter) => (
-          <li key={chapter.id}>
-            <Link
-              href={`/dashboard/worlds/${world.slug}/story/chapters/${chapter.id}`}
-              className="block py-3 hover:underline"
-            >
-              <span className="text-xs text-muted-foreground">
-                #{chapter.order_index}
-              </span>{" "}
-              {chapter.title}
-              {chapter.description && (
-                <p className="mt-0.5 text-sm text-muted-foreground">
-                  {chapter.description}
-                </p>
-              )}
-            </Link>
-          </li>
-        ))}
-        {chapters.length === 0 && (
-          <li className="py-3 text-sm text-muted-foreground">目前還沒有章節。</li>
-        )}
-      </ul>
+      {chapters.length === 0 ? (
+        <div className="mt-3">
+          <EmptyState
+            title="目前還沒有章節"
+            description="新增第一個章節,開始記錄這條時間軸的故事。"
+            actionHref={
+              canManage && (tab === "official" || selectedCharacterId) ? newChapterHref : undefined
+            }
+            actionLabel={
+              canManage && (tab === "official" || selectedCharacterId) ? "+ 新增章節" : undefined
+            }
+          />
+        </div>
+      ) : (
+        <ul className="mt-3 divide-y divide-border">
+          {chapters.map((chapter) => (
+            <li key={chapter.id}>
+              <Link
+                href={`/dashboard/worlds/${world.slug}/story/chapters/${chapter.id}`}
+                className="block py-3 hover:underline"
+              >
+                <span className="text-xs text-muted-foreground">
+                  #{chapter.order_index}
+                </span>{" "}
+                {chapter.title}
+                {chapter.description && (
+                  <p className="mt-0.5 text-sm text-muted-foreground">
+                    {chapter.description}
+                  </p>
+                )}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

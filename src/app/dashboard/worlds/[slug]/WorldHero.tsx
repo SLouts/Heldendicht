@@ -49,7 +49,7 @@ export function WorldHero({
           />
         )}
         <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Heldendicht</p>
-        <h1 className="font-display mt-3 text-3xl font-bold uppercase tracking-wide">{name}</h1>
+        <h1 className="font-display mt-3 text-3xl sm:text-4xl font-bold uppercase tracking-wide">{name}</h1>
         {tagline && <p className="mt-3 text-xs italic text-muted-foreground">{tagline}</p>}
         {bannerUrl && (
           // eslint-disable-next-line @next/next/no-img-element -- signed URL,無法用 next/image 白名單網域
@@ -86,7 +86,7 @@ export function WorldHero({
               <circle cx="23" cy="23" r="2" fill="currentColor" stroke="none" />
             </svg>
           )}
-          <h1 className="font-display text-3xl">{name}</h1>
+          <h1 className="font-display text-3xl sm:text-4xl">{name}</h1>
         </div>
         {bannerUrl && (
           // eslint-disable-next-line @next/next/no-img-element -- signed URL,無法用 next/image 白名單網域
@@ -122,7 +122,7 @@ export function WorldHero({
               />
             )}
             <div>
-              <h1 className="font-display text-3xl">{name}</h1>
+              <h1 className="font-display text-3xl sm:text-4xl">{name}</h1>
               {tagline && <p className="hero-wuxia-tagline">{tagline}</p>}
             </div>
           </div>
@@ -142,7 +142,7 @@ export function WorldHero({
                 className="scroll-wax-glow h-12 w-12 shrink-0 rounded-full border border-border object-cover"
               />
             )}
-            <h1 className="font-display text-3xl">{name}</h1>
+            <h1 className="font-display text-3xl sm:text-4xl">{name}</h1>
           </div>
           {tagline && <p className="mt-2 text-sm italic text-muted-foreground">{tagline}</p>}
           {bannerUrl && (
@@ -178,7 +178,7 @@ export function WorldHero({
               className="h-12 w-12 shrink-0 rounded-full border border-border object-cover"
             />
           )}
-          <h1 className="font-display text-3xl uppercase tracking-wide">{name}</h1>
+          <h1 className="font-display text-3xl sm:text-4xl uppercase tracking-wide">{name}</h1>
         </div>
         {tagline && (
           <p className="mt-2 text-xs uppercase tracking-[0.15em] text-muted-foreground">
@@ -214,7 +214,7 @@ export function WorldHero({
               <span className="hero-almanac-star">✦</span>
             )}
             <div>
-              <h1 className="font-display text-3xl italic">{name}</h1>
+              <h1 className="font-display text-3xl sm:text-4xl italic">{name}</h1>
               {tagline && <p className="hero-almanac-tagline">{tagline}</p>}
             </div>
           </div>

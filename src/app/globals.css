@@ -928,3 +928,13 @@ h3,
   letter-spacing: 0.02em;
   text-transform: none;
 }
+
+/* 橫向滑動列(主分頁、篩選膠囊列)用——手機上隱藏捲軸,但保留滑動手勢,
+   不是真的關掉捲動功能。 */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}

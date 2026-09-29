@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/dal";
+import { MobileMenu } from "@/components/MobileMenu";
 
 /**
  * 對外頁面共用的橫幅頁首——「Heldendicht」字標+右側導覽,原本寫死在
@@ -20,7 +21,7 @@ export async function SiteHeader() {
         <Link href="/" className="font-display text-xl font-semibold tracking-wide">
           Heldendicht
         </Link>
-        <nav className="flex items-center gap-4 text-sm">
+        <MobileMenu>
           <Link href="/worlds" className="hover:underline">
             探索公開世界觀
           </Link>
@@ -44,7 +45,7 @@ export async function SiteHeader() {
               </Link>
             </>
           )}
-        </nav>
+        </MobileMenu>
       </div>
     </header>
   );

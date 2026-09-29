@@ -243,7 +243,7 @@ export default function StoryMapGraph({
             type="button"
             onClick={() => zoomBy(1.25)}
             aria-label="放大"
-            className="h-8 w-8 rounded-lg border border-border bg-surface text-sm shadow-sm hover:bg-muted"
+            className="h-10 w-10 rounded-lg border border-border bg-surface text-sm shadow-sm hover:bg-muted sm:h-8 sm:w-8"
           >
             +
           </button>
@@ -251,14 +251,14 @@ export default function StoryMapGraph({
             type="button"
             onClick={() => zoomBy(0.8)}
             aria-label="縮小"
-            className="h-8 w-8 rounded-lg border border-border bg-surface text-sm shadow-sm hover:bg-muted"
+            className="h-10 w-10 rounded-lg border border-border bg-surface text-sm shadow-sm hover:bg-muted sm:h-8 sm:w-8"
           >
             −
           </button>
           <button
             type="button"
             onClick={resetView}
-            className="h-8 rounded-lg border border-border bg-surface px-2 text-xs shadow-sm hover:bg-muted"
+            className="h-10 rounded-lg border border-border bg-surface px-2 text-xs shadow-sm hover:bg-muted sm:h-8"
           >
             重置
           </button>

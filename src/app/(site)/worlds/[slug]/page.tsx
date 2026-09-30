@@ -163,29 +163,27 @@ export default async function WorldPage({
     { key: "overview", label: "世界導讀", content: overviewTabContent },
     {
       key: "directory",
-      label: "條目與節點目錄",
+      label: "條目目錄",
       content: (
-        <WorldDirectoryTab
-          categoryGroups={categoryGroups}
-          uncategorizedByType={uncategorizedByType}
-          characterNodes={characterNodes}
-          relationships={relationships}
-          defaultPcQuota={world.default_pc_quota}
-          worldSlug={slug}
-        />
+        <div className="flex flex-col gap-6">
+          <NodeSearchBox worldId={world.id} basePath={`/worlds/${slug}/nodes`} />
+          <WorldDirectoryTab
+            categoryGroups={categoryGroups}
+            uncategorizedByType={uncategorizedByType}
+            characterNodes={characterNodes}
+            relationships={relationships}
+            defaultPcQuota={world.default_pc_quota}
+            worldSlug={slug}
+          />
+        </div>
       ),
     },
-    { key: "rules", label: "企劃規則與手冊", content: <WorldRulesTab worldRules={worldRules} /> },
     {
       key: "recent",
       label: "近期變更",
       content: <WorldRecentChangesTab nodes={recentNodes} basePath={`/worlds/${slug}/nodes`} />,
     },
-    {
-      key: "search",
-      label: "搜尋",
-      content: <NodeSearchBox worldId={world.id} basePath={`/worlds/${slug}/nodes`} />,
-    },
+    { key: "rules", label: "規則", content: <WorldRulesTab worldRules={worldRules} /> },
   ];
 
   return (

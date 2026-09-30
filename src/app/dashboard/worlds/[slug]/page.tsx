@@ -172,27 +172,20 @@ export default async function WorldDashboardPage({
     { key: "overview", label: "世界導讀", content: overviewTabContent },
     {
       key: "directory",
-      label: "條目與節點目錄",
+      label: "條目目錄",
       content: (
-        <WorldDirectoryTab
-          categoryGroups={categoryGroups}
-          uncategorizedByType={uncategorizedByType}
-          characterNodes={characterNodes}
-          relationships={relationships}
-          defaultPcQuota={world.default_pc_quota}
-          worldSlug={world.slug}
-          currentUserId={user.id}
-        />
-      ),
-    },
-    {
-      key: "rules",
-      label: "企劃規則與手冊",
-      content: (
-        <WorldRulesTab
-          worldRules={worldRules}
-          manageHref={isStaff ? `/dashboard/worlds/${world.slug}/rules` : undefined}
-        />
+        <div className="flex flex-col gap-6">
+          <NodeSearchBox worldId={world.id} basePath={`/dashboard/worlds/${world.slug}/nodes`} />
+          <WorldDirectoryTab
+            categoryGroups={categoryGroups}
+            uncategorizedByType={uncategorizedByType}
+            characterNodes={characterNodes}
+            relationships={relationships}
+            defaultPcQuota={world.default_pc_quota}
+            worldSlug={world.slug}
+            currentUserId={user.id}
+          />
+        </div>
       ),
     },
     {
@@ -206,10 +199,13 @@ export default async function WorldDashboardPage({
       ),
     },
     {
-      key: "search",
-      label: "搜尋",
+      key: "rules",
+      label: "規則",
       content: (
-        <NodeSearchBox worldId={world.id} basePath={`/dashboard/worlds/${world.slug}/nodes`} />
+        <WorldRulesTab
+          worldRules={worldRules}
+          manageHref={isStaff ? `/dashboard/worlds/${world.slug}/rules` : undefined}
+        />
       ),
     },
   ];

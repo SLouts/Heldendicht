@@ -2,6 +2,7 @@ import Link from "next/link";
 import { CollapsibleSection } from "@/components/CollapsibleSection";
 import { EmptyState } from "@/components/EmptyState";
 import { NODE_TYPE_LABEL, NODE_STATUS_LABEL } from "@/lib/nodeTypeLabels";
+import { nodeCategory, NODE_CATEGORY_COLOR_VARS } from "@/lib/nodeCategory";
 import type { Database, NodeType } from "@/lib/supabase/database.types";
 import { unwrapRelation } from "@/lib/unwrapRelation";
 
@@ -210,6 +211,11 @@ function NodeList({
     <ul className="mt-3 divide-y divide-border">
       {nodes.map((node) => {
         const character = characterInfo(node);
+        const category = nodeCategory({
+          nodeType: node.node_type,
+          isPlaceholder: node.is_placeholder,
+          characterType: character?.type ?? null,
+        });
         const titleSpan = (
           <span className={node.is_placeholder ? "text-muted-foreground italic" : ""}>
             {node.title}
@@ -217,6 +223,10 @@ function NodeList({
         );
         return (
           <li key={node.id} className="flex flex-wrap items-center gap-2 py-3">
+            <span
+              className="h-2 w-2 shrink-0 rounded-full"
+              style={{ backgroundColor: NODE_CATEGORY_COLOR_VARS[category] }}
+            />
             {node.status !== "rejected" ? (
               <Link href={`/worlds/${worldSlug}/nodes/${node.slug}`} className="hover:underline">
                 {titleSpan}
@@ -248,6 +258,9 @@ function NodeList({
                 待撰寫
               </span>
             )}
+            <span className="ml-auto text-xs text-muted-foreground">
+              {NODE_TYPE_LABEL[node.node_type]}
+            </span>
           </li>
         );
       })}

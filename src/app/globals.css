@@ -470,6 +470,78 @@ body {
 }
 
 /* ============================================================
+   全站滿版主題背景 —— 跟 Hero 用同一套裝飾語彙(見下方各主題
+   hero-* 紋理定義),延伸到整個頁面(不只 Hero 卡片本身),呼應
+   美術方向重新設計稿裡「整頁都是這個主題」的做法。都用低透明度、
+   可平鋪的紋理,不會蓋過內容的可讀性。
+============================================================= */
+@media (min-width: 1024px) {
+  :root:not([data-art-theme]) body,
+  :root[data-art-theme="script"] body {
+    background-image: linear-gradient(
+      to right,
+      transparent 55px,
+      color-mix(in srgb, var(--border) 70%, transparent) 55px,
+      color-mix(in srgb, var(--border) 70%, transparent) 56px,
+      transparent 56px
+    );
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+  }
+}
+
+:root[data-art-theme="field"] body {
+  background-image: radial-gradient(circle, var(--border) 1px, transparent 1.3px);
+  background-size: 16px 16px;
+}
+
+:root[data-art-theme="wuxia"] body::before {
+  content: "";
+  position: fixed;
+  z-index: -1;
+  inset: auto 0 0 0;
+  height: 180px;
+  pointer-events: none;
+  opacity: 0.12;
+  background: var(--foreground);
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 560 120' preserveAspectRatio='none'%3E%3Cpath d='M0 120 L0 80 Q60 40 120 65 Q170 20 230 55 Q290 15 350 52 Q410 25 470 55 Q520 35 560 55 L560 120 Z'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 560 120' preserveAspectRatio='none'%3E%3Cpath d='M0 120 L0 80 Q60 40 120 65 Q170 20 230 55 Q290 15 350 52 Q410 25 470 55 Q520 35 560 55 L560 120 Z'/%3E%3C/svg%3E");
+  -webkit-mask-repeat: repeat-x;
+  mask-repeat: repeat-x;
+  -webkit-mask-size: 560px 100%;
+  mask-size: 560px 100%;
+}
+
+:root[data-art-theme="scroll"] body {
+  background-image: radial-gradient(6px 6px at 15% 30%, color-mix(in srgb, var(--foreground) 6%, transparent), transparent),
+    radial-gradient(8px 8px at 75% 65%, color-mix(in srgb, var(--foreground) 5%, transparent), transparent),
+    radial-gradient(5px 5px at 45% 80%, color-mix(in srgb, var(--foreground) 6%, transparent), transparent);
+  background-size: 260px 260px;
+}
+
+:root[data-art-theme="cartographer"] body {
+  background-image: linear-gradient(
+      color-mix(in srgb, var(--border) 35%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--border) 35%, transparent) 1px,
+      transparent 1px
+    );
+  background-size: 24px 24px;
+}
+
+:root[data-art-theme="almanac"] body {
+  background-image: radial-gradient(1.4px 1.4px at 10% 20%, rgba(216, 187, 110, 0.9), transparent),
+    radial-gradient(1.4px 1.4px at 65% 55%, rgba(216, 187, 110, 0.7), transparent),
+    radial-gradient(1.2px 1.2px at 35% 80%, rgba(216, 187, 110, 0.6), transparent),
+    radial-gradient(1.2px 1.2px at 85% 15%, rgba(216, 187, 110, 0.5), transparent),
+    radial-gradient(1.2px 1.2px at 50% 40%, rgba(216, 187, 110, 0.4), transparent);
+  background-size: 220px 220px;
+}
+
+/* ============================================================
    Hero 依主題切換 —— WorldHero.tsx 一次渲染六份,這裡只切換
    哪一份看得到,不用另外寫 client component 去讀 localStorage。
 ============================================================= */

@@ -1,5 +1,3 @@
-import { Badge } from "@/components/Badge";
-
 /**
  * 世界觀頁面的 hero 區塊,公開頁面(/worlds/[slug])跟後台頁面
  * (/dashboard/worlds/[slug])共用——跟 worldmap/WorldMapView.tsx 一樣的
@@ -14,13 +12,8 @@ import { Badge } from "@/components/Badge";
  * 自己可以清空——劇本手稿跟東方玄幻的標題副文字直接顯示這個真資料,
  * 不是寫死的文案,主辦不填就不顯示那一行。
  *
- * 徽章列(公開/私人、多人共筆/paro、共筆比例)預設是頁面自己在 Hero
- * 外面另外畫一排(見 page.tsx 的 .world-badge-row),只有羊皮紙卷軸
- * 這個主題比較特殊,美術稿把徽章放在標題區塊「裡面」、分隔線在徽章
- * 下方,所以這裡額外收 isPublic/isSolo/collaborativePercent 這三個
- * 參數,只給羊皮紙卷軸這個變體用——不是六個主題都要改,其他五個主題
- * 維持原本「徽章在 Hero 外面」的做法,page.tsx 那排徽章列也還是照畫,
- * 只是在羊皮紙卷軸主題底下用 CSS 隱藏(避免重複顯示两次)。
+ * 徽章列(公開/私人、多人共筆/paro、共筆比例)一律是頁面自己在 Hero
+ * 外面另外畫一排(見 page.tsx 的徽章列),六個主題都一樣,不在這裡畫。
  */
 
 // 東方玄幻沒有自訂 icon 時的預留印章圖——8 張現成的硃砂印章素材,依
@@ -40,19 +33,11 @@ export function WorldHero({
   tagline,
   bannerUrl,
   iconUrl,
-  isPublic,
-  isSolo,
-  collaborativePercent = null,
 }: {
   name: string;
   tagline: string | null;
   bannerUrl: string | null;
   iconUrl: string | null;
-  /** 沒有傳的話(例如個人頁的「精選世界觀」預覽,不是真正的世界觀首頁),
-   * 羊皮紙卷軸這個變體就不畫徽章列——寧可不顯示,也不要用猜的資料誤導。 */
-  isPublic?: boolean;
-  isSolo?: boolean;
-  collaborativePercent?: number | null;
 }) {
   return (
     <>
@@ -157,17 +142,6 @@ export function WorldHero({
               {name}
             </h1>
             {tagline && <p className="mt-2 text-sm italic text-muted-foreground">{tagline}</p>}
-            {isPublic !== undefined && isSolo !== undefined && (
-              <div className="mt-3 flex flex-wrap items-center gap-2">
-                <Badge variant={isPublic ? "info" : "neutral"}>{isPublic ? "公開" : "私人"}</Badge>
-                <Badge variant="neutral">{isSolo ? "個人寫作(paro)" : "多人共筆"}</Badge>
-                {collaborativePercent !== null && (
-                  <span className="hidden lg:inline-flex">
-                    <Badge variant="info">共筆比例 {collaborativePercent}%</Badge>
-                  </span>
-                )}
-              </div>
-            )}
           </div>
           {iconUrl && (
             // eslint-disable-next-line @next/next/no-img-element -- signed URL,無法用 next/image 白名單網域

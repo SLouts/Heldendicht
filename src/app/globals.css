@@ -563,11 +563,6 @@ body {
 :root[data-art-theme="scroll"] .hero-scroll {
   display: block;
 }
-/* 羊皮紙卷軸把徽章列畫進 Hero 卡片裡面了(見 WorldHero.tsx),
-   頁面上原本另外畫的那排徽章(.world-badge-row)這個主題下不用重複顯示。 */
-:root[data-art-theme="scroll"] .world-badge-row {
-  display: none;
-}
 :root[data-art-theme="cartographer"] .hero-cartographer {
   display: block;
 }

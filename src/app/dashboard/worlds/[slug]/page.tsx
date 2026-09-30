@@ -320,7 +320,7 @@ export default async function WorldDashboardPage({
       {/* 電腦版(lg 以上):維持改版前的左右兩欄——右側邊欄放導覽/管理連結,
           左側內容用 client tab 切換(不換頁),不用手機版那套路由式主分頁。 */}
       <div className="mt-8 hidden lg:grid lg:grid-cols-12 lg:gap-8">
-        <div className="lg:order-2 lg:col-span-4">
+        <div className="lg:order-2 lg:col-span-3">
           <WorldSidebar
             ownerLabel={owner?.display_name || owner?.username || owner?.email || null}
             defaultPcQuota={world.default_pc_quota}
@@ -328,7 +328,7 @@ export default async function WorldDashboardPage({
           />
         </div>
 
-        <div className="lg:order-1 lg:col-span-8 lg:min-w-0">
+        <div className="lg:order-1 lg:col-span-9 lg:min-w-0">
           <NodeTabs tabs={desktopTabs} />
         </div>
       </div>

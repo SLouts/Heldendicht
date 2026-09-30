@@ -129,34 +129,32 @@ export function WorldHero({
         </div>
       </div>
 
-      {/* ---------- 04 羊皮紙卷軸:攤開的卷軸 ---------- */}
-      <div className="hero-variant hero-scroll">
-        <div className="hero-scroll-rod" />
-        <div className="hero-scroll-body">
-          <div className="flex items-center gap-3">
-            {iconUrl && (
-              // eslint-disable-next-line @next/next/no-img-element -- signed URL,無法用 next/image 白名單網域
-              <img
-                src={iconUrl}
-                alt=""
-                className="scroll-wax-glow h-12 w-12 shrink-0 rounded-full border border-border object-cover"
-              />
-            )}
-            <h1 className="font-display text-3xl sm:text-4xl font-semibold italic text-primary">
-              {name}
-            </h1>
-          </div>
-          {tagline && <p className="mt-2 text-sm italic text-muted-foreground">{tagline}</p>}
-          {bannerUrl && (
+      {/* ---------- 04 羊皮紙卷軸:標題卡片本身維持簡單樣式,「攤開卷軸」
+          的木軸意象改成整頁背景(見 globals.css 的 body::before/::after),
+          不用再框住標題卡片。 ---------- */}
+      <div className="hero-variant hero-scroll rounded-lg border border-border bg-surface px-6 py-8">
+        <div className="flex items-center gap-3">
+          {iconUrl && (
             // eslint-disable-next-line @next/next/no-img-element -- signed URL,無法用 next/image 白名單網域
             <img
-              src={bannerUrl}
+              src={iconUrl}
               alt=""
-              className="mt-5 max-h-56 w-full rounded object-cover"
+              className="scroll-wax-glow h-12 w-12 shrink-0 rounded-full border border-border object-cover"
             />
           )}
+          <h1 className="font-display text-3xl sm:text-4xl font-semibold italic text-primary">
+            {name}
+          </h1>
         </div>
-        <div className="hero-scroll-rod" />
+        {tagline && <p className="mt-2 text-sm italic text-muted-foreground">{tagline}</p>}
+        {bannerUrl && (
+          // eslint-disable-next-line @next/next/no-img-element -- signed URL,無法用 next/image 白名單網域
+          <img
+            src={bannerUrl}
+            alt=""
+            className="mt-5 max-h-56 w-full rounded object-cover"
+          />
+        )}
       </div>
 
       {/* ---------- 05 製圖師手記:方格野帳 + 羅盤 + 座標刻度 ---------- */}

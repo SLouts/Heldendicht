@@ -144,12 +144,10 @@ export function WorldHero({
             {tagline && <p className="mt-2 text-sm italic text-muted-foreground">{tagline}</p>}
           </div>
           {iconUrl && (
-            // eslint-disable-next-line @next/next/no-img-element -- signed URL,無法用 next/image 白名單網域
-            <img
-              src={iconUrl}
-              alt=""
-              className="scroll-wax-glow h-14 w-14 shrink-0 rounded-full border border-border object-cover"
-            />
+            <div className="scroll-wax-glow h-14 w-14 shrink-0">
+              {/* eslint-disable-next-line @next/next/no-img-element -- signed URL,無法用 next/image 白名單網域 */}
+              <img src={iconUrl} alt="" className="h-full w-full object-cover" />
+            </div>
           )}
         </div>
         {bannerUrl && (

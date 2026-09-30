@@ -671,6 +671,11 @@ body {
 .scroll-wax-glow {
   box-shadow: 0 0 14px 2px color-mix(in srgb, var(--primary) 35%, transparent);
   border-radius: 50%;
+  transform: rotate(7deg);
+}
+
+.scroll-wax-glow > img {
+  clip-path: circle(45% at 50% 50%);
 }
 
 /* ---------- 製圖師手記 hero:方格野帳底 + 羅盤 + 座標刻度 ---------- */

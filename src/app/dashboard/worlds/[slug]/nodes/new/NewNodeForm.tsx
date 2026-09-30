@@ -4,6 +4,8 @@ import { useActionState, useState } from "react";
 import { createNode } from "@/lib/actions/nodes";
 import { CategorySelectOptions } from "@/components/CategorySelectOptions";
 import { DynamicFieldInput } from "@/components/DynamicFieldInput";
+import { NODE_TYPE_LABEL } from "@/lib/nodeTypeLabels";
+import type { NodeType } from "@/lib/supabase/database.types";
 
 type CategoryFieldOption = {
   id: string;
@@ -31,6 +33,9 @@ export function NewNodeForm({
 }) {
   const [state, formAction, pending] = useActionState(createNode, undefined);
   const [categoryId, setCategoryId] = useState("");
+  const [nodeType, setNodeType] = useState<NodeType>("location");
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
   const categoryFields = fieldsByCategory[categoryId] ?? [];
 
   // 一般成員一定要選一個開放投稿的分類才能建立節點(見 guard_node_category
@@ -45,7 +50,8 @@ export function NewNodeForm({
   }
 
   return (
-    <form action={formAction} className="mt-6 flex max-w-xl flex-col gap-4">
+    <div className="mt-6 flex flex-col gap-6 lg:flex-row lg:items-start">
+    <form action={formAction} className="flex max-w-xl flex-1 flex-col gap-4">
       <input type="hidden" name="worldId" value={worldId} />
       <input type="hidden" name="worldSlug" value={worldSlug} />
 
@@ -56,7 +62,8 @@ export function NewNodeForm({
         <select
           id="nodeType"
           name="nodeType"
-          defaultValue="location"
+          value={nodeType}
+          onChange={(e) => setNodeType(e.target.value as NodeType)}
           className="w-40 rounded-lg border border-border bg-surface px-3 py-2"
         >
           <option value="location">地點</option>
@@ -132,6 +139,8 @@ export function NewNodeForm({
           id="title"
           name="title"
           required
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
           className="rounded-lg border border-border bg-surface px-3 py-2"
         />
         {state && "fieldErrors" in state && state.fieldErrors.title && (
@@ -148,6 +157,8 @@ export function NewNodeForm({
           name="content"
           rows={8}
           placeholder="可以用 [[名稱]] 建立 WikiLink"
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
           className="rounded-lg border border-border bg-surface px-3 py-2"
         />
       </div>
@@ -179,5 +190,19 @@ export function NewNodeForm({
         {pending ? "建立中…" : "建立節點"}
       </button>
     </form>
+
+    <aside className="w-full shrink-0 lg:w-72">
+      <p className="text-xs font-medium text-muted-foreground">即時預覽</p>
+      <div className="mt-2 rounded-lg border border-border bg-surface p-4">
+        <span className="w-fit rounded-full bg-badge-info-bg px-2 py-0.5 text-xs text-badge-info-fg">
+          {NODE_TYPE_LABEL[nodeType]}
+        </span>
+        <h3 className="mt-2 text-lg font-semibold">{title || "未命名條目"}</h3>
+        <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">
+          {content ? (content.length > 80 ? `${content.slice(0, 80)}…` : content) : "尚未填寫內文……"}
+        </p>
+      </div>
+    </aside>
+    </div>
   );
 }

@@ -10,7 +10,7 @@ import Link from "next/link";
  */
 export function WorldQuickBar({ worldSlug }: { worldSlug: string }) {
   return (
-    <section className="mt-6 grid grid-cols-2 gap-2 text-sm sm:flex sm:flex-wrap sm:justify-end">
+    <section className="grid grid-cols-2 gap-2 text-sm sm:flex sm:flex-wrap sm:justify-end">
       <Link
         href={`/dashboard/worlds/${worldSlug}/nodes/new`}
         className="flex min-h-11 items-center justify-center rounded-lg border border-border bg-surface px-3 py-1.5 text-center hover:bg-muted"

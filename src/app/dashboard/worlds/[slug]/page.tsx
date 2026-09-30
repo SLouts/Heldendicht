@@ -273,21 +273,23 @@ export default async function WorldDashboardPage({
         />
       </div>
 
-      <div className="world-badge-row mt-3 flex flex-wrap items-center gap-2">
-        <Badge variant={world.is_public ? "info" : "neutral"}>
-          {world.is_public ? "公開" : "私人"}
-        </Badge>
-        <Badge variant="neutral">{world.is_solo ? "個人寫作(paro)" : "多人共筆"}</Badge>
-        {collaborativePercent !== null && (
-          <span className="hidden lg:inline-flex">
-            <Badge variant="info">共筆比例 {collaborativePercent}%</Badge>
-          </span>
-        )}
+      <div className="mt-3 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="world-badge-row flex flex-wrap items-center gap-2">
+          <Badge variant={world.is_public ? "info" : "neutral"}>
+            {world.is_public ? "公開" : "私人"}
+          </Badge>
+          <Badge variant="neutral">{world.is_solo ? "個人寫作(paro)" : "多人共筆"}</Badge>
+          {collaborativePercent !== null && (
+            <span className="hidden lg:inline-flex">
+              <Badge variant="info">共筆比例 {collaborativePercent}%</Badge>
+            </span>
+          )}
+        </div>
+
+        <WorldQuickBar worldSlug={world.slug} />
       </div>
 
       {isNewlyCreated && <NewWorldOnboarding worldSlug={world.slug} isSolo={world.is_solo} />}
-
-      <WorldQuickBar worldSlug={world.slug} />
 
       {/* 電腦版把這幾個數字挪回側邊欄用文字列呈現,這裡的卡片只在手機版顯示。 */}
       <div className="mt-6 lg:hidden">

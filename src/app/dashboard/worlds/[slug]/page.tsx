@@ -262,10 +262,18 @@ export default async function WorldDashboardPage({
       </Link>
 
       <div className="mt-2">
-        <WorldHero name={world.name} tagline={world.tagline} bannerUrl={bannerUrl} iconUrl={iconUrl} />
+        <WorldHero
+          name={world.name}
+          tagline={world.tagline}
+          bannerUrl={bannerUrl}
+          iconUrl={iconUrl}
+          isPublic={world.is_public}
+          isSolo={world.is_solo}
+          collaborativePercent={collaborativePercent}
+        />
       </div>
 
-      <div className="mt-3 flex flex-wrap items-center gap-2">
+      <div className="world-badge-row mt-3 flex flex-wrap items-center gap-2">
         <Badge variant={world.is_public ? "info" : "neutral"}>
           {world.is_public ? "公開" : "私人"}
         </Badge>

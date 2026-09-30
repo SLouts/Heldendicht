@@ -137,7 +137,7 @@ export default async function DashboardLayout({
   return (
     <div className="flex flex-1 flex-col">
       <header className="border-b border-border">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <span className="flex items-baseline gap-2">
             <span className="font-display text-lg font-semibold tracking-wide">
               Heldendicht
@@ -166,7 +166,7 @@ export default async function DashboardLayout({
           </div>
         </div>
       </header>
-      <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-8">
+      <main className="mx-auto w-full max-w-7xl flex-1 px-6 py-8">
         {children}
       </main>
     </div>

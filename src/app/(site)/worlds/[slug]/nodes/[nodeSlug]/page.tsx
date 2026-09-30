@@ -245,7 +245,7 @@ export default async function PublicNodeDetailPage({
   };
 
   return (
-    <div className="mx-auto w-full max-w-2xl flex-1 px-6 py-12 lg:max-w-5xl">
+    <div className="mx-auto w-full max-w-2xl flex-1 px-6 py-12 lg:max-w-7xl">
       <Link
         href={`/worlds/${world.slug}`}
         className="text-sm text-muted-foreground hover:underline"

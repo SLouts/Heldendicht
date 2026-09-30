@@ -345,7 +345,7 @@ export default async function PersonaDetailPage({
   }
 
   return (
-    <div className="mx-auto w-full max-w-5xl flex-1 px-6 py-12">
+    <div className="mx-auto w-full max-w-7xl flex-1 px-6 py-12">
       <Link
         href={`/u/${username}`}
         className="text-sm text-muted-foreground hover:underline"

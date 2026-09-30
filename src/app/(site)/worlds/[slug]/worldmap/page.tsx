@@ -72,7 +72,7 @@ export default async function PublicWorldMapPage({
   }
 
   return (
-    <div className="mx-auto w-full max-w-5xl flex-1 px-6 py-12">
+    <div className="mx-auto w-full max-w-7xl flex-1 px-6 py-12">
       <WorldMainTabs basePath={`/worlds/${world.slug}`} />
 
       <WorldMapView

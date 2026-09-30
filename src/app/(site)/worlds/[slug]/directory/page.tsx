@@ -54,7 +54,7 @@ export default async function PublicWorldDirectoryPage({
   })).filter((g) => g.nodes.length > 0);
 
   return (
-    <div className="mx-auto w-full max-w-5xl flex-1 px-6 py-12">
+    <div className="mx-auto w-full max-w-7xl flex-1 px-6 py-12">
       <WorldMainTabs basePath={`/worlds/${slug}`} />
 
       <div className="mt-6 flex flex-col gap-8">

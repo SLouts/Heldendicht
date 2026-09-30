@@ -120,7 +120,7 @@ export default async function PublicStoryMapPage({
   }));
 
   return (
-    <div className="mx-auto w-full max-w-5xl flex-1 px-6 py-12">
+    <div className="mx-auto w-full max-w-7xl flex-1 px-6 py-12">
       <WorldMainTabs basePath={`/worlds/${world.slug}`} />
 
       {graphNodes.length === 0 ? (

@@ -310,7 +310,7 @@ export default async function NodeDetailPage({
   };
 
   return (
-    <div className="max-w-2xl lg:max-w-5xl">
+    <div className="max-w-2xl lg:max-w-7xl">
       <Link
         href={`/dashboard/worlds/${world.slug}`}
         className="text-sm text-muted-foreground hover:underline"

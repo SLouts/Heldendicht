@@ -79,7 +79,7 @@ export default async function Home() {
 
   return (
     <div className="flex flex-1 flex-col bg-background">
-      <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-12">
+      <main className="mx-auto w-full max-w-7xl flex-1 px-6 py-12">
         <section className="py-8 text-center">
           <h1 className="font-display text-4xl font-bold tracking-tight sm:text-5xl">
             編織架空宇宙,記錄英雄敘事

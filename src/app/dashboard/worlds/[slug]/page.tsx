@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/dal";
 import { createClient } from "@/lib/supabase/server";
 import { getWorldMediaSignedUrl } from "@/lib/worldMedia";
+import { getWorldMapSignedUrl } from "@/lib/worldmap";
 import { WorldHero } from "./WorldHero";
 import { WorldStatCards } from "./WorldStatCards";
 import { WorldMainTabs } from "@/components/WorldMainTabs";
@@ -59,6 +60,7 @@ export default async function WorldDashboardPage({
     { data: categories },
     { data: worldRules },
     { data: recentNodes },
+    { data: firstMapLayer },
     bannerUrl,
     iconUrl,
   ] = await Promise.all([
@@ -96,9 +98,20 @@ export default async function WorldDashboardPage({
       .eq("is_placeholder", false)
       .order("updated_at", { ascending: false })
       .limit(RECENT_CHANGES_LIMIT),
+    supabase
+      .from("world_map_layers")
+      .select("image_path")
+      .eq("world_id", world.id)
+      .order("order_index", { ascending: true })
+      .limit(1)
+      .maybeSingle(),
     getWorldMediaSignedUrl(world.banner_path),
     getWorldMediaSignedUrl(world.icon_path),
   ]);
+
+  const mapPreviewUrl = firstMapLayer
+    ? await getWorldMapSignedUrl(firstMapLayer.image_path)
+    : null;
 
   const nodeRows = nodes ?? [];
   const totalNodeCount = nodeRows.length;
@@ -133,8 +146,30 @@ export default async function WorldDashboardPage({
     />
   );
 
+  const overviewTabContent = (
+    <div className="flex flex-col gap-4">
+      {descriptionContent}
+      {mapPreviewUrl && (
+        <Link
+          href={`/dashboard/worlds/${world.slug}/worldmap`}
+          className="group relative block overflow-hidden rounded-lg border border-border"
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element -- signed URL,無法用 next/image 白名單網域 */}
+          <img
+            src={mapPreviewUrl}
+            alt=""
+            className="h-48 w-full object-cover transition group-hover:opacity-90"
+          />
+          <span className="absolute right-2 top-2 rounded bg-surface/90 px-2 py-1 text-xs text-foreground shadow-sm">
+            世界地圖預覽
+          </span>
+        </Link>
+      )}
+    </div>
+  );
+
   const desktopTabs: NodeTab[] = [
-    { key: "overview", label: "世界導讀", content: descriptionContent },
+    { key: "overview", label: "世界導讀", content: overviewTabContent },
     {
       key: "directory",
       label: "條目與節點目錄",
@@ -181,67 +216,43 @@ export default async function WorldDashboardPage({
 
   const managementNavMenu = (
     <>
-      <Link
-        href={`/worlds/${world.slug}`}
-        className="rounded-md px-3 py-1.5 hover:bg-surface hover:underline"
-      >
+      <Link href={`/worlds/${world.slug}`} className="hover:underline">
         公開頁面
       </Link>
-      <Link
-        href={`/dashboard/worlds/${world.slug}/story`}
-        className="rounded-md px-3 py-1.5 hover:bg-surface hover:underline"
-      >
+      <Link href={`/dashboard/worlds/${world.slug}/story`} className="hover:underline">
         故事時間軸
       </Link>
-      <Link
-        href={`/dashboard/worlds/${world.slug}/map`}
-        className="rounded-md px-3 py-1.5 hover:bg-surface hover:underline"
-      >
+      <Link href={`/dashboard/worlds/${world.slug}/map`} className="hover:underline">
         關係圖譜
       </Link>
-      <Link
-        href={`/dashboard/worlds/${world.slug}/worldmap`}
-        className="rounded-md px-3 py-1.5 hover:bg-surface hover:underline"
-      >
+      <Link href={`/dashboard/worlds/${world.slug}/worldmap`} className="hover:underline">
         世界地圖
       </Link>
       {isStaff && (
         <Link
           href={`/dashboard/worlds/${world.slug}/character-template`}
-          className="rounded-md px-3 py-1.5 hover:bg-surface hover:underline"
+          className="hover:underline"
         >
           角色卡設定
         </Link>
       )}
       {isStaff && (
-        <Link
-          href={`/dashboard/worlds/${world.slug}/categories`}
-          className="rounded-md px-3 py-1.5 hover:bg-surface hover:underline"
-        >
+        <Link href={`/dashboard/worlds/${world.slug}/categories`} className="hover:underline">
           內容分類
         </Link>
       )}
       {isStaff && !world.is_solo && (
-        <Link
-          href={`/dashboard/worlds/${world.slug}/reports`}
-          className="rounded-md px-3 py-1.5 hover:bg-surface hover:underline"
-        >
+        <Link href={`/dashboard/worlds/${world.slug}/reports`} className="hover:underline">
           檢舉列表
         </Link>
       )}
       {isAdmin && !world.is_solo && (
-        <Link
-          href={`/dashboard/worlds/${world.slug}/members`}
-          className="rounded-md px-3 py-1.5 hover:bg-surface hover:underline"
-        >
+        <Link href={`/dashboard/worlds/${world.slug}/members`} className="hover:underline">
           成員
         </Link>
       )}
       {isStaff && (
-        <Link
-          href={`/dashboard/worlds/${world.slug}/settings`}
-          className="rounded-md px-3 py-1.5 hover:bg-surface hover:underline"
-        >
+        <Link href={`/dashboard/worlds/${world.slug}/settings`} className="hover:underline">
           世界觀設定
         </Link>
       )}
@@ -263,13 +274,19 @@ export default async function WorldDashboardPage({
           {world.is_public ? "公開" : "私人"}
         </Badge>
         <Badge variant="neutral">{world.is_solo ? "個人寫作(paro)" : "多人共筆"}</Badge>
+        {collaborativePercent !== null && (
+          <span className="hidden lg:inline-flex">
+            <Badge variant="info">共筆比例 {collaborativePercent}%</Badge>
+          </span>
+        )}
       </div>
 
       {isNewlyCreated && <NewWorldOnboarding worldSlug={world.slug} isSolo={world.is_solo} />}
 
       <WorldQuickBar worldSlug={world.slug} />
 
-      <div className="mt-6">
+      {/* 電腦版把這幾個數字挪回側邊欄用文字列呈現,這裡的卡片只在手機版顯示。 */}
+      <div className="mt-6 lg:hidden">
         <WorldStatCards
           ownerLabel={owner?.display_name || owner?.username || owner?.email || null}
           collaborativePercent={collaborativePercent}
@@ -304,7 +321,11 @@ export default async function WorldDashboardPage({
           左側內容用 client tab 切換(不換頁),不用手機版那套路由式主分頁。 */}
       <div className="mt-8 hidden lg:grid lg:grid-cols-12 lg:gap-8">
         <div className="lg:order-2 lg:col-span-4">
-          <WorldSidebar navMenu={managementNavMenu} />
+          <WorldSidebar
+            ownerLabel={owner?.display_name || owner?.username || owner?.email || null}
+            defaultPcQuota={world.default_pc_quota}
+            navMenu={managementNavMenu}
+          />
         </div>
 
         <div className="lg:order-1 lg:col-span-8 lg:min-w-0">

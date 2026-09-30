@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getWorldMediaSignedUrl } from "@/lib/worldMedia";
+import { getWorldMapSignedUrl } from "@/lib/worldmap";
 import { WorldHero } from "@/app/dashboard/worlds/[slug]/WorldHero";
 import { WorldStatCards } from "@/app/dashboard/worlds/[slug]/WorldStatCards";
 import { WorldMainTabs } from "@/components/WorldMainTabs";
@@ -50,8 +51,16 @@ export default async function WorldPage({
   // 改版前的做法),所以節點/分類/關係線這幾份跟 /directory 路由重複的
   // 資料在這裡也要撈一次——手機版另外走 WorldMainTabs 的路由式分頁,
   // 不用到這些。
-  const [{ data: nodes }, { data: relationships }, { data: categories }, { data: worldRules }, { data: recentNodes }, bannerUrl, iconUrl] =
-    await Promise.all([
+  const [
+    { data: nodes },
+    { data: relationships },
+    { data: categories },
+    { data: worldRules },
+    { data: recentNodes },
+    { data: firstMapLayer },
+    bannerUrl,
+    iconUrl,
+  ] = await Promise.all([
       supabase
         .from("nodes")
         .select(
@@ -84,9 +93,18 @@ export default async function WorldPage({
         .eq("is_placeholder", false)
         .order("updated_at", { ascending: false })
         .limit(RECENT_CHANGES_LIMIT),
+      supabase
+        .from("world_map_layers")
+        .select("image_path")
+        .eq("world_id", world.id)
+        .order("order_index", { ascending: true })
+        .limit(1)
+        .maybeSingle(),
       getWorldMediaSignedUrl(world.banner_path),
       getWorldMediaSignedUrl(world.icon_path),
     ]);
+
+  const mapPreviewUrl = firstMapLayer ? await getWorldMapSignedUrl(firstMapLayer.image_path) : null;
 
   // 開放共筆節點的比例——edit_mode 是 nodes 表自己的欄位(每個節點各自
   // 決定要不要開放協作編輯),不是世界觀或成員層級的設定,所以從這裡查出
@@ -119,8 +137,30 @@ export default async function WorldPage({
     <EmptyState title="這個世界觀還沒有介紹文字" description="主辦還沒有寫下這個世界觀的導讀。" />
   );
 
+  const overviewTabContent = (
+    <div className="flex flex-col gap-4">
+      {descriptionContent}
+      {mapPreviewUrl && (
+        <Link
+          href={`/worlds/${slug}/worldmap`}
+          className="group relative block overflow-hidden rounded-lg border border-border"
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element -- signed URL,無法用 next/image 白名單網域 */}
+          <img
+            src={mapPreviewUrl}
+            alt=""
+            className="h-48 w-full object-cover transition group-hover:opacity-90"
+          />
+          <span className="absolute right-2 top-2 rounded bg-surface/90 px-2 py-1 text-xs text-foreground shadow-sm">
+            世界地圖預覽
+          </span>
+        </Link>
+      )}
+    </div>
+  );
+
   const desktopTabs: NodeTab[] = [
-    { key: "overview", label: "世界導讀", content: descriptionContent },
+    { key: "overview", label: "世界導讀", content: overviewTabContent },
     {
       key: "directory",
       label: "條目與節點目錄",
@@ -157,11 +197,17 @@ export default async function WorldPage({
           {world.is_public ? "公開" : "私人"}
         </Badge>
         <Badge variant="neutral">{world.is_solo ? "個人寫作(paro)" : "多人共筆"}</Badge>
+        {collaborativePercent !== null && (
+          <span className="hidden lg:inline-flex">
+            <Badge variant="info">共筆比例 {collaborativePercent}%</Badge>
+          </span>
+        )}
       </div>
 
       <WorldQuickBar worldSlug={slug} />
 
-      <div className="mt-6">
+      {/* 電腦版把這幾個數字挪回側邊欄用文字列呈現,這裡的卡片只在手機版顯示。 */}
+      <div className="mt-6 lg:hidden">
         <WorldStatCards
           ownerLabel={owner?.display_name || owner?.username || null}
           collaborativePercent={collaborativePercent}
@@ -195,24 +241,17 @@ export default async function WorldPage({
       <div className="mt-8 hidden lg:grid lg:grid-cols-12 lg:gap-8">
         <div className="lg:order-2 lg:col-span-4">
           <WorldSidebar
+            ownerLabel={owner?.display_name || owner?.username || null}
+            defaultPcQuota={world.default_pc_quota}
             navMenu={
               <>
-                <Link
-                  href={`/worlds/${slug}/story`}
-                  className="rounded-md px-3 py-1.5 hover:bg-surface hover:underline"
-                >
+                <Link href={`/worlds/${slug}/story`} className="hover:underline">
                   故事時間軸
                 </Link>
-                <Link
-                  href={`/worlds/${slug}/map`}
-                  className="rounded-md px-3 py-1.5 hover:bg-surface hover:underline"
-                >
+                <Link href={`/worlds/${slug}/map`} className="hover:underline">
                   關係圖譜
                 </Link>
-                <Link
-                  href={`/worlds/${slug}/worldmap`}
-                  className="rounded-md px-3 py-1.5 hover:bg-surface hover:underline"
-                >
+                <Link href={`/worlds/${slug}/worldmap`} className="hover:underline">
                   世界地圖
                 </Link>
               </>

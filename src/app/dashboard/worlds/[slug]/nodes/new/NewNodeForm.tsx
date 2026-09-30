@@ -6,10 +6,12 @@ import { CategorySelectOptions } from "@/components/CategorySelectOptions";
 import { DynamicFieldInput } from "@/components/DynamicFieldInput";
 import { NODE_TYPE_LABEL } from "@/lib/nodeTypeLabels";
 import type { NodeType } from "@/lib/supabase/database.types";
+import { NodeTemplatePreview } from "./NodeTemplatePreview";
 
 type CategoryFieldOption = {
   id: string;
   label: string;
+  exampleValue: string;
   isRequired: boolean;
   fieldType: "text" | "select" | "range";
   options: string[];
@@ -100,6 +102,10 @@ export function NewNodeForm({
           )}
         </div>
       )}
+
+      <NodeTemplatePreview
+        fields={categoryFields.map((f) => ({ label: f.label, exampleValue: f.exampleValue }))}
+      />
 
       {categoryFields.length > 0 && (
         <div className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-3">

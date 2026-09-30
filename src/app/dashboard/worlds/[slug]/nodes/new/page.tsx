@@ -30,7 +30,7 @@ export default async function NewNodePage({
       supabase
         .from("world_category_fields")
         .select(
-          "id, category_id, label, is_required, field_type, options, range_min, range_max, range_step",
+          "id, category_id, label, example_value, is_required, field_type, options, range_min, range_max, range_step",
         )
         .eq("world_id", world.id)
         .order("order_index", { ascending: true }),
@@ -49,6 +49,7 @@ export default async function NewNodePage({
     {
       id: string;
       label: string;
+      exampleValue: string;
       isRequired: boolean;
       fieldType: "text" | "select" | "range";
       options: string[];
@@ -61,6 +62,7 @@ export default async function NewNodePage({
     (fieldsByCategory[f.category_id] ??= []).push({
       id: f.id,
       label: f.label,
+      exampleValue: f.example_value,
       isRequired: f.is_required,
       fieldType: f.field_type,
       options: f.options,

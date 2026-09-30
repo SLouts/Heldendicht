@@ -142,7 +142,9 @@ export function WorldHero({
                 className="scroll-wax-glow h-12 w-12 shrink-0 rounded-full border border-border object-cover"
               />
             )}
-            <h1 className="font-display text-3xl sm:text-4xl">{name}</h1>
+            <h1 className="font-display text-3xl sm:text-4xl font-semibold italic text-primary">
+              {name}
+            </h1>
           </div>
           {tagline && <p className="mt-2 text-sm italic text-muted-foreground">{tagline}</p>}
           {bannerUrl && (

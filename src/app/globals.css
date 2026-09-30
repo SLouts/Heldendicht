@@ -521,12 +521,12 @@ body {
 
 :root[data-art-theme="cartographer"] body {
   background-image: linear-gradient(
-      color-mix(in srgb, var(--border) 35%, transparent) 1px,
+      color-mix(in srgb, var(--border) 14%, transparent) 1px,
       transparent 1px
     ),
     linear-gradient(
       90deg,
-      color-mix(in srgb, var(--border) 35%, transparent) 1px,
+      color-mix(in srgb, var(--border) 14%, transparent) 1px,
       transparent 1px
     );
   background-size: 24px 24px;
@@ -674,12 +674,12 @@ body {
 /* ---------- 製圖師手記 hero:方格野帳底 + 羅盤 + 座標刻度 ---------- */
 .hero-cartographer-grid {
   background-image: linear-gradient(
-      color-mix(in srgb, var(--border) 35%, transparent) 1px,
+      color-mix(in srgb, var(--border) 14%, transparent) 1px,
       transparent 1px
     ),
     linear-gradient(
       90deg,
-      color-mix(in srgb, var(--border) 35%, transparent) 1px,
+      color-mix(in srgb, var(--border) 14%, transparent) 1px,
       transparent 1px
     );
   background-size: 24px 24px;
@@ -694,9 +694,13 @@ body {
   color: var(--border);
   opacity: 0.6;
 }
-/* 邊框刻度尺——沿卡片四邊標上座標,呼應「手繪野帳」的測繪感。 */
+/* 邊框刻度尺——沿卡片四邊標上座標,呼應「手繪野帳」的測繪感。overflow
+   hidden 是必要的:刻度尺文字用絕對定位貼齊四邊,卡片實際高度(尤其
+   沒有橫幅圖/一句話介紹的世界觀)常常比刻度尺本身還矮,沒剪裁就會溢出
+   卡片範圍,跟底下徽章列或其他內容疊在一起變成一團亂碼。 */
 .cartographer-ruler {
   position: relative;
+  overflow: hidden;
 }
 .cartographer-ruler::before,
 .cartographer-ruler::after {

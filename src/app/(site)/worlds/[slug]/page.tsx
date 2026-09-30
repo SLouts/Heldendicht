@@ -192,7 +192,7 @@ export default async function WorldPage({
     <div className="mx-auto w-full max-w-7xl flex-1 px-6 py-12">
       <WorldHero name={world.name} tagline={world.tagline} bannerUrl={bannerUrl} iconUrl={iconUrl} />
 
-      <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+      <div className="mt-3 flex flex-wrap items-center gap-2">
         <Badge variant={world.is_public ? "info" : "neutral"}>
           {world.is_public ? "公開" : "私人"}
         </Badge>

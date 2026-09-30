@@ -580,7 +580,7 @@ body {
   position: relative;
   background: var(--surface);
   padding: 28px 24px 26px;
-  text-align: center;
+  text-align: left;
 }
 .hero-scroll-body,
 .scroll-foxing {

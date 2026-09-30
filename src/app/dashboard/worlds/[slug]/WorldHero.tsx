@@ -39,13 +39,13 @@ export function WorldHero({
   return (
     <>
       {/* ---------- 01 劇本手稿:標題頁(預設) ---------- */}
-      <div className="hero-variant hero-script rounded-lg border border-border bg-surface px-6 py-10 text-center">
+      <div className="hero-variant hero-script rounded-lg border border-border bg-surface px-6 py-10 text-left">
         {iconUrl && !bannerUrl && (
           // eslint-disable-next-line @next/next/no-img-element -- signed URL,無法用 next/image 白名單網域
           <img
             src={iconUrl}
             alt=""
-            className="mx-auto mb-4 h-14 w-14 rounded-full border border-border object-cover"
+            className="mb-4 h-14 w-14 rounded-full border border-border object-cover"
           />
         )}
         <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Heldendicht</p>
@@ -56,7 +56,7 @@ export function WorldHero({
           <img
             src={bannerUrl}
             alt=""
-            className="mx-auto mt-6 max-h-56 rounded border border-border object-cover"
+            className="mt-6 max-h-56 rounded border border-border object-cover"
           />
         )}
       </div>
@@ -133,7 +133,7 @@ export function WorldHero({
       <div className="hero-variant hero-scroll">
         <div className="hero-scroll-rod" />
         <div className="hero-scroll-body">
-          <div className="flex items-center justify-center gap-3">
+          <div className="flex items-center gap-3">
             {iconUrl && (
               // eslint-disable-next-line @next/next/no-img-element -- signed URL,無法用 next/image 白名單網域
               <img
@@ -150,7 +150,7 @@ export function WorldHero({
             <img
               src={bannerUrl}
               alt=""
-              className="mx-auto mt-5 max-h-56 w-full rounded object-cover"
+              className="mt-5 max-h-56 w-full rounded object-cover"
             />
           )}
         </div>

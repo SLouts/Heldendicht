@@ -696,36 +696,6 @@ body {
   color: var(--border);
   opacity: 0.6;
 }
-/* 邊框刻度尺——沿卡片四邊標上座標,呼應「手繪野帳」的測繪感。overflow
-   hidden 是必要的:刻度尺文字用絕對定位貼齊四邊,卡片實際高度(尤其
-   沒有橫幅圖/一句話介紹的世界觀)常常比刻度尺本身還矮,沒剪裁就會溢出
-   卡片範圍,跟底下徽章列或其他內容疊在一起變成一團亂碼。 */
-.cartographer-ruler {
-  position: relative;
-  overflow: hidden;
-}
-.cartographer-ruler::before,
-.cartographer-ruler::after {
-  content: "0   10   20   30   40   50   60   70   80   90   100";
-  position: absolute;
-  font-size: 8px;
-  letter-spacing: 0.25em;
-  color: var(--muted-foreground);
-  opacity: 0.7;
-  pointer-events: none;
-  white-space: nowrap;
-}
-.cartographer-ruler::before {
-  top: 2px;
-  left: 20px;
-}
-.cartographer-ruler::after {
-  writing-mode: vertical-rl;
-  top: 20px;
-  left: 2px;
-  bottom: 2px;
-}
-
 /* ---------- 占星曆書 hero:星點夜色 + 星座連線 ---------- */
 .hero-almanac-sky {
   position: relative;

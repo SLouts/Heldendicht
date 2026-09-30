@@ -8,11 +8,19 @@ import { WorldStatCards } from "./WorldStatCards";
 import { WorldMainTabs } from "@/components/WorldMainTabs";
 import { Badge } from "@/components/Badge";
 import { EmptyState } from "@/components/EmptyState";
+import { NodeSearchBox } from "@/components/NodeSearchBox";
+import { NodeTabs, type NodeTab } from "@/app/(site)/worlds/[slug]/nodes/[nodeSlug]/NodeTabs";
 import { WorldRulesTab } from "@/app/(site)/worlds/[slug]/WorldRulesTab";
 import { WorldRecentChangesTab } from "@/app/(site)/worlds/[slug]/WorldRecentChangesTab";
 import { WorldSidebar } from "@/app/(site)/worlds/[slug]/WorldSidebar";
 import { WorldQuickBar } from "@/app/(site)/worlds/[slug]/WorldQuickBar";
+import {
+  WorldDirectoryTab,
+  type DashboardCategoryGroup,
+  type DashboardTypeGroup,
+} from "./WorldDirectoryTab";
 import { NewWorldOnboarding } from "./NewWorldOnboarding";
+import { FALLBACK_NODE_TYPE_ORDER } from "@/lib/nodeTypeLabels";
 import { unwrapRelation } from "@/lib/unwrapRelation";
 
 const RECENT_CHANGES_LIMIT = 8;
@@ -24,7 +32,7 @@ export default async function WorldDashboardPage({
   const { slug } = await params;
   const sp = await searchParams;
   const isNewlyCreated = sp.new === "1";
-  await requireUser();
+  const user = await requireUser();
   const supabase = await createClient();
 
   const { data: world } = await supabase
@@ -39,10 +47,16 @@ export default async function WorldDashboardPage({
 
   const owner = unwrapRelation(world.profiles);
 
+  // 電腦版把「世界導讀/條目與節點目錄/企劃規則與手冊/近期變更/搜尋」
+  // 收回同一頁用 client tab 切換(維持改版前的做法,不用整頁換頁),
+  // 所以節點/分類/關係線這幾份跟 /directory 路由重複的資料在這裡也要
+  // 撈一次——手機版另外走 WorldMainTabs 的路由式分頁,不用到這些。
   const [
     { data: isStaff },
     { data: isAdmin },
     { data: nodes },
+    { data: relationships },
+    { data: categories },
     { data: worldRules },
     { data: recentNodes },
     bannerUrl,
@@ -52,8 +66,24 @@ export default async function WorldDashboardPage({
     supabase.rpc("is_world_admin", { p_world_id: world.id }),
     supabase
       .from("nodes")
-      .select("id, node_type, edit_mode, characters(character_type)")
-      .eq("world_id", world.id),
+      .select(
+        "id, title, slug, node_type, status, is_placeholder, creator_id, category_id, edit_mode, characters(character_type, owner_id, profiles(display_name, username, email))",
+      )
+      .eq("world_id", world.id)
+      .order("node_type")
+      .order("title"),
+    supabase
+      .from("relationships")
+      .select(
+        "id, label, status, node_a:nodes!relationships_node_a_id_fkey(title), node_b:nodes!relationships_node_b_id_fkey(title)",
+      )
+      .eq("world_id", world.id)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("world_content_categories")
+      .select("id, name, description, accepts_submissions, parent_id")
+      .eq("world_id", world.id)
+      .order("order_index", { ascending: true }),
     supabase
       .from("world_rule_fields")
       .select("id, label, content")
@@ -78,6 +108,145 @@ export default async function WorldDashboardPage({
   const pcCount = nodeRows.filter(
     (n) => n.node_type === "character" && unwrapRelation(n.characters)?.character_type === "pc",
   ).length;
+
+  const uncategorizedNodes = nodeRows.filter((n) => n.category_id == null);
+  const characterNodes = uncategorizedNodes.filter((n) => n.node_type === "character");
+  const categoryGroups: DashboardCategoryGroup[] = (categories ?? []).map((category) => ({
+    category,
+    nodes: nodeRows.filter((n) => n.category_id === category.id),
+  }));
+  const uncategorizedByType: DashboardTypeGroup[] = FALLBACK_NODE_TYPE_ORDER.map((nodeType) => ({
+    nodeType,
+    nodes: uncategorizedNodes.filter((n) => n.node_type === nodeType),
+  })).filter((g) => g.nodes.length > 0);
+
+  const descriptionContent = world.description ? (
+    <p className="max-w-2xl whitespace-pre-wrap text-sm text-muted-foreground">
+      {world.description}
+    </p>
+  ) : (
+    <EmptyState
+      title="這個世界觀還沒有介紹文字"
+      description="寫一段導讀,讓來訪的人快速了解這個世界觀的樣貌。"
+      actionHref={isStaff ? `/dashboard/worlds/${world.slug}/settings` : undefined}
+      actionLabel={isStaff ? "撰寫第一篇導讀" : undefined}
+    />
+  );
+
+  const desktopTabs: NodeTab[] = [
+    { key: "overview", label: "世界導讀", content: descriptionContent },
+    {
+      key: "directory",
+      label: "條目與節點目錄",
+      content: (
+        <WorldDirectoryTab
+          categoryGroups={categoryGroups}
+          uncategorizedByType={uncategorizedByType}
+          characterNodes={characterNodes}
+          relationships={relationships}
+          defaultPcQuota={world.default_pc_quota}
+          worldSlug={world.slug}
+          currentUserId={user.id}
+        />
+      ),
+    },
+    {
+      key: "rules",
+      label: "企劃規則與手冊",
+      content: (
+        <WorldRulesTab
+          worldRules={worldRules}
+          manageHref={isStaff ? `/dashboard/worlds/${world.slug}/rules` : undefined}
+        />
+      ),
+    },
+    {
+      key: "recent",
+      label: "近期變更",
+      content: (
+        <WorldRecentChangesTab
+          nodes={recentNodes}
+          basePath={`/dashboard/worlds/${world.slug}/nodes`}
+        />
+      ),
+    },
+    {
+      key: "search",
+      label: "搜尋",
+      content: (
+        <NodeSearchBox worldId={world.id} basePath={`/dashboard/worlds/${world.slug}/nodes`} />
+      ),
+    },
+  ];
+
+  const managementNavMenu = (
+    <>
+      <Link
+        href={`/worlds/${world.slug}`}
+        className="rounded-md px-3 py-1.5 hover:bg-surface hover:underline"
+      >
+        公開頁面
+      </Link>
+      <Link
+        href={`/dashboard/worlds/${world.slug}/story`}
+        className="rounded-md px-3 py-1.5 hover:bg-surface hover:underline"
+      >
+        故事時間軸
+      </Link>
+      <Link
+        href={`/dashboard/worlds/${world.slug}/map`}
+        className="rounded-md px-3 py-1.5 hover:bg-surface hover:underline"
+      >
+        關係圖譜
+      </Link>
+      <Link
+        href={`/dashboard/worlds/${world.slug}/worldmap`}
+        className="rounded-md px-3 py-1.5 hover:bg-surface hover:underline"
+      >
+        世界地圖
+      </Link>
+      {isStaff && (
+        <Link
+          href={`/dashboard/worlds/${world.slug}/character-template`}
+          className="rounded-md px-3 py-1.5 hover:bg-surface hover:underline"
+        >
+          角色卡設定
+        </Link>
+      )}
+      {isStaff && (
+        <Link
+          href={`/dashboard/worlds/${world.slug}/categories`}
+          className="rounded-md px-3 py-1.5 hover:bg-surface hover:underline"
+        >
+          內容分類
+        </Link>
+      )}
+      {isStaff && !world.is_solo && (
+        <Link
+          href={`/dashboard/worlds/${world.slug}/reports`}
+          className="rounded-md px-3 py-1.5 hover:bg-surface hover:underline"
+        >
+          檢舉列表
+        </Link>
+      )}
+      {isAdmin && !world.is_solo && (
+        <Link
+          href={`/dashboard/worlds/${world.slug}/members`}
+          className="rounded-md px-3 py-1.5 hover:bg-surface hover:underline"
+        >
+          成員
+        </Link>
+      )}
+      {isStaff && (
+        <Link
+          href={`/dashboard/worlds/${world.slug}/settings`}
+          className="rounded-md px-3 py-1.5 hover:bg-surface hover:underline"
+        >
+          世界觀設定
+        </Link>
+      )}
+    </>
+  );
 
   return (
     <div>
@@ -110,79 +279,14 @@ export default async function WorldDashboardPage({
         />
       </div>
 
-      <div className="mt-8">
-        <WorldMainTabs basePath={`/dashboard/worlds/${world.slug}`} />
-      </div>
-
-      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-8">
-        <div className="lg:order-2 lg:col-span-4">
-          <WorldSidebar
-            navMenu={
-              <>
-                <Link
-                  href={`/worlds/${world.slug}`}
-                  className="rounded-md px-3 py-1.5 hover:bg-surface hover:underline"
-                >
-                  公開頁面
-                </Link>
-                {isStaff && (
-                  <Link
-                    href={`/dashboard/worlds/${world.slug}/character-template`}
-                    className="rounded-md px-3 py-1.5 hover:bg-surface hover:underline"
-                  >
-                    角色卡設定
-                  </Link>
-                )}
-                {isStaff && (
-                  <Link
-                    href={`/dashboard/worlds/${world.slug}/categories`}
-                    className="rounded-md px-3 py-1.5 hover:bg-surface hover:underline"
-                  >
-                    內容分類
-                  </Link>
-                )}
-                {isStaff && !world.is_solo && (
-                  <Link
-                    href={`/dashboard/worlds/${world.slug}/reports`}
-                    className="rounded-md px-3 py-1.5 hover:bg-surface hover:underline"
-                  >
-                    檢舉列表
-                  </Link>
-                )}
-                {isAdmin && !world.is_solo && (
-                  <Link
-                    href={`/dashboard/worlds/${world.slug}/members`}
-                    className="rounded-md px-3 py-1.5 hover:bg-surface hover:underline"
-                  >
-                    成員
-                  </Link>
-                )}
-                {isStaff && (
-                  <Link
-                    href={`/dashboard/worlds/${world.slug}/settings`}
-                    className="rounded-md px-3 py-1.5 hover:bg-surface hover:underline"
-                  >
-                    世界觀設定
-                  </Link>
-                )}
-              </>
-            }
-          />
+      {/* 手機版(< lg):維持路由式的單一階層主分頁,這塊先不要動。 */}
+      <div className="lg:hidden">
+        <div className="mt-8">
+          <WorldMainTabs basePath={`/dashboard/worlds/${world.slug}`} />
         </div>
 
-        <div className="lg:order-1 lg:col-span-8 lg:min-w-0 flex flex-col gap-8">
-          {world.description ? (
-            <p className="max-w-2xl whitespace-pre-wrap text-sm text-muted-foreground">
-              {world.description}
-            </p>
-          ) : (
-            <EmptyState
-              title="這個世界觀還沒有介紹文字"
-              description="寫一段導讀,讓來訪的人快速了解這個世界觀的樣貌。"
-              actionHref={isStaff ? `/dashboard/worlds/${world.slug}/settings` : undefined}
-              actionLabel={isStaff ? "撰寫第一篇導讀" : undefined}
-            />
-          )}
+        <div className="mt-6 flex flex-col gap-8">
+          {descriptionContent}
 
           <WorldRulesTab
             worldRules={worldRules}
@@ -193,6 +297,18 @@ export default async function WorldDashboardPage({
             nodes={recentNodes}
             basePath={`/dashboard/worlds/${world.slug}/nodes`}
           />
+        </div>
+      </div>
+
+      {/* 電腦版(lg 以上):維持改版前的左右兩欄——右側邊欄放導覽/管理連結,
+          左側內容用 client tab 切換(不換頁),不用手機版那套路由式主分頁。 */}
+      <div className="mt-8 hidden lg:grid lg:grid-cols-12 lg:gap-8">
+        <div className="lg:order-2 lg:col-span-4">
+          <WorldSidebar navMenu={managementNavMenu} />
+        </div>
+
+        <div className="lg:order-1 lg:col-span-8 lg:min-w-0">
+          <NodeTabs tabs={desktopTabs} />
         </div>
       </div>
     </div>

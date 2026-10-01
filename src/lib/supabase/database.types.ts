@@ -732,6 +732,18 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["site_rule_fields"]["Row"]>;
         Relationships: [];
       };
+      site_settings: {
+        Row: {
+          id: boolean;
+          hero_title: string;
+          hero_tagline: string;
+          disclaimer_content: string;
+          updated_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["site_settings"]["Row"]>;
+        Update: Partial<Database["public"]["Tables"]["site_settings"]["Row"]>;
+        Relationships: [];
+      };
       world_rule_fields: {
         Row: {
           id: string;

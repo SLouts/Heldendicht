@@ -75,8 +75,8 @@ function parseBlocks(text: string): Block[] {
 
 // 連結、粗體、斜體都只支援一層,不處理巢狀(例如粗體裡面再斜體)——規則
 // 欄位只是簡短說明文字,不需要完整 CommonMark。網址只接受 /開頭的站內
-// 相對路徑,或 http(s):// 開頭的外部網址,其餘一律當純文字顯示,避免
-// javascript: 之類的網址被當成連結執行。
+// 相對路徑、http(s):// 開頭的外部網址,或 mailto: 開頭的信箱連結,其餘
+// 一律當純文字顯示,避免 javascript: 之類的網址被當成連結執行。
 const INLINE_PATTERN = /\[([^[\]]+)\]\(([^\s()]+)\)|\*\*([^*]+)\*\*|\*([^*]+)\*/g;
 
 function renderInline(text: string): ReactNode[] {
@@ -111,6 +111,16 @@ function renderInline(text: string): ReactNode[] {
             href={url}
             target="_blank"
             rel="noopener noreferrer"
+            className="text-badge-info-fg underline decoration-badge-info-fg/50"
+          >
+            {label}
+          </a>,
+        );
+      } else if (/^mailto:/i.test(url)) {
+        parts.push(
+          <a
+            key={key++}
+            href={url}
             className="text-badge-info-fg underline decoration-badge-info-fg/50"
           >
             {label}

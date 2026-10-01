@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/dal";
 import { RecentActivityList, type RecentActivityItem } from "./RecentActivityList";
 import { PlatformFeatures } from "./PlatformFeatures";
+import { MarkdownText } from "@/components/MarkdownText";
 import { unwrapRelation } from "@/lib/unwrapRelation";
 
 /**
@@ -16,6 +17,12 @@ import { unwrapRelation } from "@/lib/unwrapRelation";
 export default async function Home() {
   const user = await getCurrentUser();
   const supabase = await createClient();
+
+  const { data: siteSettings } = await supabase
+    .from("site_settings")
+    .select("hero_title, hero_tagline, disclaimer_content")
+    .eq("id", true)
+    .single();
 
   const { data: recentNodes } = await supabase
     .from("nodes")
@@ -82,25 +89,20 @@ export default async function Home() {
       <main className="mx-auto w-full max-w-7xl flex-1 px-6 py-12">
         <section className="py-8 text-center">
           <h1 className="font-display text-4xl font-bold tracking-tight sm:text-5xl">
-            編織架空宇宙,記錄英雄敘事
+            {siteSettings?.hero_title ?? "編織架空宇宙,記錄英雄敘事"}
           </h1>
           <p className="mt-4 text-lg text-muted-foreground">
-            跟其他玩家一起建立世界觀、經營角色,把設定跟故事留在同一個地方。
+            {siteSettings?.hero_tagline ??
+              "跟其他玩家一起建立世界觀、經營角色,把設定跟故事留在同一個地方。"}
           </p>
-          <p className="mx-auto mt-4 max-w-2xl text-xs text-muted-foreground">
-            Heldendicht 目前處於系統建置與公開測試階段。本站所有展示資料皆為測試用途,平台不對資料遺失、異常或非預期之系統變更負擔保責任,請創作者務必自行保留本地備份。投稿或瀏覽前請先閱讀
-            <Link href="/rules" className="underline underline-offset-2 hover:text-foreground">
-              全站規則
-            </Link>
-            ,若有系統問題或意見反饋,歡迎來信至{" "}
-            <a
-              href="mailto:heldendicht.cit@gmail.com"
-              className="underline underline-offset-2 hover:text-foreground"
-            >
-              heldendicht.cit@gmail.com
-            </a>
-            。
-          </p>
+          <div className="mx-auto mt-4 max-w-2xl text-xs text-muted-foreground [&_p]:mt-0 [&_p]:text-xs">
+            <MarkdownText
+              text={
+                siteSettings?.disclaimer_content ??
+                "Heldendicht 目前處於系統建置與公開測試階段。本站所有展示資料皆為測試用途,平台不對資料遺失、異常或非預期之系統變更負擔保責任,請創作者務必自行保留本地備份。投稿或瀏覽前請先閱讀[全站規則](/rules),若有系統問題或意見反饋,歡迎來信至 [heldendicht.cit@gmail.com](mailto:heldendicht.cit@gmail.com)。"
+              }
+            />
+          </div>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <Link
               href="/worlds"

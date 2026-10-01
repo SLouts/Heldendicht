@@ -80,18 +80,8 @@ export default async function DashboardPage() {
 
       {isSiteAdmin && (
         <p className="text-sm text-muted-foreground">
-          站務工具:
-          <Link href="/dashboard/admin/invite-codes" className="ml-1 underline">
-            邀請碼管理
-          </Link>
-          <Link href="/dashboard/admin/reset-password" className="ml-3 underline">
-            手動重設密碼
-          </Link>
-          <Link href="/dashboard/admin/rules" className="ml-3 underline">
-            全站規則
-          </Link>
-          <Link href="/dashboard/admin/world-deletion-requests" className="ml-3 underline">
-            世界觀刪除申請
+          <Link href="/dashboard/admin" className="underline">
+            站務工具 →
           </Link>
         </p>
       )}

@@ -96,8 +96,8 @@ export default async function WorldDeletionRequestsPage() {
 
 function BackLink() {
   return (
-    <Link href="/dashboard" className="text-sm text-muted-foreground hover:underline">
-      ← 回後台首頁
+    <Link href="/dashboard/admin" className="text-sm text-muted-foreground hover:underline">
+      ← 回站務首頁
     </Link>
   );
 }

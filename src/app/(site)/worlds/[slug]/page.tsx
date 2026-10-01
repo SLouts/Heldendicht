@@ -15,6 +15,7 @@ import { WorldRecentChangesTab } from "./WorldRecentChangesTab";
 import { WorldSidebar } from "./WorldSidebar";
 import { WorldQuickBar } from "./WorldQuickBar";
 import { WorldDirectoryTab, type CategoryGroup, type TypeGroup } from "./WorldDirectoryTab";
+import { WorldAnnouncementsSection } from "./WorldAnnouncementsSection";
 import { FALLBACK_NODE_TYPE_ORDER } from "@/lib/nodeTypeLabels";
 import { unwrapRelation } from "@/lib/unwrapRelation";
 
@@ -58,6 +59,7 @@ export default async function WorldPage({
     { data: worldRules },
     { data: recentNodes },
     { data: firstMapLayer },
+    { data: announcements },
     bannerUrl,
     iconUrl,
   ] = await Promise.all([
@@ -100,6 +102,11 @@ export default async function WorldPage({
         .order("order_index", { ascending: true })
         .limit(1)
         .maybeSingle(),
+      supabase
+        .from("world_announcements")
+        .select("id, title, content, created_at, updated_at")
+        .eq("world_id", world.id)
+        .order("created_at", { ascending: false }),
       getWorldMediaSignedUrl(world.banner_path),
       getWorldMediaSignedUrl(world.icon_path),
     ]);
@@ -137,9 +144,14 @@ export default async function WorldPage({
     <EmptyState title="這個世界觀還沒有介紹文字" description="主辦還沒有寫下這個世界觀的導讀。" />
   );
 
+  const announcementsContent = (
+    <WorldAnnouncementsSection announcements={announcements ?? []} />
+  );
+
   const overviewTabContent = (
     <div className="flex flex-col gap-4">
       {descriptionContent}
+      {announcementsContent}
       {mapPreviewUrl && (
         <Link
           href={`/worlds/${slug}/worldmap`}
@@ -225,6 +237,8 @@ export default async function WorldPage({
 
         <div className="mt-6 flex flex-col gap-8">
           {descriptionContent}
+
+          {announcementsContent}
 
           <WorldRulesTab worldRules={worldRules} />
 

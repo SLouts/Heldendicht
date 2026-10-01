@@ -756,6 +756,40 @@ export type Database = {
           },
         ];
       };
+      world_announcements: {
+        Row: {
+          id: string;
+          world_id: string;
+          author_id: string;
+          title: string;
+          content: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["world_announcements"]["Row"]> & {
+          world_id: string;
+          author_id: string;
+          title: string;
+          content: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["world_announcements"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "world_announcements_world_id_fkey";
+            columns: ["world_id"];
+            isOneToOne: false;
+            referencedRelation: "worlds";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "world_announcements_author_id_fkey";
+            columns: ["author_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       relationships: {
         Row: {
           id: string;

@@ -22,6 +22,8 @@ import {
 } from "./WorldDirectoryTab";
 import { NewWorldOnboarding } from "./NewWorldOnboarding";
 import { WorldAdminLinks } from "./WorldAdminLinks";
+import { WorldAnnouncementsEditor } from "./WorldAnnouncementsEditor";
+import { WorldAnnouncementsSection } from "@/app/(site)/worlds/[slug]/WorldAnnouncementsSection";
 import { FALLBACK_NODE_TYPE_ORDER } from "@/lib/nodeTypeLabels";
 import { unwrapRelation } from "@/lib/unwrapRelation";
 
@@ -62,6 +64,7 @@ export default async function WorldDashboardPage({
     { data: worldRules },
     { data: recentNodes },
     { data: firstMapLayer },
+    { data: announcements },
     bannerUrl,
     iconUrl,
   ] = await Promise.all([
@@ -106,6 +109,11 @@ export default async function WorldDashboardPage({
       .order("order_index", { ascending: true })
       .limit(1)
       .maybeSingle(),
+    supabase
+      .from("world_announcements")
+      .select("id, title, content, created_at, updated_at")
+      .eq("world_id", world.id)
+      .order("created_at", { ascending: false }),
     getWorldMediaSignedUrl(world.banner_path),
     getWorldMediaSignedUrl(world.icon_path),
   ]);
@@ -147,9 +155,23 @@ export default async function WorldDashboardPage({
     />
   );
 
+  // 公告——介紹文字維持置頂,下面另外給多人共筆世界觀的主辦一個能發布
+  // 近況/活動的地方(像部落格文章)。isStaff 一律顯示編輯器(含發布表單),
+  // 其他人只顯示唯讀清單,沒有公告就整塊不顯示。
+  const announcementsContent = isStaff ? (
+    <WorldAnnouncementsEditor
+      worldId={world.id}
+      worldSlug={world.slug}
+      announcements={announcements ?? []}
+    />
+  ) : (
+    <WorldAnnouncementsSection announcements={announcements ?? []} />
+  );
+
   const overviewTabContent = (
     <div className="flex flex-col gap-4">
       {descriptionContent}
+      {announcementsContent}
       {mapPreviewUrl && (
         <Link
           href={`/dashboard/worlds/${world.slug}/worldmap`}
@@ -288,6 +310,8 @@ export default async function WorldDashboardPage({
 
         <div className="mt-6 flex flex-col gap-8">
           {descriptionContent}
+
+          {announcementsContent}
 
           <WorldRulesTab
             worldRules={worldRules}

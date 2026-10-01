@@ -6,15 +6,9 @@ import { createChapter } from "@/lib/actions/story";
 export function NewChapterForm({
   worldId,
   worldSlug,
-  scope,
-  characterId,
-  characterTitle,
 }: {
   worldId: string;
   worldSlug: string;
-  scope: "official" | "character";
-  characterId: string;
-  characterTitle?: string;
 }) {
   const [state, formAction, pending] = useActionState(createChapter, undefined);
 
@@ -22,14 +16,6 @@ export function NewChapterForm({
     <form action={formAction} className="mt-6 flex max-w-xl flex-col gap-4">
       <input type="hidden" name="worldId" value={worldId} />
       <input type="hidden" name="worldSlug" value={worldSlug} />
-      <input type="hidden" name="scope" value={scope} />
-      <input type="hidden" name="characterId" value={characterId} />
-
-      {scope === "character" && (
-        <p className="text-sm text-muted-foreground">
-          屬於角色:<span className="font-medium">{characterTitle}</span>
-        </p>
-      )}
 
       <div className="flex flex-col gap-1">
         <label htmlFor="title" className="text-sm font-medium">

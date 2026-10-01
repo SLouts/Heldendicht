@@ -1,21 +1,19 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { requireUser } from "@/lib/dal";
 import { createClient } from "@/lib/supabase/server";
 import { WorldMainTabs } from "@/components/WorldMainTabs";
 import { EmptyState } from "@/components/EmptyState";
-import { unwrapRelation } from "@/lib/unwrapRelation";
 
-type CharacterOption = { id: string; title: string; ownerId: string | null };
-
+/**
+ * 「角色時間軸」(story_chapters, scope='character')已經收掉——角色自己
+ * 的時間軸現在回到角色節點頁面的 character_timeline_events(「時間軸」
+ * 分頁),這裡只保留世界觀共用的「企劃時間軸」(scope='official')。
+ * 舊的 scope='character' 章節資料不處理,也不再有入口連過去。
+ */
 export default async function StoryPage({
   params,
-  searchParams,
 }: PageProps<"/dashboard/worlds/[slug]/story">) {
   const { slug } = await params;
-  const sp = await searchParams;
-  const tab = sp.tab === "character" ? "character" : "official";
-  const user = await requireUser();
   const supabase = await createClient();
 
   const { data: world } = await supabase
@@ -29,63 +27,14 @@ export default async function StoryPage({
     p_world_id: world.id,
   });
 
-  const { data: characterNodes } = await supabase
-    .from("nodes")
-    .select("id, title, characters(character_type, owner_id)")
+  const { data: chapters } = await supabase
+    .from("story_chapters")
+    .select("id, title, description, order_index")
     .eq("world_id", world.id)
-    .eq("node_type", "character")
-    .order("title");
+    .eq("scope", "official")
+    .order("order_index");
 
-  const pcOptions: CharacterOption[] = (characterNodes ?? [])
-    .map((n) => {
-      const c = unwrapRelation(n.characters);
-      return c?.character_type === "pc"
-        ? { id: n.id, title: n.title, ownerId: c.owner_id }
-        : null;
-    })
-    .filter((n): n is CharacterOption => n !== null);
-
-  const selectedCharacterId =
-    typeof sp.characterId === "string"
-      ? sp.characterId
-      : (pcOptions[0]?.id ?? null);
-  const selectedCharacter = pcOptions.find((c) => c.id === selectedCharacterId);
-
-  let chapters: {
-    id: string;
-    title: string;
-    description: string | null;
-    order_index: number;
-  }[] = [];
-
-  if (tab === "official") {
-    const { data } = await supabase
-      .from("story_chapters")
-      .select("id, title, description, order_index")
-      .eq("world_id", world.id)
-      .eq("scope", "official")
-      .order("order_index");
-    chapters = data ?? [];
-  } else if (selectedCharacterId) {
-    const { data } = await supabase
-      .from("story_chapters")
-      .select("id, title, description, order_index")
-      .eq("world_id", world.id)
-      .eq("scope", "character")
-      .eq("character_id", selectedCharacterId)
-      .order("order_index");
-    chapters = data ?? [];
-  }
-
-  const canManage =
-    tab === "official"
-      ? Boolean(isStaff)
-      : Boolean(isStaff) || selectedCharacter?.ownerId === user.id;
-
-  const newChapterHref =
-    tab === "official"
-      ? `/dashboard/worlds/${world.slug}/story/chapters/new?scope=official`
-      : `/dashboard/worlds/${world.slug}/story/chapters/new?scope=character&characterId=${selectedCharacterId}`;
+  const newChapterHref = `/dashboard/worlds/${world.slug}/story/chapters/new`;
 
   return (
     <div>
@@ -94,86 +43,27 @@ export default async function StoryPage({
         showAdminTab={Boolean(isStaff)}
       />
 
-      <div className="mt-4 flex gap-2 border-b border-border">
-        <Link
-          href={`/dashboard/worlds/${world.slug}/story?tab=official`}
-          className={
-            "px-3 py-2 text-sm " +
-            (tab === "official"
-              ? "border-b-2 border-primary font-medium"
-              : "text-muted-foreground")
-          }
-        >
-          企劃時間軸
-        </Link>
-        <Link
-          href={`/dashboard/worlds/${world.slug}/story?tab=character${
-            selectedCharacterId ? `&characterId=${selectedCharacterId}` : ""
-          }`}
-          className={
-            "px-3 py-2 text-sm " +
-            (tab === "character"
-              ? "border-b-2 border-primary font-medium"
-              : "text-muted-foreground")
-          }
-        >
-          角色時間軸
-        </Link>
-      </div>
-
-      {tab === "character" && (
-        <div className="mt-4 flex flex-wrap gap-2">
-          {pcOptions.map((c) => (
-            <Link
-              key={c.id}
-              href={`/dashboard/worlds/${world.slug}/story?tab=character&characterId=${c.id}`}
-              className={
-                "rounded-full border px-3 py-1 text-sm " +
-                (c.id === selectedCharacterId
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "border-border bg-surface hover:border-primary/50")
-              }
-            >
-              {c.title}
-            </Link>
-          ))}
-          {pcOptions.length === 0 && (
-            <p className="text-sm text-muted-foreground">這個世界觀目前還沒有 PC。</p>
-          )}
-        </div>
-      )}
-
       <div className="mt-6 flex items-center justify-between">
-        <h2 className="text-lg font-semibold">
-          {tab === "official"
-            ? "章節"
-            : selectedCharacter
-              ? `${selectedCharacter.title} 的時間軸`
-              : "請先選擇一個角色"}
-        </h2>
-        {canManage && (tab === "official" || selectedCharacterId) && (
+        <h2 className="text-lg font-semibold">章節</h2>
+        {isStaff && (
           <Link href={newChapterHref} className="text-sm underline">
             + 新增章節
           </Link>
         )}
       </div>
 
-      {chapters.length === 0 ? (
+      {(chapters ?? []).length === 0 ? (
         <div className="mt-3">
           <EmptyState
             title="目前還沒有章節"
             description="新增第一個章節,開始記錄這條時間軸的故事。"
-            actionHref={
-              canManage && (tab === "official" || selectedCharacterId) ? newChapterHref : undefined
-            }
-            actionLabel={
-              canManage && (tab === "official" || selectedCharacterId) ? "+ 新增章節" : undefined
-            }
+            actionHref={isStaff ? newChapterHref : undefined}
+            actionLabel={isStaff ? "+ 新增章節" : undefined}
           />
         </div>
       ) : (
         <ul className="mt-3 divide-y divide-border">
-          {chapters.map((chapter) => (
+          {(chapters ?? []).map((chapter) => (
             <li key={chapter.id}>
               <Link
                 href={`/dashboard/worlds/${world.slug}/story/chapters/${chapter.id}`}

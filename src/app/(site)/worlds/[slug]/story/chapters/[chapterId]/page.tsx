@@ -47,9 +47,10 @@ export default async function PublicChapterDetailPage({
     (worldNodes ?? []).map((n) => [n.title, { slug: n.slug, isPlaceholder: n.is_placeholder }]),
   );
 
-  const backHref = `/worlds/${world.slug}/story?tab=${chapter.scope}${
-    chapter.scope === "character" ? `&characterId=${chapter.character_id}` : ""
-  }`;
+  // story 列表頁已經收掉 scope='character' 的分頁跟入口,這裡統一導回
+  // 企劃時間軸列表——舊的角色章節仍可透過這個詳細頁直接檢視,只是不再
+  // 有入口連過去。
+  const backHref = `/worlds/${world.slug}/story`;
 
   return (
     <div className="mx-auto w-full max-w-2xl flex-1 px-6 py-12">

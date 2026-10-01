@@ -11,25 +11,19 @@ export type StoryFormState =
   | { fieldErrors: Record<string, string[]> }
   | undefined;
 
-const CreateChapterSchema = z
-  .object({
-    worldId: z.uuid(),
-    worldSlug: z.string().min(1),
-    scope: z.enum(["official", "character"]),
-    characterId: z.string(), // "" 代表 official,character 模式下才需要是合法 uuid
-    title: z.string().min(1, { error: "請輸入章節名稱" }),
-    description: z.string(),
-    orderIndex: z.coerce.number().int(),
-  })
-  .refine((data) => data.scope === "official" || z.uuid().safeParse(data.characterId).success, {
-    error: "請選擇這條時間軸屬於哪個角色",
-    path: ["characterId"],
-  });
+const CreateChapterSchema = z.object({
+  worldId: z.uuid(),
+  worldSlug: z.string().min(1),
+  title: z.string().min(1, { error: "請輸入章節名稱" }),
+  description: z.string(),
+  orderIndex: z.coerce.number().int(),
+});
 
 /**
- * 建立時間軸章節。scope='official' 只有世界觀 staff 能成功(story_chapters_write
- * policy 擋非 staff);scope='character' 只有這個角色的擁有者或 staff 能成功
- * (owns_character() 判斷)——這裡不重複判斷權限,交給資料庫。
+ * 建立「企劃時間軸」(scope='official')章節——角色自己的時間軸已經
+ * 改回角色節點頁面的 character_timeline_events,這裡不再支援
+ * scope='character'。只有世界觀 staff 能成功(story_chapters_write
+ * policy 擋非 staff),這裡不重複判斷權限,交給資料庫。
  */
 export async function createChapter(
   _prevState: StoryFormState,
@@ -40,8 +34,6 @@ export async function createChapter(
   const parsed = CreateChapterSchema.safeParse({
     worldId: formData.get("worldId"),
     worldSlug: formData.get("worldSlug"),
-    scope: formData.get("scope"),
-    characterId: formData.get("characterId") ?? "",
     title: formData.get("title"),
     description: formData.get("description") ?? "",
     orderIndex: formData.get("orderIndex") || 1,
@@ -55,8 +47,7 @@ export async function createChapter(
     .from("story_chapters")
     .insert({
       world_id: parsed.data.worldId,
-      scope: parsed.data.scope,
-      character_id: parsed.data.scope === "character" ? parsed.data.characterId : null,
+      scope: "official",
       title: parsed.data.title,
       description: parsed.data.description || null,
       order_index: parsed.data.orderIndex,

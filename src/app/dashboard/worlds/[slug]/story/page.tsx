@@ -89,7 +89,10 @@ export default async function StoryPage({
 
   return (
     <div>
-      <WorldMainTabs basePath={`/dashboard/worlds/${world.slug}`} />
+      <WorldMainTabs
+        basePath={`/dashboard/worlds/${world.slug}`}
+        showAdminTab={Boolean(isStaff)}
+      />
 
       <div className="mt-4 flex gap-2 border-b border-border">
         <Link

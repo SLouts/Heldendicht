@@ -74,7 +74,10 @@ export default async function WorldMapPage({
 
   return (
     <div>
-      <WorldMainTabs basePath={`/dashboard/worlds/${world.slug}`} />
+      <WorldMainTabs
+        basePath={`/dashboard/worlds/${world.slug}`}
+        showAdminTab={Boolean(isStaff)}
+      />
 
       <WorldMapView
         layers={mapLayers}

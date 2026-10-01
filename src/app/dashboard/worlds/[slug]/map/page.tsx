@@ -60,7 +60,7 @@ export default async function StoryMapPage({
   const nodeIds = graphNodes.map((n) => n.id);
   const statusMap = new Map(graphNodes.map((n) => [n.id, n.status]));
 
-  const [{ data: relationships }, { data: wikilinks }] = await Promise.all([
+  const [{ data: relationships }, { data: wikilinks }, { data: isStaff }] = await Promise.all([
     supabase
       .from("relationships")
       .select("id, node_a_id, node_b_id, label, status")
@@ -71,6 +71,7 @@ export default async function StoryMapPage({
           .select("source_node_id, target_node_id")
           .in("source_node_id", nodeIds)
       : Promise.resolve({ data: [] as { source_node_id: string; target_node_id: string }[] }),
+    supabase.rpc("is_world_staff", { p_world_id: world.id }),
   ]);
 
   const relEdges: RelEdge[] = (relationships ?? []).map((r) => ({
@@ -119,7 +120,10 @@ export default async function StoryMapPage({
 
   return (
     <div>
-      <WorldMainTabs basePath={`/dashboard/worlds/${world.slug}`} />
+      <WorldMainTabs
+        basePath={`/dashboard/worlds/${world.slug}`}
+        showAdminTab={Boolean(isStaff)}
+      />
 
       {graphNodes.length === 0 ? (
         <p className="mt-6 text-sm text-muted-foreground">這個世界觀還沒有節點。</p>

@@ -24,28 +24,30 @@ export default async function WorldDirectoryPage({
     .maybeSingle();
   if (!world) notFound();
 
-  const [{ data: nodes }, { data: relationships }, { data: categories }] = await Promise.all([
-    supabase
-      .from("nodes")
-      .select(
-        "id, title, slug, node_type, status, is_placeholder, creator_id, category_id, characters(character_type, owner_id, profiles(display_name, username, email))",
-      )
-      .eq("world_id", world.id)
-      .order("node_type")
-      .order("title"),
-    supabase
-      .from("relationships")
-      .select(
-        "id, label, status, node_a:nodes!relationships_node_a_id_fkey(title), node_b:nodes!relationships_node_b_id_fkey(title)",
-      )
-      .eq("world_id", world.id)
-      .order("created_at", { ascending: false }),
-    supabase
-      .from("world_content_categories")
-      .select("id, name, description, accepts_submissions, parent_id")
-      .eq("world_id", world.id)
-      .order("order_index", { ascending: true }),
-  ]);
+  const [{ data: nodes }, { data: relationships }, { data: categories }, { data: isStaff }] =
+    await Promise.all([
+      supabase
+        .from("nodes")
+        .select(
+          "id, title, slug, node_type, status, is_placeholder, creator_id, category_id, characters(character_type, owner_id, profiles(display_name, username, email))",
+        )
+        .eq("world_id", world.id)
+        .order("node_type")
+        .order("title"),
+      supabase
+        .from("relationships")
+        .select(
+          "id, label, status, node_a:nodes!relationships_node_a_id_fkey(title), node_b:nodes!relationships_node_b_id_fkey(title)",
+        )
+        .eq("world_id", world.id)
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("world_content_categories")
+        .select("id, name, description, accepts_submissions, parent_id")
+        .eq("world_id", world.id)
+        .order("order_index", { ascending: true }),
+      supabase.rpc("is_world_staff", { p_world_id: world.id }),
+    ]);
 
   const nodeRows = nodes ?? [];
   const uncategorizedNodes = nodeRows.filter((n) => n.category_id == null);
@@ -61,7 +63,10 @@ export default async function WorldDirectoryPage({
 
   return (
     <div>
-      <WorldMainTabs basePath={`/dashboard/worlds/${world.slug}`} />
+      <WorldMainTabs
+        basePath={`/dashboard/worlds/${world.slug}`}
+        showAdminTab={Boolean(isStaff)}
+      />
 
       <div className="mt-6 flex flex-col gap-8">
         <NodeSearchBox worldId={world.id} basePath={`/dashboard/worlds/${world.slug}/nodes`} />

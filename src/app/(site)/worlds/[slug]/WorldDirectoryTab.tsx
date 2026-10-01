@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { CollapsibleSection } from "@/components/CollapsibleSection";
 import { EmptyState } from "@/components/EmptyState";
+import { CopyTemplateRow } from "@/components/CopyTemplateRow";
 import { NODE_TYPE_LABEL, NODE_STATUS_LABEL } from "@/lib/nodeTypeLabels";
 import { nodeCategory, NODE_CATEGORY_COLOR_VARS } from "@/lib/nodeCategory";
+import { buildCharacterTemplateText } from "@/lib/characterTemplate";
 import type { Database, NodeType } from "@/lib/supabase/database.types";
 import { unwrapRelation } from "@/lib/unwrapRelation";
 
@@ -48,6 +50,8 @@ export type CategoryGroup = {
 
 export type TypeGroup = { nodeType: NodeType; nodes: DirectoryNodeRow[] };
 
+export type CategoryFieldSummary = { label: string; exampleValue: string };
+
 /**
  * 「條目與節點目錄」分頁——分類導覽(依 world_content_categories 分組)+
  * 未分類節點依 node_type 分組+角色+人際關係線,原本首頁裡這幾塊的邏輯
@@ -60,6 +64,7 @@ export function WorldDirectoryTab({
   relationships,
   defaultPcQuota,
   worldSlug,
+  fieldsByCategory,
 }: {
   categoryGroups: CategoryGroup[];
   uncategorizedByType: TypeGroup[];
@@ -67,6 +72,9 @@ export function WorldDirectoryTab({
   relationships: DirectoryRelationshipRow[] | null | undefined;
   defaultPcQuota: number;
   worldSlug: string;
+  /** 分類 id → 該分類的欄位清單,給分類清單頂端的「複製分類範本」用;
+   * 沒有任何欄位的分類不傳或傳空陣列即可,NodeList 會自動不顯示那顆按鈕。 */
+  fieldsByCategory?: Record<string, CategoryFieldSummary[]>;
 }) {
   const hasCategories = categoryGroups.length > 0;
   const isCompletelyEmpty =
@@ -94,6 +102,15 @@ export function WorldDirectoryTab({
     return <EmptyState title="這個世界觀還沒有任何節點" description="主辦還沒有新增任何地點、角色或條目。" />;
   }
 
+  // 分類沒設任何欄位的話不組範本(回傳 undefined),NodeList 就不會顯示
+  // 「複製分類範本」那顆按鈕——跟 NewNodeForm 的 NodeTemplatePreview 同一個
+  // 判斷。
+  function categoryTemplateText(categoryId: string): string | undefined {
+    const fields = fieldsByCategory?.[categoryId] ?? [];
+    if (fields.length === 0) return undefined;
+    return buildCharacterTemplateText(fields, []);
+  }
+
   return (
     <div className="flex flex-col gap-8">
       {hasCategories && (
@@ -112,7 +129,11 @@ export function WorldDirectoryTab({
                   description={category.description ?? undefined}
                   badge={<SubmissionBadge accepts={category.accepts_submissions} />}
                 >
-                  <NodeList nodes={categoryNodes} worldSlug={worldSlug} />
+                  <NodeList
+                    nodes={categoryNodes}
+                    worldSlug={worldSlug}
+                    copyTemplateText={categoryTemplateText(category.id)}
+                  />
                   {childGroups.length > 0 && (
                     <div className="mt-3 flex flex-col gap-3">
                       {childGroups.map(({ category: child, nodes: childNodes }) => (
@@ -123,7 +144,11 @@ export function WorldDirectoryTab({
                           description={child.description ?? undefined}
                           badge={<SubmissionBadge accepts={child.accepts_submissions} />}
                         >
-                          <NodeList nodes={childNodes} worldSlug={worldSlug} />
+                          <NodeList
+                            nodes={childNodes}
+                            worldSlug={worldSlug}
+                            copyTemplateText={categoryTemplateText(child.id)}
+                          />
                         </CollapsibleSection>
                       ))}
                     </div>
@@ -199,17 +224,22 @@ function characterInfo(node: DirectoryNodeRow) {
 function NodeList({
   nodes,
   worldSlug,
+  copyTemplateText,
 }: {
   nodes: DirectoryNodeRow[] | null | undefined;
   worldSlug: string;
+  copyTemplateText?: string;
 }) {
-  if (!nodes || nodes.length === 0) {
+  const hasNodes = Boolean(nodes && nodes.length > 0);
+  if (!hasNodes && !copyTemplateText) {
     return <p className="mt-3 text-sm text-muted-foreground">目前還沒有節點。</p>;
   }
 
   return (
     <ul className="mt-3 divide-y divide-border">
-      {nodes.map((node) => {
+      {copyTemplateText && <CopyTemplateRow templateText={copyTemplateText} />}
+      {!hasNodes && <li className="py-3 text-sm text-muted-foreground">目前還沒有節點。</li>}
+      {(nodes ?? []).map((node) => {
         const character = characterInfo(node);
         const category = nodeCategory({
           nodeType: node.node_type,

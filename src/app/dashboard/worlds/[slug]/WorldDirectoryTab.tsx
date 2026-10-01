@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { CollapsibleSection } from "@/components/CollapsibleSection";
 import { EmptyState } from "@/components/EmptyState";
+import { CopyTemplateRow } from "@/components/CopyTemplateRow";
 import { NODE_TYPE_LABEL, NODE_STATUS_LABEL } from "@/lib/nodeTypeLabels";
 import { nodeCategory, NODE_CATEGORY_COLOR_VARS } from "@/lib/nodeCategory";
+import { buildCharacterTemplateText } from "@/lib/characterTemplate";
 import type { Database, NodeType } from "@/lib/supabase/database.types";
 import { unwrapRelation } from "@/lib/unwrapRelation";
 
@@ -48,6 +50,8 @@ export type DashboardCategoryGroup = {
 
 export type DashboardTypeGroup = { nodeType: NodeType; nodes: DashboardNodeRow[] };
 
+export type CategoryFieldSummary = { label: string; exampleValue: string };
+
 /**
  * 後台版「條目與節點目錄」分頁——跟公開版(../[nodeSlug 以外]/WorldDirectoryTab.tsx)
  * 結構一樣,但這裡是編輯者視角:節點清單多顯示「你建立的」標籤跟完整的
@@ -65,6 +69,7 @@ export function WorldDirectoryTab({
   defaultPcQuota,
   worldSlug,
   currentUserId,
+  fieldsByCategory,
 }: {
   categoryGroups: DashboardCategoryGroup[];
   uncategorizedByType: DashboardTypeGroup[];
@@ -73,6 +78,9 @@ export function WorldDirectoryTab({
   defaultPcQuota: number;
   worldSlug: string;
   currentUserId: string;
+  /** 分類 id → 該分類的欄位清單,給分類清單頂端的「複製分類範本」用;
+   * 沒有任何欄位的分類不傳或傳空陣列即可,NodeList 會自動不顯示那顆按鈕。 */
+  fieldsByCategory?: Record<string, CategoryFieldSummary[]>;
 }) {
   const hasCategories = categoryGroups.length > 0;
   const isCompletelyEmpty =
@@ -107,6 +115,15 @@ export function WorldDirectoryTab({
     );
   }
 
+  // 分類沒設任何欄位的話不組範本(回傳 undefined),NodeList 就不會顯示
+  // 「複製分類範本」那顆按鈕——跟 NewNodeForm 的 NodeTemplatePreview 同一個
+  // 判斷。
+  function categoryTemplateText(categoryId: string): string | undefined {
+    const fields = fieldsByCategory?.[categoryId] ?? [];
+    if (fields.length === 0) return undefined;
+    return buildCharacterTemplateText(fields, []);
+  }
+
   return (
     <div className="flex flex-col gap-8">
       {hasCategories && (
@@ -130,7 +147,12 @@ export function WorldDirectoryTab({
                   description={category.description ?? undefined}
                   badge={<SubmissionBadge accepts={category.accepts_submissions} />}
                 >
-                  <NodeList nodes={categoryNodes} worldSlug={worldSlug} currentUserId={currentUserId} />
+                  <NodeList
+                    nodes={categoryNodes}
+                    worldSlug={worldSlug}
+                    currentUserId={currentUserId}
+                    copyTemplateText={categoryTemplateText(category.id)}
+                  />
                   {childGroups.length > 0 && (
                     <div className="mt-3 flex flex-col gap-3">
                       {childGroups.map(({ category: child, nodes: childNodes }) => (
@@ -145,6 +167,7 @@ export function WorldDirectoryTab({
                             nodes={childNodes}
                             worldSlug={worldSlug}
                             currentUserId={currentUserId}
+                            copyTemplateText={categoryTemplateText(child.id)}
                           />
                         </CollapsibleSection>
                       ))}
@@ -237,18 +260,23 @@ function NodeList({
   nodes,
   worldSlug,
   currentUserId,
+  copyTemplateText,
 }: {
   nodes: DashboardNodeRow[] | null | undefined;
   worldSlug: string;
   currentUserId: string;
+  copyTemplateText?: string;
 }) {
-  if (!nodes || nodes.length === 0) {
+  const hasNodes = Boolean(nodes && nodes.length > 0);
+  if (!hasNodes && !copyTemplateText) {
     return <p className="mt-3 text-sm text-muted-foreground">目前還沒有節點。</p>;
   }
 
   return (
     <ul className="mt-3 divide-y divide-border">
-      {nodes.map((node) => {
+      {copyTemplateText && <CopyTemplateRow templateText={copyTemplateText} />}
+      {!hasNodes && <li className="py-3 text-sm text-muted-foreground">目前還沒有節點。</li>}
+      {(nodes ?? []).map((node) => {
         const character = characterInfo(node);
         const category = nodeCategory({
           nodeType: node.node_type,

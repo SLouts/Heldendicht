@@ -65,6 +65,7 @@ export default async function WorldDashboardPage({
     { data: recentNodes },
     { data: firstMapLayer },
     { data: announcements },
+    { data: categoryFields },
     bannerUrl,
     iconUrl,
   ] = await Promise.all([
@@ -114,6 +115,11 @@ export default async function WorldDashboardPage({
       .select("id, title, content, created_at, updated_at")
       .eq("world_id", world.id)
       .order("created_at", { ascending: false }),
+    supabase
+      .from("world_category_fields")
+      .select("category_id, label, example_value")
+      .eq("world_id", world.id)
+      .order("order_index", { ascending: true }),
     getWorldMediaSignedUrl(world.banner_path),
     getWorldMediaSignedUrl(world.icon_path),
   ]);
@@ -141,6 +147,13 @@ export default async function WorldDashboardPage({
     nodeType,
     nodes: uncategorizedNodes.filter((n) => n.node_type === nodeType),
   })).filter((g) => g.nodes.length > 0);
+
+  // 條目目錄分類清單頂端的「複製分類範本」要用——同一份 category_id →
+  // 欄位清單的分組邏輯跟 NewNodeForm/nodes/new/page.tsx 一致。
+  const fieldsByCategory: Record<string, { label: string; exampleValue: string }[]> = {};
+  for (const f of categoryFields ?? []) {
+    (fieldsByCategory[f.category_id] ??= []).push({ label: f.label, exampleValue: f.example_value });
+  }
 
   const descriptionContent = world.description ? (
     <p className="max-w-2xl whitespace-pre-wrap text-sm text-muted-foreground">
@@ -216,6 +229,7 @@ export default async function WorldDashboardPage({
             defaultPcQuota={world.default_pc_quota}
             worldSlug={world.slug}
             currentUserId={user.id}
+            fieldsByCategory={fieldsByCategory}
           />
         </div>
       ),

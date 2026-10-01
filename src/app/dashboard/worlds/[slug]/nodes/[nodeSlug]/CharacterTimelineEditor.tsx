@@ -20,6 +20,9 @@ export type TimelineEventItem = {
   imageUrl: string | null;
   /** 防雷標記,開啟後連 description 都要點擊才會顯示。 */
   isSpoiler: boolean;
+  /** 選填——填了之後這個時間點會一起顯示在世界觀整體的橫向時間軸上。
+   * 只有這個編輯元件需要用到,NodeContentPanel 等純顯示用的呼叫端不用填。 */
+  worldYear?: number | null;
 };
 
 /**
@@ -91,6 +94,18 @@ function TimelineEventRow({
             />
             標記防雷(連描述都要點擊才會顯示)
           </label>
+          <div className="flex flex-col gap-1">
+            <label htmlFor={`worldYear-${event.id}`} className="text-xs text-muted-foreground">
+              世界觀年份(選填,填了會一起顯示在企劃時間軸上)
+            </label>
+            <input
+              id={`worldYear-${event.id}`}
+              name="worldYear"
+              type="number"
+              defaultValue={event.worldYear ?? undefined}
+              className="w-32 rounded-lg border border-border bg-background px-3 py-1.5 text-sm"
+            />
+          </div>
           {state && "error" in state && (
             <p className="text-sm text-danger">{state.error}</p>
           )}
@@ -282,6 +297,17 @@ export function CharacterTimelineEditor({
             <input type="checkbox" name="isSpoiler" />
             標記防雷(連描述都要點擊才會顯示)
           </label>
+          <div className="flex flex-col gap-1">
+            <label htmlFor="newEventWorldYear" className="text-xs text-muted-foreground">
+              世界觀年份(選填,填了會一起顯示在企劃時間軸上)
+            </label>
+            <input
+              id="newEventWorldYear"
+              name="worldYear"
+              type="number"
+              className="w-32 rounded-lg border border-border bg-surface px-3 py-1.5 text-sm"
+            />
+          </div>
           {createState && "error" in createState && (
             <p className="text-sm text-danger">{createState.error}</p>
           )}

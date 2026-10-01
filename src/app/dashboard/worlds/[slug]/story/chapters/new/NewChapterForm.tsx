@@ -32,19 +32,40 @@ export function NewChapterForm({
         )}
       </div>
 
-      <div className="flex flex-col gap-1">
-        <label htmlFor="orderIndex" className="text-sm font-medium">
-          順序(數字越小越前面)
-        </label>
-        <input
-          id="orderIndex"
-          name="orderIndex"
-          type="number"
-          defaultValue={1}
-          required
-          className="w-32 rounded-lg border border-border bg-surface px-3 py-2"
-        />
+      <div className="flex gap-4">
+        <div className="flex flex-col gap-1">
+          <label htmlFor="yearStart" className="text-sm font-medium">
+            起始年份
+          </label>
+          <input
+            id="yearStart"
+            name="yearStart"
+            type="number"
+            required
+            className="w-32 rounded-lg border border-border bg-surface px-3 py-2"
+          />
+          {state && "fieldErrors" in state && state.fieldErrors.yearStart && (
+            <p className="text-sm text-danger">{state.fieldErrors.yearStart[0]}</p>
+          )}
+        </div>
+        <div className="flex flex-col gap-1">
+          <label htmlFor="yearEnd" className="text-sm font-medium">
+            結束年份(選填)
+          </label>
+          <input
+            id="yearEnd"
+            name="yearEnd"
+            type="number"
+            className="w-32 rounded-lg border border-border bg-surface px-3 py-2"
+          />
+          {state && "fieldErrors" in state && state.fieldErrors.yearEnd && (
+            <p className="text-sm text-danger">{state.fieldErrors.yearEnd[0]}</p>
+          )}
+        </div>
       </div>
+      <p className="-mt-2 text-xs text-muted-foreground">
+        用世界觀自己的曆法填年份即可(可以是負數)。這個章節會照年份顯示在企劃時間軸上;只填起始年份代表單一時間點,兩個都填代表橫跨一段年份。
+      </p>
 
       <div className="flex flex-col gap-1">
         <label htmlFor="description" className="text-sm font-medium">

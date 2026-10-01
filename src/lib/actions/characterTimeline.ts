@@ -33,6 +33,14 @@ const TimelineEventSchema = z.object({
     .max(500, { error: "描述最多 500 字" }),
   content: z.string().trim().max(3000, { error: "內文最多 3000 字" }),
   isSpoiler: z.boolean(),
+  // 選填——填了之後這個時間點會一起顯示在世界觀整體(企劃)的橫向時間軸
+  // 上,跟官方章節並排,不填就只留在這個角色自己的時間軸裡(維持原狀)。
+  worldYear: z
+    .string()
+    .trim()
+    .refine((v) => v === "" || Number.isInteger(Number(v)), {
+      error: "世界觀年份請輸入整數",
+    }),
 });
 
 /**
@@ -63,6 +71,7 @@ export async function createTimelineEvent(
     description: formData.get("description") ?? "",
     content: formData.get("content") ?? "",
     isSpoiler: formData.get("isSpoiler") === "on",
+    worldYear: formData.get("worldYear") ?? "",
   });
   if (!parsed.success) {
     return { fieldErrors: parsed.error.flatten().fieldErrors };
@@ -87,14 +96,32 @@ export async function createTimelineEvent(
     .limit(1)
     .maybeSingle();
 
-  const { error } = await supabase.from("character_timeline_events").insert({
+  const worldYear = parsed.data.worldYear === "" ? null : Number(parsed.data.worldYear);
+
+  // migration 034 套用前 character_timeline_events 還沒有 world_year 這欄,
+  // 帶這欄 insert 會直接失敗——接住那個失敗,退回不含這欄的 insert,讓
+  // 新增時間點在套用 migration 之前還能正常運作,只是沒辦法填世界觀年份。
+  const withYear = await supabase.from("character_timeline_events").insert({
     node_id: nodeId,
     label: parsed.data.label,
     description: parsed.data.description,
     content: parsed.data.content,
     is_spoiler: parsed.data.isSpoiler,
     order_index: (last?.order_index ?? -1) + 1,
+    world_year: worldYear,
   });
+  const error = withYear.error
+    ? (
+        await supabase.from("character_timeline_events").insert({
+          node_id: nodeId,
+          label: parsed.data.label,
+          description: parsed.data.description,
+          content: parsed.data.content,
+          is_spoiler: parsed.data.isSpoiler,
+          order_index: (last?.order_index ?? -1) + 1,
+        })
+      ).error
+    : null;
   if (error) {
     return { error: "新增失敗,請確認你有這個節點的編輯權限" };
   }
@@ -126,13 +153,18 @@ export async function updateTimelineEvent(
     description: formData.get("description") ?? "",
     content: formData.get("content") ?? "",
     isSpoiler: formData.get("isSpoiler") === "on",
+    worldYear: formData.get("worldYear") ?? "",
   });
   if (!parsed.success) {
     return { fieldErrors: parsed.error.flatten().fieldErrors };
   }
 
+  const worldYear = parsed.data.worldYear === "" ? null : Number(parsed.data.worldYear);
   const supabase = await createClient();
-  const { error, count } = await supabase
+
+  // migration 034 套用前還沒有 world_year 這欄,帶這欄 update 會直接
+  // 失敗——接住那個失敗,退回不含這欄的 update。
+  const withYear = await supabase
     .from("character_timeline_events")
     .update(
       {
@@ -140,11 +172,27 @@ export async function updateTimelineEvent(
         description: parsed.data.description,
         content: parsed.data.content,
         is_spoiler: parsed.data.isSpoiler,
+        world_year: worldYear,
         updated_at: new Date().toISOString(),
       },
       { count: "exact" },
     )
     .eq("id", eventId);
+  const { error, count } = withYear.error
+    ? await supabase
+        .from("character_timeline_events")
+        .update(
+          {
+            label: parsed.data.label,
+            description: parsed.data.description,
+            content: parsed.data.content,
+            is_spoiler: parsed.data.isSpoiler,
+            updated_at: new Date().toISOString(),
+          },
+          { count: "exact" },
+        )
+        .eq("id", eventId)
+    : withYear;
   if (error || count === 0) {
     return { error: "更新失敗,請確認你有這個節點的編輯權限" };
   }

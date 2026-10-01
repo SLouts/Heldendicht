@@ -8,13 +8,15 @@ export function EditChapterForm({
   worldSlug,
   title,
   description,
-  orderIndex,
+  yearStart,
+  yearEnd,
 }: {
   chapterId: string;
   worldSlug: string;
   title: string;
   description: string;
-  orderIndex: number;
+  yearStart: number | null;
+  yearEnd: number | null;
 }) {
   const [state, formAction, pending] = useActionState(updateChapter, undefined);
 
@@ -36,18 +38,38 @@ export function EditChapterForm({
         />
       </div>
 
-      <div className="flex flex-col gap-1">
-        <label htmlFor="orderIndex" className="text-sm font-medium">
-          順序
-        </label>
-        <input
-          id="orderIndex"
-          name="orderIndex"
-          type="number"
-          defaultValue={orderIndex}
-          required
-          className="w-32 rounded-lg border border-border bg-surface px-3 py-2"
-        />
+      <div className="flex gap-4">
+        <div className="flex flex-col gap-1">
+          <label htmlFor="yearStart" className="text-sm font-medium">
+            起始年份
+          </label>
+          <input
+            id="yearStart"
+            name="yearStart"
+            type="number"
+            defaultValue={yearStart ?? undefined}
+            required
+            className="w-32 rounded-lg border border-border bg-surface px-3 py-2"
+          />
+          {state && "fieldErrors" in state && state.fieldErrors.yearStart && (
+            <p className="text-sm text-danger">{state.fieldErrors.yearStart[0]}</p>
+          )}
+        </div>
+        <div className="flex flex-col gap-1">
+          <label htmlFor="yearEnd" className="text-sm font-medium">
+            結束年份(選填)
+          </label>
+          <input
+            id="yearEnd"
+            name="yearEnd"
+            type="number"
+            defaultValue={yearEnd ?? undefined}
+            className="w-32 rounded-lg border border-border bg-surface px-3 py-2"
+          />
+          {state && "fieldErrors" in state && state.fieldErrors.yearEnd && (
+            <p className="text-sm text-danger">{state.fieldErrors.yearEnd[0]}</p>
+          )}
+        </div>
       </div>
 
       <div className="flex flex-col gap-1">

@@ -22,14 +22,28 @@ export default async function ChapterDetailPage({
     .maybeSingle();
   if (!world) notFound();
 
-  const { data: chapter } = await supabase
+  // migration 034 套用前 story_chapters 還沒有 year_start/year_end,select
+  // 會直接失敗——接住那個失敗,退回不含這兩欄的查詢,讓章節詳細頁在套用
+  // migration 之前還能正常開啟,只是編輯表單暫時看不到年份欄位。
+  const chapterWithYears = await supabase
     .from("story_chapters")
     .select(
-      "id, scope, character_id, title, description, order_index, character:nodes!story_chapters_character_id_fkey(id, title)",
+      "id, scope, character_id, title, description, order_index, year_start, year_end, character:nodes!story_chapters_character_id_fkey(id, title)",
     )
     .eq("id", chapterId)
     .eq("world_id", world.id)
     .maybeSingle();
+  const chapter = chapterWithYears.error
+    ? await supabase
+        .from("story_chapters")
+        .select(
+          "id, scope, character_id, title, description, order_index, character:nodes!story_chapters_character_id_fkey(id, title)",
+        )
+        .eq("id", chapterId)
+        .eq("world_id", world.id)
+        .maybeSingle()
+        .then((r) => (r.data ? { ...r.data, year_start: null, year_end: null } : null))
+    : chapterWithYears.data;
   if (!chapter) notFound();
 
   const character = unwrapRelation(chapter.character);
@@ -94,7 +108,8 @@ export default async function ChapterDetailPage({
           worldSlug={world.slug}
           title={chapter.title}
           description={chapter.description ?? ""}
-          orderIndex={chapter.order_index}
+          yearStart={chapter.year_start}
+          yearEnd={chapter.year_end}
         />
       )}
 

@@ -583,6 +583,7 @@ export type Database = {
           image_path: string | null;
           is_spoiler: boolean;
           order_index: number;
+          world_year: number | null;
           created_at: string;
           updated_at: string;
         };
@@ -978,6 +979,8 @@ export type Database = {
           title: string;
           order_index: number;
           description: string | null;
+          year_start: number | null;
+          year_end: number | null;
           creator_id: string;
           created_at: string;
         };

@@ -20,6 +20,7 @@ import { ReportForm } from "@/components/ReportForm";
 import { NODE_TYPE_LABEL, NODE_STATUS_LABEL } from "@/lib/nodeTypeLabels";
 import { getNodeMediaSignedUrl } from "@/lib/nodeMedia";
 import { unwrapRelation } from "@/lib/unwrapRelation";
+import { fetchCharacterTimelineEvents } from "@/lib/storyTimeline";
 
 export default async function NodeDetailPage({
   params,
@@ -64,7 +65,6 @@ export default async function NodeDetailPage({
     { data: characterFieldDefs },
     { data: characterFieldValues },
     { data: categories },
-    { data: timelineEvents },
     { data: categoryFieldDefs },
     { data: categoryFieldValues },
   ] = await Promise.all([
@@ -124,13 +124,6 @@ export default async function NodeDetailPage({
       .select("id, name, accepts_submissions, parent_id")
       .eq("world_id", world.id)
       .order("order_index", { ascending: true }),
-    node.node_type === "character"
-      ? supabase
-          .from("character_timeline_events")
-          .select("id, label, description, content, image_path, is_spoiler")
-          .eq("node_id", node.id)
-          .order("order_index", { ascending: true })
-      : Promise.resolve({ data: null }),
     node.category_id
       ? supabase
           .from("world_category_fields")
@@ -147,6 +140,11 @@ export default async function NodeDetailPage({
           .eq("node_id", node.id)
       : Promise.resolve({ data: null }),
   ]);
+
+  const timelineEvents =
+    node.node_type === "character"
+      ? await fetchCharacterTimelineEvents(supabase, node.id)
+      : [];
 
   // 一般成員只能改選開放投稿的分類,或是節點目前已經掛著的那個分類
   // (即使那個分類後來被關閉,也不會因此把選項憑空拿掉、逼他們選別的)。
@@ -247,13 +245,14 @@ export default async function NodeDetailPage({
   ]);
 
   const timelineEventItems = await Promise.all(
-    (timelineEvents ?? []).map(async (e) => ({
+    timelineEvents.map(async (e) => ({
       id: e.id,
       label: e.label,
       description: e.description,
       content: e.content,
       imageUrl: await getNodeMediaSignedUrl(e.image_path),
       isSpoiler: e.is_spoiler,
+      worldYear: e.world_year,
     })),
   );
 

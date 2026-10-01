@@ -5,10 +5,6 @@ import type { TimelineEventItem } from "./CharacterTimelineEditor";
  * 那個陽春的編輯清單(負責新增/編輯/排序/刪除,不分主題)。跟 NodeIdentityCard
  * 同一個慣例:六份都會渲染,globals.css 依 <html data-art-theme> 決定哪份可見。
  *
- * 版面是橫向的:每個事件是固定寬度的一欄,一列由左到右排開,寬度超出
- * 容器就用 overflow-x-auto 橫向捲動——排序仍然是 CharacterTimelineEditor
- * 既有的上移/下移(跟全站其他排序清單同一套慣例),這裡只負責橫向呈現。
- *
  * 沒有任何時間點就整塊不顯示(跟頭貼/立繪「不填就不顯示」同一套邏輯)。
  *
  * description(簡短描述/標題)一律常駐顯示;content(內文)/imageUrl(配圖)
@@ -77,8 +73,7 @@ function ExpandableDescription({
   );
 }
 
-/** 三個版型共用的「橫線+圓點」時間軸,只有 dot 形狀跟文字排版是可調的。
- * 每個事件固定寬度排成一列,橫線貫穿所有 dot,超出容器寬度就橫向捲動。 */
+/** 三個版型共用的「直線+圓點」時間軸,只有 dot 形狀跟文字排版是可調的。 */
 function DotTimeline({
   events,
   dotStyle = "circle",
@@ -95,45 +90,43 @@ function DotTimeline({
   currentDescriptionClassName: string;
 }) {
   return (
-    <div className="overflow-x-auto pb-1">
-      <div className="relative flex min-w-max gap-8 pt-5">
-        <div className="absolute top-[9px] right-0 left-0 h-px bg-border" />
-        {events.map((event, i) => {
-          const isCurrent = i === events.length - 1;
-          return (
-            <div key={event.id} className="relative w-44 shrink-0">
-              {dotStyle === "star" ? (
-                <span
-                  className={
-                    isCurrent
-                      ? "absolute top-0 left-0 text-sm text-primary"
-                      : "absolute top-0 left-0 text-sm text-muted-foreground"
-                  }
-                >
-                  ✦
-                </span>
-              ) : (
-                <span
-                  className={
-                    isCurrent
-                      ? "absolute top-0.5 left-0 h-2.5 w-2.5 rounded-full border-2 border-surface bg-primary"
-                      : "absolute top-0.5 left-0 h-2.5 w-2.5 rounded-full border-2 border-surface bg-border"
-                  }
-                />
-              )}
-              <div className={"pt-4 " + (isCurrent ? currentLabelClassName : labelClassName)}>
-                {event.label}
-              </div>
-              <ExpandableDescription
-                event={event}
+    <div className="relative pl-6">
+      <div className="absolute top-0.5 bottom-0.5 left-[7px] w-px bg-border" />
+      {events.map((event, i) => {
+        const isCurrent = i === events.length - 1;
+        return (
+          <div key={event.id} className={i === events.length - 1 ? "relative" : "relative pb-4"}>
+            {dotStyle === "star" ? (
+              <span
                 className={
-                  "mt-0.5 " + (isCurrent ? currentDescriptionClassName : descriptionClassName)
+                  isCurrent
+                    ? "absolute -left-6 top-0 text-sm text-primary"
+                    : "absolute -left-6 top-0 text-sm text-muted-foreground"
+                }
+              >
+                ✦
+              </span>
+            ) : (
+              <span
+                className={
+                  isCurrent
+                    ? "absolute -left-[23px] top-1 h-2.5 w-2.5 rounded-full border-2 border-surface bg-primary"
+                    : "absolute -left-[23px] top-1 h-2.5 w-2.5 rounded-full border-2 border-surface bg-border"
                 }
               />
+            )}
+            <div className={isCurrent ? currentLabelClassName : labelClassName}>
+              {event.label}
             </div>
-          );
-        })}
-      </div>
+            <ExpandableDescription
+              event={event}
+              className={
+                "mt-0.5 " + (isCurrent ? currentDescriptionClassName : descriptionClassName)
+              }
+            />
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -143,32 +136,34 @@ export function CharacterTimelineDisplay({ events }: { events: TimelineEventItem
 
   return (
     <>
-      {/* ---------- 01 劇本手稿:日誌橫欄(預設) ---------- */}
+      {/* ---------- 01 劇本手稿:日誌表格(預設) ---------- */}
       <div className="char-timeline-variant char-timeline-script border border-border bg-surface p-4">
         <h2 className="font-display mb-3 text-sm">生平時間線</h2>
-        <div className="overflow-x-auto">
-          <div className="flex min-w-max divide-x divide-border">
+        <table className="w-full border-collapse text-sm">
+          <tbody>
             {events.map((event, i) => {
               const isCurrent = i === events.length - 1;
               return (
-                <div key={event.id} className="w-48 shrink-0 px-3 leading-relaxed first:pl-0 last:pr-0">
-                  <div
+                <tr key={event.id} className={isCurrent ? undefined : "border-b border-border"}>
+                  <td
                     className={
-                      "mb-1 text-xs uppercase tracking-wide " +
+                      "w-24 whitespace-nowrap py-2 pr-2 align-top text-xs uppercase tracking-wide " +
                       (isCurrent ? "text-primary" : "text-muted-foreground")
                     }
                   >
                     {event.label}
-                  </div>
-                  <ExpandableDescription
-                    event={event}
-                    className={isCurrent ? "text-primary" : ""}
-                  />
-                </div>
+                  </td>
+                  <td className="py-2 leading-relaxed align-top">
+                    <ExpandableDescription
+                      event={event}
+                      className={isCurrent ? "text-primary" : ""}
+                    />
+                  </td>
+                </tr>
               );
             })}
-          </div>
-        </div>
+          </tbody>
+        </table>
       </div>
 
       {/* ---------- 02 田野筆記:點格紙 ---------- */}
@@ -200,31 +195,26 @@ export function CharacterTimelineDisplay({ events }: { events: TimelineEventItem
         <div className="hero-scroll-rod" />
         <div className="bg-surface scroll-foxing px-5 py-6 text-center">
           <h2 className="font-display mb-4 text-lg">生平時間線</h2>
-          <div className="overflow-x-auto">
-            <div className="flex min-w-max items-start justify-center gap-4">
-              {events.map((event, i) => {
-                const isCurrent = i === events.length - 1;
-                return (
-                  <div key={event.id} className="flex items-start gap-4">
-                    {i > 0 && <div className="mt-0.5 text-muted-foreground">✦</div>}
-                    <div className="w-40">
-                      <div
-                        className={
-                          "text-sm italic " +
-                          (isCurrent ? "text-primary" : "text-muted-foreground")
-                        }
-                      >
-                        {event.label}
-                      </div>
-                      <ExpandableDescription
-                        event={event}
-                        className={"mt-0.5 text-sm " + (isCurrent ? "text-primary" : "")}
-                      />
-                    </div>
+          <div className="flex flex-col gap-3">
+            {events.map((event, i) => {
+              const isCurrent = i === events.length - 1;
+              return (
+                <div key={event.id}>
+                  {i > 0 && <div className="mb-3 text-muted-foreground">✦</div>}
+                  <div
+                    className={
+                      "text-sm italic " + (isCurrent ? "text-primary" : "text-muted-foreground")
+                    }
+                  >
+                    {event.label}
                   </div>
-                );
-              })}
-            </div>
+                  <ExpandableDescription
+                    event={event}
+                    className={"mt-0.5 text-sm " + (isCurrent ? "text-primary" : "")}
+                  />
+                </div>
+              );
+            })}
           </div>
         </div>
         <div className="hero-scroll-rod" />
@@ -233,34 +223,32 @@ export function CharacterTimelineDisplay({ events }: { events: TimelineEventItem
       {/* ---------- 05 製圖師手記:方格野帳 ---------- */}
       <div className="char-timeline-variant char-timeline-cartographer hero-cartographer-grid relative rounded-none border-2 border-border p-5">
         <h2 className="font-display mb-3 text-lg">生平時間線</h2>
-        <div className="overflow-x-auto">
-          <div className="flex min-w-max gap-2">
-            {events.map((event, i) => {
-              const isCurrent = i === events.length - 1;
-              return (
+        <div className="flex flex-col gap-2">
+          {events.map((event, i) => {
+            const isCurrent = i === events.length - 1;
+            return (
+              <div
+                key={event.id}
+                className={
+                  "border border-dashed p-2 " +
+                  (isCurrent ? "border-primary" : "border-border")
+                }
+              >
                 <div
-                  key={event.id}
                   className={
-                    "w-48 shrink-0 border border-dashed p-2 " +
-                    (isCurrent ? "border-primary" : "border-border")
+                    "text-xs uppercase tracking-wide " +
+                    (isCurrent ? "text-primary" : "text-muted-foreground")
                   }
                 >
-                  <div
-                    className={
-                      "text-xs uppercase tracking-wide " +
-                      (isCurrent ? "text-primary" : "text-muted-foreground")
-                    }
-                  >
-                    {event.label}
-                  </div>
-                  <ExpandableDescription
-                    event={event}
-                    className={"text-sm " + (isCurrent ? "text-primary" : "")}
-                  />
+                  {event.label}
                 </div>
-              );
-            })}
-          </div>
+                <ExpandableDescription
+                  event={event}
+                  className={"text-sm " + (isCurrent ? "text-primary" : "")}
+                />
+              </div>
+            );
+          })}
         </div>
       </div>
 

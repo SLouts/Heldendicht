@@ -11,19 +11,38 @@ export type StoryFormState =
   | { fieldErrors: Record<string, string[]> }
   | undefined;
 
-const CreateChapterSchema = z.object({
-  worldId: z.uuid(),
-  worldSlug: z.string().min(1),
-  title: z.string().min(1, { error: "請輸入章節名稱" }),
-  description: z.string(),
-  orderIndex: z.coerce.number().int(),
-});
+const CreateChapterSchema = z
+  .object({
+    worldId: z.uuid(),
+    worldSlug: z.string().min(1),
+    title: z.string().min(1, { error: "請輸入章節名稱" }),
+    description: z.string(),
+    yearStart: z.coerce.number().int({ error: "請輸入這個章節的起始年份" }),
+    yearEnd: z.string(),
+  })
+  .transform((data) => ({
+    ...data,
+    yearEnd: data.yearEnd.trim() === "" ? null : Number(data.yearEnd),
+  }))
+  .refine((data) => data.yearEnd === null || Number.isInteger(data.yearEnd), {
+    error: "結束年份請輸入整數",
+    path: ["yearEnd"],
+  })
+  .refine((data) => data.yearEnd === null || data.yearEnd >= data.yearStart, {
+    error: "結束年份不能早於起始年份",
+    path: ["yearEnd"],
+  });
 
 /**
  * 建立「企劃時間軸」(scope='official')章節——角色自己的時間軸已經
  * 改回角色節點頁面的 character_timeline_events,這裡不再支援
  * scope='character'。只有世界觀 staff 能成功(story_chapters_write
  * policy 擋非 staff),這裡不重複判斷權限,交給資料庫。
+ *
+ * 章節改用「起始/結束年份」決定在企劃時間軸上的位置,不再讓主辦手動輸入
+ * order_index——那個欄位還在(unique index 還在),這裡自動算「目前這個
+ * 世界觀官方章節裡最大的 order_index + 1」寫入,純粹滿足既有約束,排序
+ * 顯示完全看 year_start。
  */
 export async function createChapter(
   _prevState: StoryFormState,
@@ -36,13 +55,24 @@ export async function createChapter(
     worldSlug: formData.get("worldSlug"),
     title: formData.get("title"),
     description: formData.get("description") ?? "",
-    orderIndex: formData.get("orderIndex") || 1,
+    yearStart: formData.get("yearStart"),
+    yearEnd: formData.get("yearEnd") ?? "",
   });
   if (!parsed.success) {
     return { fieldErrors: parsed.error.flatten().fieldErrors };
   }
 
   const supabase = await createClient();
+
+  const { data: last } = await supabase
+    .from("story_chapters")
+    .select("order_index")
+    .eq("world_id", parsed.data.worldId)
+    .eq("scope", "official")
+    .order("order_index", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
   const { data, error } = await supabase
     .from("story_chapters")
     .insert({
@@ -50,19 +80,16 @@ export async function createChapter(
       scope: "official",
       title: parsed.data.title,
       description: parsed.data.description || null,
-      order_index: parsed.data.orderIndex,
+      order_index: (last?.order_index ?? 0) + 1,
+      year_start: parsed.data.yearStart,
+      year_end: parsed.data.yearEnd,
       creator_id: user.id,
     })
     .select("id")
     .single();
 
   if (error) {
-    return {
-      error:
-        error.code === "23505"
-          ? "這個順序已經被用過了,換一個數字試試"
-          : "建立失敗,你可能沒有權限建立這條時間軸",
-    };
+    return { error: "建立失敗,你可能沒有權限建立這條時間軸" };
   }
 
   revalidatePath(`/dashboard/worlds/${parsed.data.worldSlug}/story`);
@@ -71,13 +98,27 @@ export async function createChapter(
   );
 }
 
-const UpdateChapterSchema = z.object({
-  chapterId: z.uuid(),
-  worldSlug: z.string().min(1),
-  title: z.string().min(1, { error: "請輸入章節名稱" }),
-  description: z.string(),
-  orderIndex: z.coerce.number().int(),
-});
+const UpdateChapterSchema = z
+  .object({
+    chapterId: z.uuid(),
+    worldSlug: z.string().min(1),
+    title: z.string().min(1, { error: "請輸入章節名稱" }),
+    description: z.string(),
+    yearStart: z.coerce.number().int({ error: "請輸入這個章節的起始年份" }),
+    yearEnd: z.string(),
+  })
+  .transform((data) => ({
+    ...data,
+    yearEnd: data.yearEnd.trim() === "" ? null : Number(data.yearEnd),
+  }))
+  .refine((data) => data.yearEnd === null || Number.isInteger(data.yearEnd), {
+    error: "結束年份請輸入整數",
+    path: ["yearEnd"],
+  })
+  .refine((data) => data.yearEnd === null || data.yearEnd >= data.yearStart, {
+    error: "結束年份不能早於起始年份",
+    path: ["yearEnd"],
+  });
 
 export async function updateChapter(
   _prevState: StoryFormState,
@@ -90,7 +131,8 @@ export async function updateChapter(
     worldSlug: formData.get("worldSlug"),
     title: formData.get("title"),
     description: formData.get("description") ?? "",
-    orderIndex: formData.get("orderIndex") || 1,
+    yearStart: formData.get("yearStart"),
+    yearEnd: formData.get("yearEnd") ?? "",
   });
   if (!parsed.success) {
     return { fieldErrors: parsed.error.flatten().fieldErrors };
@@ -103,16 +145,15 @@ export async function updateChapter(
       {
         title: parsed.data.title,
         description: parsed.data.description || null,
-        order_index: parsed.data.orderIndex,
+        year_start: parsed.data.yearStart,
+        year_end: parsed.data.yearEnd,
       },
       { count: "exact" },
     )
     .eq("id", parsed.data.chapterId);
 
   if (error) {
-    return {
-      error: error.code === "23505" ? "這個順序已經被用過了" : "更新失敗,請稍後再試",
-    };
+    return { error: "更新失敗,請稍後再試" };
   }
   if (count === 0) {
     return { error: "你沒有權限編輯這條時間軸" };

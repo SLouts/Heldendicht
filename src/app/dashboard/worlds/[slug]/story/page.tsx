@@ -3,12 +3,20 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { WorldMainTabs } from "@/components/WorldMainTabs";
 import { EmptyState } from "@/components/EmptyState";
+import { WorldStoryTimeline } from "@/components/WorldStoryTimeline";
+import {
+  fetchOfficialChapters,
+  fetchWorldCharacterTimelineEvents,
+} from "@/lib/storyTimeline";
 
 /**
  * 「角色時間軸」(story_chapters, scope='character')已經收掉——角色自己
  * 的時間軸現在回到角色節點頁面的 character_timeline_events(「時間軸」
  * 分頁),這裡只保留世界觀共用的「企劃時間軸」(scope='official')。
  * 舊的 scope='character' 章節資料不處理,也不再有入口連過去。
+ *
+ * 章節照年份(year_start/year_end)橫向排列,角色自己時間軸上填了
+ * 「世界觀年份」的時間點也會一起混進同一條軸線——見 WorldStoryTimeline。
  */
 export default async function StoryPage({
   params,
@@ -27,14 +35,30 @@ export default async function StoryPage({
     p_world_id: world.id,
   });
 
-  const { data: chapters } = await supabase
-    .from("story_chapters")
-    .select("id, title, description, order_index")
-    .eq("world_id", world.id)
-    .eq("scope", "official")
-    .order("order_index");
+  const [chapters, characterEvents] = await Promise.all([
+    fetchOfficialChapters(supabase, world.id),
+    fetchWorldCharacterTimelineEvents(supabase, world.id),
+  ]);
 
   const newChapterHref = `/dashboard/worlds/${world.slug}/story/chapters/new`;
+
+  const chapterItems = chapters.map((c) => ({
+    id: c.id,
+    title: c.title,
+    description: c.description,
+    yearStart: c.year_start,
+    yearEnd: c.year_end,
+    href: `/dashboard/worlds/${world.slug}/story/chapters/${c.id}`,
+  }));
+  const characterEventItems = characterEvents.map((e) => ({
+    id: e.id,
+    label: e.label,
+    description: e.description,
+    isSpoiler: e.is_spoiler,
+    worldYear: e.world_year,
+    characterTitle: e.character_title,
+    href: `/dashboard/worlds/${world.slug}/nodes/${e.character_slug}`,
+  }));
 
   return (
     <div>
@@ -52,7 +76,7 @@ export default async function StoryPage({
         )}
       </div>
 
-      {(chapters ?? []).length === 0 ? (
+      {chapterItems.length === 0 && characterEventItems.length === 0 ? (
         <div className="mt-3">
           <EmptyState
             title="目前還沒有章節"
@@ -62,26 +86,9 @@ export default async function StoryPage({
           />
         </div>
       ) : (
-        <ul className="mt-3 divide-y divide-border">
-          {(chapters ?? []).map((chapter) => (
-            <li key={chapter.id}>
-              <Link
-                href={`/dashboard/worlds/${world.slug}/story/chapters/${chapter.id}`}
-                className="block py-3 hover:underline"
-              >
-                <span className="text-xs text-muted-foreground">
-                  #{chapter.order_index}
-                </span>{" "}
-                {chapter.title}
-                {chapter.description && (
-                  <p className="mt-0.5 text-sm text-muted-foreground">
-                    {chapter.description}
-                  </p>
-                )}
-              </Link>
-            </li>
-          ))}
-        </ul>
+        <div className="mt-4">
+          <WorldStoryTimeline chapters={chapterItems} characterEvents={characterEventItems} />
+        </div>
       )}
     </div>
   );

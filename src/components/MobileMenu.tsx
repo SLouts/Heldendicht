@@ -35,7 +35,15 @@ export function MobileMenu({ children }: { children: ReactNode }) {
         <div className="absolute right-0 top-full z-20 mt-2 min-w-48 rounded-lg border border-border bg-surface p-2 shadow-sm md:hidden">
           <nav
             className="flex flex-col gap-1 text-sm [&_a]:min-h-11 [&_a]:rounded-md [&_a]:px-3 [&_a]:py-2 [&_a]:hover:bg-muted [&_button]:min-h-11 [&_button]:rounded-md [&_button]:px-3 [&_button]:py-2 [&_button]:text-left [&_button]:hover:bg-muted [&_form]:contents"
-            onClick={() => setOpen(false)}
+            onClick={() =>
+              // 延後到下一個 tick 才收合——children 裡有登出用的
+              // <form action={...}><button type="submit"> ,如果在同一個
+              // click 事件裡就把這塊 DOM 收掉(setOpen(false) 同步重繪、
+              // 把 form 從畫面上移除),瀏覽器會判定這顆 submit 按鈕已經
+              // 不在文件裡,直接取消掉這次表單送出的預設行為,導致手機版
+              // 點登出完全沒反應。setTimeout 讓送出先完成,選單才收合。
+              setTimeout(() => setOpen(false), 0)
+            }
           >
             {children}
           </nav>

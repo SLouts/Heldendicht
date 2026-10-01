@@ -308,3 +308,81 @@ export async function deleteStep(
 
   revalidatePath(`/dashboard/worlds/${worldSlug}/story/chapters/${chapterId}`);
 }
+
+const UpdateStoryTimelineRangeSchema = z
+  .object({
+    worldId: z.uuid(),
+    worldSlug: z.string().min(1),
+    yearStart: z.string(),
+    yearEnd: z.string(),
+  })
+  .transform((data) => ({
+    worldId: data.worldId,
+    worldSlug: data.worldSlug,
+    yearStart: data.yearStart.trim() === "" ? null : Number(data.yearStart),
+    yearEnd: data.yearEnd.trim() === "" ? null : Number(data.yearEnd),
+  }))
+  .refine((data) => data.yearStart === null || Number.isInteger(data.yearStart), {
+    error: "起始年份請輸入整數",
+    path: ["yearStart"],
+  })
+  .refine((data) => data.yearEnd === null || Number.isInteger(data.yearEnd), {
+    error: "結束年份請輸入整數",
+    path: ["yearEnd"],
+  })
+  .refine(
+    (data) => data.yearStart === null || data.yearEnd === null || data.yearEnd >= data.yearStart,
+    { error: "結束年份不能早於起始年份", path: ["yearEnd"] },
+  );
+
+/**
+ * 設定「企劃時間軸」橫軸要呈現的起迄年份(worlds.story_timeline_year_start/
+ * year_end)——跟每個章節各自的 year_start/year_end 是兩件事,這裡是軸線
+ * 本身的顯示範圍,讓主辦可以呈現出正確的歷史尺度,不會被目前實際有的
+ * 章節資料「擠」成一小段。只填其中一欄視同沒設定,兩欄一起清空,退回
+ * 自動依資料範圍顯示(不支援開放式區間)。
+ *
+ * 只有世界觀 admin 能成功(worlds_update_admin policy 擋非 admin 的 staff),
+ * 這裡不重複判斷權限,交給資料庫。
+ */
+export async function updateStoryTimelineRange(
+  _prevState: StoryFormState,
+  formData: FormData,
+): Promise<StoryFormState> {
+  await requireUser();
+
+  const parsed = UpdateStoryTimelineRangeSchema.safeParse({
+    worldId: formData.get("worldId"),
+    worldSlug: formData.get("worldSlug"),
+    yearStart: formData.get("yearStart") ?? "",
+    yearEnd: formData.get("yearEnd") ?? "",
+  });
+  if (!parsed.success) {
+    return { fieldErrors: parsed.error.flatten().fieldErrors };
+  }
+
+  const bothSet = parsed.data.yearStart !== null && parsed.data.yearEnd !== null;
+
+  const supabase = await createClient();
+  const { error, count } = await supabase
+    .from("worlds")
+    .update(
+      {
+        story_timeline_year_start: bothSet ? parsed.data.yearStart : null,
+        story_timeline_year_end: bothSet ? parsed.data.yearEnd : null,
+      },
+      { count: "exact" },
+    )
+    .eq("id", parsed.data.worldId);
+
+  if (error) {
+    return { error: "更新失敗,請稍後再試" };
+  }
+  if (count === 0) {
+    return { error: "你沒有權限修改這個世界觀的時間軸設定" };
+  }
+
+  revalidatePath(`/dashboard/worlds/${parsed.data.worldSlug}/story`);
+  revalidatePath(`/worlds/${parsed.data.worldSlug}/story`);
+  return undefined;
+}

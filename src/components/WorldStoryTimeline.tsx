@@ -32,9 +32,14 @@ export type TimelineCharacterEventItem = {
 export function WorldStoryTimeline({
   chapters,
   characterEvents,
+  yearRange,
 }: {
   chapters: TimelineChapterItem[];
   characterEvents: TimelineCharacterEventItem[];
+  /** 主辦自己設定的軸線顯示範圍(worlds.story_timeline_year_start/year_end)
+   * ——有設定就優先用這組當軸線端點,不管目前實際有沒有涵蓋這麼多資料;
+   * 沒設定(null/undefined)才退回用章節/時間點本身的最小/最大年份。 */
+  yearRange?: { start: number; end: number } | null;
 }) {
   const timedChapters = chapters.filter(
     (c): c is TimelineChapterItem & { yearStart: number } => c.yearStart != null,
@@ -46,17 +51,19 @@ export function WorldStoryTimeline({
     ...characterEvents.map((e) => e.worldYear),
   ];
 
-  if (years.length === 0) {
+  if (!yearRange && years.length === 0) {
     return untimedChapters.length > 0 ? (
       <ChapterPlainList chapters={untimedChapters} />
     ) : null;
   }
 
-  const minYear = Math.min(...years);
-  const maxYear = Math.max(...years);
+  const minYear = yearRange ? yearRange.start : Math.min(...years);
+  const maxYear = yearRange ? yearRange.end : Math.max(...years);
   const span = Math.max(maxYear - minYear, 1);
   const trackWidth = Math.max(640, span * 36);
-  const pct = (year: number) => ((year - minYear) / span) * 100;
+  // 章節/時間點的實際年份有可能落在主辦設定的軸線範圍之外(範圍設太窄,
+  // 或還沒更新)——夾在兩端,至少還看得到,不會整個跑出可視範圍外。
+  const pct = (year: number) => Math.min(100, Math.max(0, ((year - minYear) / span) * 100));
 
   return (
     <div>

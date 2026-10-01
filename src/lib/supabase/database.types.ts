@@ -171,6 +171,8 @@ export type Database = {
           pc_auto_approve: boolean;
           npc_auto_approve: boolean;
           is_solo: boolean;
+          story_timeline_year_start: number | null;
+          story_timeline_year_end: number | null;
           created_at: string;
           updated_at: string;
         };

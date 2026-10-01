@@ -6,6 +6,7 @@ import { WorldStoryTimeline } from "@/components/WorldStoryTimeline";
 import {
   fetchOfficialChapters,
   fetchWorldCharacterTimelineEvents,
+  fetchWorldStoryTimelineRange,
 } from "@/lib/storyTimeline";
 
 /**
@@ -30,9 +31,10 @@ export default async function PublicStoryPage({
     .maybeSingle();
   if (!world) notFound();
 
-  const [chapters, characterEvents] = await Promise.all([
+  const [chapters, characterEvents, timelineRange] = await Promise.all([
     fetchOfficialChapters(supabase, world.id),
     fetchWorldCharacterTimelineEvents(supabase, world.id),
+    fetchWorldStoryTimelineRange(supabase, world.id),
   ]);
 
   const chapterItems = chapters.map((c) => ({
@@ -59,13 +61,17 @@ export default async function PublicStoryPage({
 
       <h2 className="mt-6 text-lg font-semibold">章節</h2>
 
-      {chapterItems.length === 0 && characterEventItems.length === 0 ? (
+      {chapterItems.length === 0 && characterEventItems.length === 0 && !timelineRange ? (
         <div className="mt-3">
           <EmptyState title="目前還沒有章節" description="主辦還沒有在這條時間軸上寫下章節。" />
         </div>
       ) : (
         <div className="mt-4">
-          <WorldStoryTimeline chapters={chapterItems} characterEvents={characterEventItems} />
+          <WorldStoryTimeline
+            chapters={chapterItems}
+            characterEvents={characterEventItems}
+            yearRange={timelineRange}
+          />
         </div>
       )}
     </div>

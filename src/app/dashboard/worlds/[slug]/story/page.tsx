@@ -4,9 +4,11 @@ import { createClient } from "@/lib/supabase/server";
 import { WorldMainTabs } from "@/components/WorldMainTabs";
 import { EmptyState } from "@/components/EmptyState";
 import { WorldStoryTimeline } from "@/components/WorldStoryTimeline";
+import { StoryTimelineRangeForm } from "./StoryTimelineRangeForm";
 import {
   fetchOfficialChapters,
   fetchWorldCharacterTimelineEvents,
+  fetchWorldStoryTimelineRange,
 } from "@/lib/storyTimeline";
 
 /**
@@ -17,6 +19,8 @@ import {
  *
  * 章節照年份(year_start/year_end)橫向排列,角色自己時間軸上填了
  * 「世界觀年份」的時間點也會一起混進同一條軸線——見 WorldStoryTimeline。
+ * 軸線本身要呈現的起迄年份可以由世界觀 admin 另外設定(見
+ * StoryTimelineRangeForm),不設定就自動依資料範圍顯示。
  */
 export default async function StoryPage({
   params,
@@ -31,14 +35,14 @@ export default async function StoryPage({
     .maybeSingle();
   if (!world) notFound();
 
-  const { data: isStaff } = await supabase.rpc("is_world_staff", {
-    p_world_id: world.id,
-  });
-
-  const [chapters, characterEvents] = await Promise.all([
-    fetchOfficialChapters(supabase, world.id),
-    fetchWorldCharacterTimelineEvents(supabase, world.id),
-  ]);
+  const [{ data: isStaff }, { data: isAdmin }, chapters, characterEvents, timelineRange] =
+    await Promise.all([
+      supabase.rpc("is_world_staff", { p_world_id: world.id }),
+      supabase.rpc("is_world_admin", { p_world_id: world.id }),
+      fetchOfficialChapters(supabase, world.id),
+      fetchWorldCharacterTimelineEvents(supabase, world.id),
+      fetchWorldStoryTimelineRange(supabase, world.id),
+    ]);
 
   const newChapterHref = `/dashboard/worlds/${world.slug}/story/chapters/new`;
 
@@ -60,6 +64,9 @@ export default async function StoryPage({
     href: `/dashboard/worlds/${world.slug}/nodes/${e.character_slug}`,
   }));
 
+  const hasContent =
+    chapterItems.length > 0 || characterEventItems.length > 0 || timelineRange !== null;
+
   return (
     <div>
       <WorldMainTabs
@@ -76,7 +83,16 @@ export default async function StoryPage({
         )}
       </div>
 
-      {chapterItems.length === 0 && characterEventItems.length === 0 ? (
+      {isAdmin && (
+        <StoryTimelineRangeForm
+          worldId={world.id}
+          worldSlug={world.slug}
+          yearStart={timelineRange?.start ?? null}
+          yearEnd={timelineRange?.end ?? null}
+        />
+      )}
+
+      {!hasContent ? (
         <div className="mt-3">
           <EmptyState
             title="目前還沒有章節"
@@ -87,7 +103,11 @@ export default async function StoryPage({
         </div>
       ) : (
         <div className="mt-4">
-          <WorldStoryTimeline chapters={chapterItems} characterEvents={characterEventItems} />
+          <WorldStoryTimeline
+            chapters={chapterItems}
+            characterEvents={characterEventItems}
+            yearRange={timelineRange}
+          />
         </div>
       )}
     </div>

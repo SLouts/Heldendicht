@@ -88,6 +88,32 @@ export async function fetchCharacterTimelineEvents(
   return (fallback.data ?? []).map((e) => ({ ...e, world_year: null }));
 }
 
+/**
+ * 查主辦為這個世界觀設定的「企劃時間軸要呈現的起迄年份」——有設定(兩欄
+ * 都填)就讓畫面優先用這組範圍當軸線端點,不是自動從目前的章節/時間點
+ * 資料算最小最大值(詳見 migration 034 的說明)。只填其中一欄(開放式
+ * 區間)視同沒設定,退回自動計算,避免再處理「只知道一端,另一端要從
+ * 哪裡補」這種額外分支。
+ *
+ * migration 034 套用前 worlds 還沒有這兩欄,select 會失敗——這裡接住
+ * 失敗當作「沒設定」,不影響既有的世界觀頁面。
+ */
+export async function fetchWorldStoryTimelineRange(
+  supabase: SupabaseServerClient,
+  worldId: string,
+): Promise<{ start: number; end: number } | null> {
+  const result = await supabase
+    .from("worlds")
+    .select("story_timeline_year_start, story_timeline_year_end")
+    .eq("id", worldId)
+    .maybeSingle();
+  if (result.error || !result.data) return null;
+
+  const { story_timeline_year_start, story_timeline_year_end } = result.data;
+  if (story_timeline_year_start == null || story_timeline_year_end == null) return null;
+  return { start: story_timeline_year_start, end: story_timeline_year_end };
+}
+
 export type WorldCharacterEventRow = {
   id: string;
   label: string;

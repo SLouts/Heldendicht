@@ -16,17 +16,26 @@ const TABS = [
  * 都是各自獨立的路由(不是同一頁用 client state 切換),這裡只負責畫出
  * 一致的分頁列外觀+依目前網址判斷哪個分頁該亮起來。basePath 由呼叫端
  * 傳入 `/worlds/{slug}` 或 `/dashboard/worlds/{slug}`,同一份元件兩邊
- * 共用。
+ * 共用。showAdminTab 是手機版的「設定」管理入口(/admin 路由,對應
+ * 電腦版 NodeTabs 的「設定」分頁),預設不顯示——只有後台世界觀首頁
+ * 傳 isStaff 進來才會出現,公開頁面/非主辦成員一律看不到。
  */
-export function WorldMainTabs({ basePath }: { basePath: string }) {
+export function WorldMainTabs({
+  basePath,
+  showAdminTab = false,
+}: {
+  basePath: string;
+  showAdminTab?: boolean;
+}) {
   const pathname = usePathname();
+  const tabs = showAdminTab ? [...TABS, { suffix: "/admin", label: "設定" }] : TABS;
 
   return (
     <div
       role="tablist"
       className="flex gap-1 overflow-x-auto no-scrollbar border-b border-border"
     >
-      {TABS.map((tab) => {
+      {tabs.map((tab) => {
         const href = `${basePath}${tab.suffix}`;
         const isActive =
           tab.suffix === ""

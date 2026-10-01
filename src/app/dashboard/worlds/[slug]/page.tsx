@@ -21,6 +21,7 @@ import {
   type DashboardTypeGroup,
 } from "./WorldDirectoryTab";
 import { NewWorldOnboarding } from "./NewWorldOnboarding";
+import { WorldAdminLinks } from "./WorldAdminLinks";
 import { FALLBACK_NODE_TYPE_ORDER } from "@/lib/nodeTypeLabels";
 import { unwrapRelation } from "@/lib/unwrapRelation";
 
@@ -170,61 +171,11 @@ export default async function WorldDashboardPage({
 
   // 管理功能連結——之前分散掛在側邊欄的一排文字連結裡,跟公開頁面/
   // 故事時間軸這些一般成員也會用的導覽混在一起,主辦容易找不到。現在
-  // 收成一個獨立的「設定」分頁,側邊欄只留給所有成員共用的導覽連結。
-  const adminLinks: { href: string; label: string; description: string }[] = [
-    {
-      href: `/dashboard/worlds/${world.slug}/settings`,
-      label: "世界觀設定",
-      description: "名稱、簡介、公開範圍、橫幅與 Icon、地圖圖層、刪除世界觀",
-    },
-    {
-      href: `/dashboard/worlds/${world.slug}/character-template`,
-      label: "角色卡設定",
-      description: "角色必填欄位與補充章節範本",
-    },
-    {
-      href: `/dashboard/worlds/${world.slug}/categories`,
-      label: "內容分類",
-      description: "條目分類、各分類的自訂欄位",
-    },
-    {
-      href: `/dashboard/worlds/${world.slug}/rules`,
-      label: "企劃規則與手冊",
-      description: "編輯「規則」分頁顯示給玩家看的內容",
-    },
-    ...(!world.is_solo
-      ? [
-          {
-            href: `/dashboard/worlds/${world.slug}/reports`,
-            label: "檢舉列表",
-            description: "處理條目與關係線的檢舉",
-          },
-        ]
-      : []),
-    ...(isAdmin && !world.is_solo
-      ? [
-          {
-            href: `/dashboard/worlds/${world.slug}/members`,
-            label: "成員管理",
-            description: "邀請成員、調整權限、移除成員",
-          },
-        ]
-      : []),
-  ];
-
+  // 收成一個獨立的「設定」分頁(電腦版)/ /admin 路由(手機版),側邊欄
+  // 只留給所有成員共用的導覽連結——清單本身抽成 WorldAdminLinks,
+  // 兩邊共用同一份。
   const adminTabContent = (
-    <div className="grid gap-3 sm:grid-cols-2">
-      {adminLinks.map((l) => (
-        <Link
-          key={l.href}
-          href={l.href}
-          className="rounded-lg border border-border bg-surface p-4 transition hover:bg-muted"
-        >
-          <p className="font-display text-sm font-medium">{l.label}</p>
-          <p className="mt-1 text-xs text-muted-foreground">{l.description}</p>
-        </Link>
-      ))}
-    </div>
+    <WorldAdminLinks worldSlug={world.slug} isAdmin={Boolean(isAdmin)} isSolo={world.is_solo} />
   );
 
   const desktopTabs: NodeTab[] = [
@@ -329,7 +280,10 @@ export default async function WorldDashboardPage({
       {/* 手機版(< lg):維持路由式的單一階層主分頁,這塊先不要動。 */}
       <div className="lg:hidden">
         <div className="mt-8">
-          <WorldMainTabs basePath={`/dashboard/worlds/${world.slug}`} />
+          <WorldMainTabs
+            basePath={`/dashboard/worlds/${world.slug}`}
+            showAdminTab={Boolean(isStaff)}
+          />
         </div>
 
         <div className="mt-6 flex flex-col gap-8">

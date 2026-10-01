@@ -311,12 +311,20 @@ export default async function NodeDetailPage({
 
   return (
     <div className="max-w-2xl lg:max-w-7xl">
-      <Link
-        href={`/dashboard/worlds/${world.slug}`}
-        className="text-sm text-muted-foreground hover:underline"
-      >
-        ← 返回世界觀
-      </Link>
+      <div className="flex items-center justify-between gap-2">
+        <Link
+          href={`/dashboard/worlds/${world.slug}`}
+          className="text-sm text-muted-foreground hover:underline"
+        >
+          ← 返回世界觀
+        </Link>
+        <Link
+          href={`/worlds/${world.slug}/nodes/${node.slug}`}
+          className="text-sm text-muted-foreground hover:underline"
+        >
+          公開頁面 →
+        </Link>
+      </div>
 
       <div className="mt-2">
         <NodeHero {...heroProps} />

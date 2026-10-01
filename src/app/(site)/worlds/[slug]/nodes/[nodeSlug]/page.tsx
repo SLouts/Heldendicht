@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/dal";
 import { getAttachmentSignedUrl } from "@/lib/attachments";
 import { getNodeMediaSignedUrl } from "@/lib/nodeMedia";
 import { NodeHero } from "@/app/dashboard/worlds/[slug]/nodes/[nodeSlug]/NodeHero";
@@ -26,6 +27,8 @@ export default async function PublicNodeDetailPage({
   const { slug, nodeSlug } = await params;
   const supabase = await createClient();
 
+  const user = await getCurrentUser();
+
   const { data: world } = await supabase
     .from("worlds")
     .select("id, slug, name")
@@ -36,7 +39,7 @@ export default async function PublicNodeDetailPage({
   const { data: node } = await supabase
     .from("nodes")
     .select(
-      "id, title, slug, node_type, content, status, is_placeholder, category_id, image_path, characters(character_type, owner_id, avatar_path, illustration_path, profiles(display_name, username))",
+      "id, title, slug, node_type, content, status, is_placeholder, creator_id, edit_mode, category_id, image_path, characters(character_type, owner_id, avatar_path, illustration_path, profiles(display_name, username))",
     )
     .eq("world_id", world.id)
     .eq("slug", nodeSlug)
@@ -59,6 +62,9 @@ export default async function PublicNodeDetailPage({
     { data: categoryFieldValues },
     { data: timelineEvents },
     { data: relationships },
+    { data: isStaff },
+    { data: isMember },
+    { data: creatorIsStaff },
   ] = await Promise.all([
     supabase
       .from("wikilinks")
@@ -128,7 +134,30 @@ export default async function PublicNodeDetailPage({
       .eq("world_id", world.id)
       .or(`node_a_id.eq.${node.id},node_b_id.eq.${node.id}`)
       .order("created_at", { ascending: false }),
+    // 這三個權限 RPC 只給「切換到可編輯頁面」連結用,訪客不需要——未登入
+    // 時完全不用打這幾支 RPC,公開頁面大多數流量都是訪客,省幾次查詢。
+    user
+      ? supabase.rpc("is_world_staff", { p_world_id: world.id })
+      : Promise.resolve({ data: null }),
+    user
+      ? supabase.rpc("is_world_member", { p_world_id: world.id })
+      : Promise.resolve({ data: null }),
+    user
+      ? supabase.rpc("creator_is_world_staff", {
+          p_creator_id: node.creator_id,
+          p_world_id: world.id,
+        })
+      : Promise.resolve({ data: null }),
   ]);
+
+  // 跟後台頁面(dashboard/.../nodes/[nodeSlug]/page.tsx)同一套判斷——
+  // 只是這裡純粹用來決定要不要顯示「切換到可編輯頁面」連結,不是這個
+  // 頁面本身的寫入權限邊界(公開頁面本來就不含任何編輯操作)。
+  const canEdit =
+    Boolean(user) &&
+    (node.creator_id === user?.id ||
+      (node.edit_mode === "collaborative" && Boolean(isMember)) ||
+      (Boolean(isStaff) && Boolean(creatorIsStaff)));
 
   const valueByFieldId = new Map(
     (characterFieldValues ?? []).map((v) => [v.field_id, v.value]),
@@ -273,6 +302,7 @@ export default async function PublicNodeDetailPage({
             coverUrl={nodeImageUrl}
             illustrationUrl={node.node_type === "character" ? characterIllustrationUrl : null}
             characterFields={characterFields}
+            editHref={canEdit ? `/dashboard/worlds/${world.slug}/nodes/${node.slug}` : undefined}
           />
         </div>
 

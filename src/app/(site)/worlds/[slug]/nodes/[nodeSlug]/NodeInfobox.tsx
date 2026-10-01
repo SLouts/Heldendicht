@@ -26,6 +26,7 @@ export function NodeInfobox({
   coverUrl,
   illustrationUrl,
   characterFields,
+  editHref,
 }: {
   nodeId: string;
   worldName: string;
@@ -41,6 +42,8 @@ export function NodeInfobox({
   coverUrl: string | null;
   illustrationUrl: string | null;
   characterFields: CharacterFieldWithValue[];
+  /** 只有這個訪客對這個節點有編輯權限時才傳——切到後台可編輯頁面的連結。 */
+  editHref?: string;
 }) {
   // 有頭貼優先用頭貼當縮圖(角色節點),沒有就退回代表圖——跟 NodeHero
   // 橫幅同一套「沒有就不佔位」邏輯,不強迫塞一張預設圖。
@@ -79,6 +82,15 @@ export function NodeInfobox({
         )}
         {extraBadges}
       </div>
+
+      {editHref && (
+        <Link
+          href={editHref}
+          className="mt-3 flex w-fit items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-sm text-primary-foreground transition hover:bg-primary-hover"
+        >
+          切換到可編輯頁面
+        </Link>
+      )}
 
       <dl className="mt-3 flex flex-col gap-1.5 text-sm">
         <div className="flex items-center justify-between gap-2">

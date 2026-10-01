@@ -3,6 +3,9 @@
 import { useState } from "react";
 import { setCharacterFieldValues } from "@/lib/actions/characterFields";
 import { DynamicFieldInput } from "@/components/DynamicFieldInput";
+import { WikiLinkContent } from "./WikiLinkContent";
+
+const EMPTY_IMAGE_MAP = new Map<string, { url: string; fileName: string; isSpoiler: boolean }>();
 
 export type CharacterFieldWithValue = {
   id: string;
@@ -97,13 +100,20 @@ export function CharacterFieldsForm({
 }
 
 /** 沒有編輯權限時的唯讀顯示。compact 給節點側邊欄資訊卡這種窄欄用,
- * 固定單欄不強擠成 2/3 欄,避免標籤跟值在窄寬度下擠成兩行。 */
+ * 固定單欄不強擠成 2/3 欄,避免標籤跟值在窄寬度下擠成兩行。欄位值
+ * 跟正文一樣支援 [[名稱]] WikiLink(sync_node_wikilinks 現在也會掃欄位
+ * 值),所以用跟正文同一個 WikiLinkContent 渲染,不是直接印字串。 */
 export function CharacterFieldsDisplay({
   fields,
   compact,
+  basePath,
+  wikiLinkMap,
 }: {
   fields: CharacterFieldWithValue[];
   compact?: boolean;
+  /** 節點連結前綴,例如 `/worlds/{slug}/nodes` 或 `/dashboard/worlds/{slug}/nodes`。 */
+  basePath: string;
+  wikiLinkMap: Map<string, { slug: string; isPlaceholder: boolean }>;
 }) {
   // 沒填值的欄位整列都不顯示,不留空白列給人看到破折號。
   const filledFields = fields.filter((f) => f.value.trim() !== "");
@@ -120,7 +130,15 @@ export function CharacterFieldsDisplay({
       {filledFields.map((f) => (
         <div key={f.id} className="flex gap-1">
           <dt className="text-muted-foreground">{f.label}</dt>
-          <dd>{f.value}</dd>
+          <dd>
+            <WikiLinkContent
+              content={f.value}
+              basePath={basePath}
+              links={wikiLinkMap}
+              images={EMPTY_IMAGE_MAP}
+              className="whitespace-pre-wrap text-sm"
+            />
+          </dd>
         </div>
       ))}
     </dl>

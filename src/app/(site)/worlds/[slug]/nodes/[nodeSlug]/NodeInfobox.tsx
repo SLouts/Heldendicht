@@ -26,6 +26,7 @@ export function NodeInfobox({
   coverUrl,
   illustrationUrl,
   characterFields,
+  wikiLinkMap,
   editHref,
 }: {
   nodeId: string;
@@ -42,6 +43,8 @@ export function NodeInfobox({
   coverUrl: string | null;
   illustrationUrl: string | null;
   characterFields: CharacterFieldWithValue[];
+  /** 角色欄位值裡的 [[名稱]] WikiLink 要用——跟正文共用同一份 map。 */
+  wikiLinkMap: Map<string, { slug: string; isPlaceholder: boolean }>;
   /** 只有這個訪客對這個節點有編輯權限時才傳——切到後台可編輯頁面的連結。 */
   editHref?: string;
 }) {
@@ -111,7 +114,12 @@ export function NodeInfobox({
 
       {characterFields.some((f) => f.value.trim() !== "") && (
         <div className="mt-3 border-t border-border pt-3">
-          <CharacterFieldsDisplay fields={characterFields} compact />
+          <CharacterFieldsDisplay
+            fields={characterFields}
+            compact
+            basePath={`/worlds/${worldSlug}/nodes`}
+            wikiLinkMap={wikiLinkMap}
+          />
         </div>
       )}
 

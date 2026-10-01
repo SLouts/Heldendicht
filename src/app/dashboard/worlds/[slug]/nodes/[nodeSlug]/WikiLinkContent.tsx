@@ -7,11 +7,15 @@ export function WikiLinkContent({
   basePath,
   links,
   images,
+  className = "whitespace-pre-wrap text-sm",
 }: {
   content: string;
   basePath: string;
   links: Map<string, { slug: string; isPlaceholder: boolean }>;
   images: Map<string, { url: string; fileName: string; isSpoiler: boolean }>;
+  /** 外層想要的排版 class,預設跟原本的節點正文一樣;欄位值顯示這種
+   * 嵌在別的排版脈絡裡的場合可以傳自己的 class 蓋掉預設值。 */
+  className?: string;
 }) {
   const parts: React.ReactNode[] = [];
   let lastIndex = 0;
@@ -85,5 +89,5 @@ export function WikiLinkContent({
     parts.push(<Fragment key={key++}>{content.slice(lastIndex)}</Fragment>);
   }
 
-  return <p className="whitespace-pre-wrap text-sm">{parts}</p>;
+  return <p className={className}>{parts}</p>;
 }

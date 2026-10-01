@@ -376,7 +376,11 @@ export default async function NodeDetailPage({
                 fields={characterFields}
               />
             ) : (
-              <CharacterFieldsDisplay fields={characterFields} />
+              <CharacterFieldsDisplay
+                fields={characterFields}
+                basePath={`/dashboard/worlds/${world.slug}/nodes`}
+                wikiLinkMap={wikiLinkMap}
+              />
             ))}
 
           {node.node_type === "character" && characterIllustrationUrl && (
@@ -443,7 +447,11 @@ export default async function NodeDetailPage({
               fields={categoryFields}
             />
           ) : (
-            <CategoryFieldsDisplay fields={categoryFields} />
+            <CategoryFieldsDisplay
+              fields={categoryFields}
+              basePath={`/dashboard/worlds/${world.slug}/nodes`}
+              wikiLinkMap={wikiLinkMap}
+            />
           )}
 
           <AttachmentsSection

@@ -3,6 +3,9 @@
 import { useState } from "react";
 import { setCategoryFieldValues } from "@/lib/actions/categoryFields";
 import { DynamicFieldInput } from "@/components/DynamicFieldInput";
+import { WikiLinkContent } from "./WikiLinkContent";
+
+const EMPTY_IMAGE_MAP = new Map<string, { url: string; fileName: string; isSpoiler: boolean }>();
 
 export type CategoryFieldWithValue = {
   id: string;
@@ -111,8 +114,19 @@ export function CategoryFieldsForm({
 }
 
 /** 沒有編輯權限時的唯讀顯示——區塊式(標題+整段內容),不是 dl 短欄位。
- * 沒填值的選填欄位整塊都不顯示,不留空白區塊給人看到破折號。 */
-export function CategoryFieldsDisplay({ fields }: { fields: CategoryFieldWithValue[] }) {
+ * 沒填值的選填欄位整塊都不顯示,不留空白區塊給人看到破折號。欄位值
+ * 跟正文一樣支援 [[名稱]] WikiLink(sync_node_wikilinks 現在也會掃欄位
+ * 值),所以用跟正文同一個 WikiLinkContent 渲染,不是直接印字串。 */
+export function CategoryFieldsDisplay({
+  fields,
+  basePath,
+  wikiLinkMap,
+}: {
+  fields: CategoryFieldWithValue[];
+  /** 節點連結前綴,例如 `/worlds/{slug}/nodes` 或 `/dashboard/worlds/{slug}/nodes`。 */
+  basePath: string;
+  wikiLinkMap: Map<string, { slug: string; isPlaceholder: boolean }>;
+}) {
   const filledFields = fields.filter((f) => f.value.trim() !== "");
   if (filledFields.length === 0) return null;
 
@@ -121,7 +135,13 @@ export function CategoryFieldsDisplay({ fields }: { fields: CategoryFieldWithVal
       {filledFields.map((f) => (
         <div key={f.id}>
           <h3 className="text-sm font-semibold">{f.label}</h3>
-          <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{f.value}</p>
+          <WikiLinkContent
+            content={f.value}
+            basePath={basePath}
+            links={wikiLinkMap}
+            images={EMPTY_IMAGE_MAP}
+            className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground"
+          />
         </div>
       ))}
     </div>

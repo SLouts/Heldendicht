@@ -90,7 +90,11 @@ export function NodeContentPanel({
           )}
 
           {categoryFields && categoryFields.length > 0 && (
-            <CategoryFieldsDisplay fields={categoryFields} />
+            <CategoryFieldsDisplay
+              fields={categoryFields}
+              basePath={`/worlds/${worldSlug}/nodes`}
+              wikiLinkMap={wikiLinkMap}
+            />
           )}
 
           {fileAttachments.length > 0 && (

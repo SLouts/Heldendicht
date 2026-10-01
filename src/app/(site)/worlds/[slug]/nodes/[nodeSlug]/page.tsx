@@ -302,6 +302,7 @@ export default async function PublicNodeDetailPage({
             coverUrl={nodeImageUrl}
             illustrationUrl={node.node_type === "character" ? characterIllustrationUrl : null}
             characterFields={characterFields}
+            wikiLinkMap={wikiLinkMap}
             editHref={canEdit ? `/dashboard/worlds/${world.slug}/nodes/${node.slug}` : undefined}
           />
         </div>

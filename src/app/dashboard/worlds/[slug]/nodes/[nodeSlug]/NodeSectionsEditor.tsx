@@ -193,7 +193,7 @@ export function NodeSectionsEditor({
         <>
           <h2 className="text-lg font-semibold">補充區塊</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            像外表、技能、個人主線、時間線這類可以獨立收合的補充內容,跟上面的主要內文分開管理。
+            可以獨立收合的補充內容,跟上面的主要內文分開管理。
           </p>
         </>
       )}

@@ -8,11 +8,11 @@ const TABS = [
   { suffix: "/worldmap", label: "世界地圖" },
   { suffix: "/map", label: "關係圖譜" },
   { suffix: "/story", label: "故事時間軸" },
-  { suffix: "/directory", label: "設定百科" },
+  { suffix: "/directory", label: "世界觀百科" },
 ] as const;
 
 /**
- * 世界觀的單一階層主分頁導覽——概覽/地圖/關係圖譜/時間軸/設定百科
+ * 世界觀的單一階層主分頁導覽——概覽/地圖/關係圖譜/時間軸/世界觀百科
  * 都是各自獨立的路由(不是同一頁用 client state 切換),這裡只負責畫出
  * 一致的分頁列外觀+依目前網址判斷哪個分頁該亮起來。basePath 由呼叫端
  * 傳入 `/worlds/{slug}` 或 `/dashboard/worlds/{slug}`,同一份元件兩邊

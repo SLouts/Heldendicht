@@ -42,7 +42,11 @@ export default async function PublicStoryPage({
     title: c.title,
     description: c.description,
     yearStart: c.year_start,
+    yearStartMonth: c.year_start_month,
+    yearStartDay: c.year_start_day,
     yearEnd: c.year_end,
+    yearEndMonth: c.year_end_month,
+    yearEndDay: c.year_end_day,
     href: `/worlds/${world.slug}/story/chapters/${c.id}`,
   }));
   const characterEventItems = characterEvents.map((e) => ({
@@ -51,6 +55,8 @@ export default async function PublicStoryPage({
     description: e.description,
     isSpoiler: e.is_spoiler,
     worldYear: e.world_year,
+    worldYearMonth: e.world_year_month,
+    worldYearDay: e.world_year_day,
     characterTitle: e.character_title,
     href: `/worlds/${world.slug}/nodes/${e.character_slug}`,
   }));

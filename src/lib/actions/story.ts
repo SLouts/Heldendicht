@@ -11,6 +11,21 @@ export type StoryFormState =
   | { fieldErrors: Record<string, string[]> }
   | undefined;
 
+/**
+ * 月/日都是選填的補充精確度(見 migration 035)——空字串代表沒填,轉成
+ * null;有填就驗證是不是落在合法範圍內的整數。不驗證月份實際天數上限
+ * (例如 2 月 30 日),這是世界觀自己的曆法,不是地球西元曆。
+ */
+function optionalDatePart(min: number, max: number, label: string) {
+  return z
+    .string()
+    .trim()
+    .transform((v) => (v === "" ? null : Number(v)))
+    .refine((v) => v === null || (Number.isInteger(v) && v >= min && v <= max), {
+      error: `${label}請輸入 ${min}~${max} 的整數`,
+    });
+}
+
 const CreateChapterSchema = z
   .object({
     worldId: z.uuid(),
@@ -18,7 +33,11 @@ const CreateChapterSchema = z
     title: z.string().min(1, { error: "請輸入章節名稱" }),
     description: z.string(),
     yearStart: z.coerce.number().int({ error: "請輸入這個章節的起始年份" }),
+    yearStartMonth: optionalDatePart(1, 12, "起始月份"),
+    yearStartDay: optionalDatePart(1, 31, "起始日期"),
     yearEnd: z.string(),
+    yearEndMonth: optionalDatePart(1, 12, "結束月份"),
+    yearEndDay: optionalDatePart(1, 31, "結束日期"),
   })
   .transform((data) => ({
     ...data,
@@ -31,6 +50,18 @@ const CreateChapterSchema = z
   .refine((data) => data.yearEnd === null || data.yearEnd >= data.yearStart, {
     error: "結束年份不能早於起始年份",
     path: ["yearEnd"],
+  })
+  .refine((data) => data.yearStartDay === null || data.yearStartMonth !== null, {
+    error: "請先填起始月份",
+    path: ["yearStartDay"],
+  })
+  .refine((data) => data.yearEndMonth === null || data.yearEnd !== null, {
+    error: "請先填結束年份",
+    path: ["yearEndMonth"],
+  })
+  .refine((data) => data.yearEndDay === null || data.yearEndMonth !== null, {
+    error: "請先填結束月份",
+    path: ["yearEndDay"],
   });
 
 /**
@@ -39,10 +70,10 @@ const CreateChapterSchema = z
  * scope='character'。只有世界觀 staff 能成功(story_chapters_write
  * policy 擋非 staff),這裡不重複判斷權限,交給資料庫。
  *
- * 章節改用「起始/結束年份」決定在企劃時間軸上的位置,不再讓主辦手動輸入
- * order_index——那個欄位還在(unique index 還在),這裡自動算「目前這個
- * 世界觀官方章節裡最大的 order_index + 1」寫入,純粹滿足既有約束,排序
- * 顯示完全看 year_start。
+ * 章節改用「起始/結束年份(+選填的月/日)」決定在企劃時間軸上的位置,
+ * 不再讓主辦手動輸入 order_index——那個欄位還在(unique index 還在),
+ * 這裡自動算「目前這個世界觀官方章節裡最大的 order_index + 1」寫入,
+ * 純粹滿足既有約束,排序顯示完全看 year_start(+月/日)。
  */
 export async function createChapter(
   _prevState: StoryFormState,
@@ -56,7 +87,11 @@ export async function createChapter(
     title: formData.get("title"),
     description: formData.get("description") ?? "",
     yearStart: formData.get("yearStart"),
+    yearStartMonth: formData.get("yearStartMonth") ?? "",
+    yearStartDay: formData.get("yearStartDay") ?? "",
     yearEnd: formData.get("yearEnd") ?? "",
+    yearEndMonth: formData.get("yearEndMonth") ?? "",
+    yearEndDay: formData.get("yearEndDay") ?? "",
   });
   if (!parsed.success) {
     return { fieldErrors: parsed.error.flatten().fieldErrors };
@@ -73,20 +108,35 @@ export async function createChapter(
     .limit(1)
     .maybeSingle();
 
-  const { data, error } = await supabase
+  const basePayload = {
+    world_id: parsed.data.worldId,
+    scope: "official" as const,
+    title: parsed.data.title,
+    description: parsed.data.description || null,
+    order_index: (last?.order_index ?? 0) + 1,
+    year_start: parsed.data.yearStart,
+    year_end: parsed.data.yearEnd,
+    creator_id: user.id,
+  };
+
+  // migration 035 套用前還沒有月/日這四欄,insert 會直接失敗——接住那個
+  // 失敗,退回不含這四欄的 insert,讓建立章節在套用 migration 之前還能
+  // 正常運作,只是沒辦法填到月/日的精確度。
+  const withDate = await supabase
     .from("story_chapters")
     .insert({
-      world_id: parsed.data.worldId,
-      scope: "official",
-      title: parsed.data.title,
-      description: parsed.data.description || null,
-      order_index: (last?.order_index ?? 0) + 1,
-      year_start: parsed.data.yearStart,
-      year_end: parsed.data.yearEnd,
-      creator_id: user.id,
+      ...basePayload,
+      year_start_month: parsed.data.yearStartMonth,
+      year_start_day: parsed.data.yearStartDay,
+      year_end_month: parsed.data.yearEndMonth,
+      year_end_day: parsed.data.yearEndDay,
     })
     .select("id")
     .single();
+
+  const { data, error } = withDate.error
+    ? await supabase.from("story_chapters").insert(basePayload).select("id").single()
+    : withDate;
 
   if (error) {
     return { error: "建立失敗,你可能沒有權限建立這條時間軸" };
@@ -105,7 +155,11 @@ const UpdateChapterSchema = z
     title: z.string().min(1, { error: "請輸入章節名稱" }),
     description: z.string(),
     yearStart: z.coerce.number().int({ error: "請輸入這個章節的起始年份" }),
+    yearStartMonth: optionalDatePart(1, 12, "起始月份"),
+    yearStartDay: optionalDatePart(1, 31, "起始日期"),
     yearEnd: z.string(),
+    yearEndMonth: optionalDatePart(1, 12, "結束月份"),
+    yearEndDay: optionalDatePart(1, 31, "結束日期"),
   })
   .transform((data) => ({
     ...data,
@@ -118,6 +172,18 @@ const UpdateChapterSchema = z
   .refine((data) => data.yearEnd === null || data.yearEnd >= data.yearStart, {
     error: "結束年份不能早於起始年份",
     path: ["yearEnd"],
+  })
+  .refine((data) => data.yearStartDay === null || data.yearStartMonth !== null, {
+    error: "請先填起始月份",
+    path: ["yearStartDay"],
+  })
+  .refine((data) => data.yearEndMonth === null || data.yearEnd !== null, {
+    error: "請先填結束年份",
+    path: ["yearEndMonth"],
+  })
+  .refine((data) => data.yearEndDay === null || data.yearEndMonth !== null, {
+    error: "請先填結束月份",
+    path: ["yearEndDay"],
   });
 
 export async function updateChapter(
@@ -132,25 +198,47 @@ export async function updateChapter(
     title: formData.get("title"),
     description: formData.get("description") ?? "",
     yearStart: formData.get("yearStart"),
+    yearStartMonth: formData.get("yearStartMonth") ?? "",
+    yearStartDay: formData.get("yearStartDay") ?? "",
     yearEnd: formData.get("yearEnd") ?? "",
+    yearEndMonth: formData.get("yearEndMonth") ?? "",
+    yearEndDay: formData.get("yearEndDay") ?? "",
   });
   if (!parsed.success) {
     return { fieldErrors: parsed.error.flatten().fieldErrors };
   }
 
+  const basePayload = {
+    title: parsed.data.title,
+    description: parsed.data.description || null,
+    year_start: parsed.data.yearStart,
+    year_end: parsed.data.yearEnd,
+  };
+
   const supabase = await createClient();
-  const { error, count } = await supabase
+
+  // migration 035 套用前還沒有月/日這四欄,update 會直接失敗——接住那個
+  // 失敗,退回不含這四欄的 update。
+  const withDate = await supabase
     .from("story_chapters")
     .update(
       {
-        title: parsed.data.title,
-        description: parsed.data.description || null,
-        year_start: parsed.data.yearStart,
-        year_end: parsed.data.yearEnd,
+        ...basePayload,
+        year_start_month: parsed.data.yearStartMonth,
+        year_start_day: parsed.data.yearStartDay,
+        year_end_month: parsed.data.yearEndMonth,
+        year_end_day: parsed.data.yearEndDay,
       },
       { count: "exact" },
     )
     .eq("id", parsed.data.chapterId);
+
+  const { error, count } = withDate.error
+    ? await supabase
+        .from("story_chapters")
+        .update(basePayload, { count: "exact" })
+        .eq("id", parsed.data.chapterId)
+    : withDate;
 
   if (error) {
     return { error: "更新失敗,請稍後再試" };
@@ -194,7 +282,7 @@ const CreateStepSchema = z.object({
 /**
  * 段落不再強制綁節點——以前這裡一定要求 nodeId 是合法 uuid,現在完全
  * 交給作者自己在 customText 裡用 [[節點名稱]] 或 [文字](網址) 連結,
- * 不用另外選。node_id 欄位保留給舊資料,新段落一律不設定它。
+ * 不用另外選。node_id 欄位保留給舊資料,新段落一律不會再設定它。
  */
 export async function createStep(
   _prevState: StoryFormState,

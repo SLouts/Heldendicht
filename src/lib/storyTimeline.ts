@@ -10,43 +10,67 @@ export type OfficialChapterRow = {
   order_index: number;
   year_start: number | null;
   year_end: number | null;
+  year_start_month: number | null;
+  year_start_day: number | null;
+  year_end_month: number | null;
+  year_end_day: number | null;
 };
 
 /**
  * 查「企劃時間軸」(scope='official')章節,照年份排序。
  *
- * migration 034 套用前 story_chapters 還沒有 year_start/year_end 這兩欄,
- * select 會直接失敗(欄位不存在)——這裡接住那個失敗,退回只查舊欄位,
- * 讓既有的章節清單在套用 migration 之前還能正常顯示,只是沒有年份/橫向
- * 版面,等套用後才會恢復。
+ * 三段式退回,對應兩次獨立的 migration:
+ *   1. 完整查詢(含 034 的 year_start/year_end + 035 的月/日)。
+ *   2. 035 還沒套用——退回只查 034 的年份欄位,月/日當 null。
+ *   3. 034 也還沒套用——退回完全不含年份的舊版查詢。
+ * 讓既有的章節清單不管套用到哪個階段都還能正常顯示。
  */
 export async function fetchOfficialChapters(
   supabase: SupabaseServerClient,
   worldId: string,
 ): Promise<OfficialChapterRow[]> {
-  const withYears = await supabase
+  const full = await supabase
+    .from("story_chapters")
+    .select(
+      "id, title, description, order_index, year_start, year_end, year_start_month, year_start_day, year_end_month, year_end_day",
+    )
+    .eq("world_id", worldId)
+    .eq("scope", "official")
+    .order("year_start", { ascending: true, nullsFirst: false })
+    .order("order_index", { ascending: true });
+  if (!full.error) return full.data ?? [];
+
+  const yearOnly = await supabase
     .from("story_chapters")
     .select("id, title, description, order_index, year_start, year_end")
     .eq("world_id", worldId)
     .eq("scope", "official")
     .order("year_start", { ascending: true, nullsFirst: false })
     .order("order_index", { ascending: true });
-
-  if (!withYears.error) {
-    return withYears.data ?? [];
+  if (!yearOnly.error) {
+    return (yearOnly.data ?? []).map((c) => ({
+      ...c,
+      year_start_month: null,
+      year_start_day: null,
+      year_end_month: null,
+      year_end_day: null,
+    }));
   }
 
-  const fallback = await supabase
+  const none = await supabase
     .from("story_chapters")
     .select("id, title, description, order_index")
     .eq("world_id", worldId)
     .eq("scope", "official")
     .order("order_index", { ascending: true });
-
-  return (fallback.data ?? []).map((c) => ({
+  return (none.data ?? []).map((c) => ({
     ...c,
     year_start: null,
     year_end: null,
+    year_start_month: null,
+    year_start_day: null,
+    year_end_month: null,
+    year_end_day: null,
   }));
 }
 
@@ -58,34 +82,54 @@ export type CharacterTimelineEventRow = {
   image_path: string | null;
   is_spoiler: boolean;
   world_year: number | null;
+  world_year_month: number | null;
+  world_year_day: number | null;
 };
 
 /**
- * 查單一角色節點自己的時間軸事件(含 world_year)——跟
+ * 查單一角色節點自己的時間軸事件(含 world_year 跟月/日)——跟
  * fetchWorldCharacterTimelineEvents 不同,這裡是給角色節點自己的頁面用
  * (顯示 CharacterTimelineDisplay/Editor,不分有沒有填世界觀年份)。
  *
- * migration 034 套用前還沒有 world_year 這欄,select 會失敗,這裡接住
- * 失敗退回不含這欄的查詢,讓既有的角色時間軸在套用 migration 之前還能
- * 正常顯示。
+ * 同樣三段式退回(034/035 各自可能還沒套用),見 fetchOfficialChapters。
  */
 export async function fetchCharacterTimelineEvents(
   supabase: SupabaseServerClient,
   nodeId: string,
 ): Promise<CharacterTimelineEventRow[]> {
-  const withYear = await supabase
+  const full = await supabase
+    .from("character_timeline_events")
+    .select(
+      "id, label, description, content, image_path, is_spoiler, world_year, world_year_month, world_year_day",
+    )
+    .eq("node_id", nodeId)
+    .order("order_index", { ascending: true });
+  if (!full.error) return full.data ?? [];
+
+  const yearOnly = await supabase
     .from("character_timeline_events")
     .select("id, label, description, content, image_path, is_spoiler, world_year")
     .eq("node_id", nodeId)
     .order("order_index", { ascending: true });
-  if (!withYear.error) return withYear.data ?? [];
+  if (!yearOnly.error) {
+    return (yearOnly.data ?? []).map((e) => ({
+      ...e,
+      world_year_month: null,
+      world_year_day: null,
+    }));
+  }
 
-  const fallback = await supabase
+  const none = await supabase
     .from("character_timeline_events")
     .select("id, label, description, content, image_path, is_spoiler")
     .eq("node_id", nodeId)
     .order("order_index", { ascending: true });
-  return (fallback.data ?? []).map((e) => ({ ...e, world_year: null }));
+  return (none.data ?? []).map((e) => ({
+    ...e,
+    world_year: null,
+    world_year_month: null,
+    world_year_day: null,
+  }));
 }
 
 /**
@@ -120,6 +164,8 @@ export type WorldCharacterEventRow = {
   description: string;
   is_spoiler: boolean;
   world_year: number;
+  world_year_month: number | null;
+  world_year_day: number | null;
   character_title: string;
   character_slug: string;
 };
@@ -130,21 +176,34 @@ export type WorldCharacterEventRow = {
  *
  * migration 034 套用前 character_timeline_events 還沒有 world_year 這欄,
  * select 會失敗,這裡直接當作「沒有任何角色時間點要顯示」,不影響其餘
- * 既有功能(角色自己頁面上的時間軸完全不走這條查詢)。
+ * 既有功能(角色自己頁面上的時間軸完全不走這條查詢)。035 的月/日欄位
+ * 用同一套「失敗就當作沒填」的邏輯接住,不需要額外一層退回。
  */
 export async function fetchWorldCharacterTimelineEvents(
   supabase: SupabaseServerClient,
   worldId: string,
 ): Promise<WorldCharacterEventRow[]> {
-  const result = await supabase
+  const full = await supabase
     .from("character_timeline_events")
     .select(
-      "id, label, description, is_spoiler, world_year, node:nodes!inner(title, slug, world_id, node_type)",
+      "id, label, description, is_spoiler, world_year, world_year_month, world_year_day, node:nodes!inner(title, slug, world_id, node_type)",
     )
     .eq("node.world_id", worldId)
     .eq("node.node_type", "character")
     .not("world_year", "is", null)
     .order("world_year", { ascending: true });
+
+  const result = full.error
+    ? await supabase
+        .from("character_timeline_events")
+        .select(
+          "id, label, description, is_spoiler, world_year, node:nodes!inner(title, slug, world_id, node_type)",
+        )
+        .eq("node.world_id", worldId)
+        .eq("node.node_type", "character")
+        .not("world_year", "is", null)
+        .order("world_year", { ascending: true })
+    : full;
 
   if (result.error || !result.data) return [];
 
@@ -158,6 +217,8 @@ export async function fetchWorldCharacterTimelineEvents(
         description: e.description,
         is_spoiler: e.is_spoiler,
         world_year: e.world_year,
+        world_year_month: "world_year_month" in e ? e.world_year_month : null,
+        world_year_day: "world_year_day" in e ? e.world_year_day : null,
         character_title: node.title,
         character_slug: node.slug,
       };

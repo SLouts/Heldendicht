@@ -586,6 +586,8 @@ export type Database = {
           is_spoiler: boolean;
           order_index: number;
           world_year: number | null;
+          world_year_month: number | null;
+          world_year_day: number | null;
           created_at: string;
           updated_at: string;
         };
@@ -983,6 +985,10 @@ export type Database = {
           description: string | null;
           year_start: number | null;
           year_end: number | null;
+          year_start_month: number | null;
+          year_start_day: number | null;
+          year_end_month: number | null;
+          year_end_day: number | null;
           creator_id: string;
           created_at: string;
         };

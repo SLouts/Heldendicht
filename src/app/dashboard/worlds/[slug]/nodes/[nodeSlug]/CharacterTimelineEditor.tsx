@@ -23,6 +23,9 @@ export type TimelineEventItem = {
   /** 選填——填了之後這個時間點會一起顯示在世界觀整體的橫向時間軸上。
    * 只有這個編輯元件需要用到,NodeContentPanel 等純顯示用的呼叫端不用填。 */
   worldYear?: number | null;
+  /** 月/日都是選填的補充精確度,依賴 worldYear 先填(見 migration 035)。 */
+  worldYearMonth?: number | null;
+  worldYearDay?: number | null;
 };
 
 /**
@@ -98,13 +101,30 @@ function TimelineEventRow({
             <label htmlFor={`worldYear-${event.id}`} className="text-xs text-muted-foreground">
               世界觀年份(選填,填了會一起顯示在企劃時間軸上)
             </label>
-            <input
-              id={`worldYear-${event.id}`}
-              name="worldYear"
-              type="number"
-              defaultValue={event.worldYear ?? undefined}
-              className="w-32 rounded-lg border border-border bg-background px-3 py-1.5 text-sm"
-            />
+            <div className="flex gap-2">
+              <input
+                id={`worldYear-${event.id}`}
+                name="worldYear"
+                type="number"
+                placeholder="年"
+                defaultValue={event.worldYear ?? undefined}
+                className="w-24 rounded-lg border border-border bg-background px-3 py-1.5 text-sm"
+              />
+              <input
+                name="worldYearMonth"
+                type="number"
+                placeholder="月(選填)"
+                defaultValue={event.worldYearMonth ?? undefined}
+                className="w-28 rounded-lg border border-border bg-background px-3 py-1.5 text-sm"
+              />
+              <input
+                name="worldYearDay"
+                type="number"
+                placeholder="日(選填)"
+                defaultValue={event.worldYearDay ?? undefined}
+                className="w-28 rounded-lg border border-border bg-background px-3 py-1.5 text-sm"
+              />
+            </div>
           </div>
           {state && "error" in state && (
             <p className="text-sm text-danger">{state.error}</p>
@@ -301,12 +321,27 @@ export function CharacterTimelineEditor({
             <label htmlFor="newEventWorldYear" className="text-xs text-muted-foreground">
               世界觀年份(選填,填了會一起顯示在企劃時間軸上)
             </label>
-            <input
-              id="newEventWorldYear"
-              name="worldYear"
-              type="number"
-              className="w-32 rounded-lg border border-border bg-surface px-3 py-1.5 text-sm"
-            />
+            <div className="flex gap-2">
+              <input
+                id="newEventWorldYear"
+                name="worldYear"
+                type="number"
+                placeholder="年"
+                className="w-24 rounded-lg border border-border bg-surface px-3 py-1.5 text-sm"
+              />
+              <input
+                name="worldYearMonth"
+                type="number"
+                placeholder="月(選填)"
+                className="w-28 rounded-lg border border-border bg-surface px-3 py-1.5 text-sm"
+              />
+              <input
+                name="worldYearDay"
+                type="number"
+                placeholder="日(選填)"
+                className="w-28 rounded-lg border border-border bg-surface px-3 py-1.5 text-sm"
+              />
+            </div>
           </div>
           {createState && "error" in createState && (
             <p className="text-sm text-danger">{createState.error}</p>

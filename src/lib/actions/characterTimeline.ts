@@ -20,28 +20,53 @@ export type UploadTicketResult =
   | { error: string }
   | { path: string; token: string };
 
-const TimelineEventSchema = z.object({
-  label: z
+/**
+ * 月/日都是選填的補充精確度(見 migration 035)——空字串代表沒填,轉成
+ * null;有填就驗證是不是落在合法範圍內的整數。不驗證月份實際天數上限,
+ * 這是世界觀自己的曆法,不是地球西元曆。
+ */
+function optionalDatePart(min: number, max: number, label: string) {
+  return z
     .string()
     .trim()
-    .min(1, { error: "請輸入標籤,例如「十三歲」" })
-    .max(30, { error: "標籤最多 30 字" }),
-  description: z
-    .string()
-    .trim()
-    .min(1, { error: "請輸入這個時間點發生的事" })
-    .max(500, { error: "描述最多 500 字" }),
-  content: z.string().trim().max(3000, { error: "內文最多 3000 字" }),
-  isSpoiler: z.boolean(),
-  // 選填——填了之後這個時間點會一起顯示在世界觀整體(企劃)的橫向時間軸
-  // 上,跟官方章節並排,不填就只留在這個角色自己的時間軸裡(維持原狀)。
-  worldYear: z
-    .string()
-    .trim()
-    .refine((v) => v === "" || Number.isInteger(Number(v)), {
-      error: "世界觀年份請輸入整數",
-    }),
-});
+    .transform((v) => (v === "" ? null : Number(v)))
+    .refine((v) => v === null || (Number.isInteger(v) && v >= min && v <= max), {
+      error: `${label}請輸入 ${min}~${max} 的整數`,
+    });
+}
+
+const TimelineEventSchema = z
+  .object({
+    label: z
+      .string()
+      .trim()
+      .min(1, { error: "請輸入標籤,例如「十三歲」" })
+      .max(30, { error: "標籤最多 30 字" }),
+    description: z
+      .string()
+      .trim()
+      .min(1, { error: "請輸入這個時間點發生的事" })
+      .max(500, { error: "描述最多 500 字" }),
+    content: z.string().trim().max(3000, { error: "內文最多 3000 字" }),
+    isSpoiler: z.boolean(),
+    // 選填——填了之後這個時間點會一起顯示在世界觀整體(企劃)的橫向時間軸
+    // 上,跟官方章節並排,不填就只留在這個角色自己的時間軸裡(維持原狀)。
+    worldYear: z
+      .string()
+      .trim()
+      .transform((v) => (v === "" ? null : Number(v)))
+      .refine((v) => v === null || Number.isInteger(v), { error: "世界觀年份請輸入整數" }),
+    worldYearMonth: optionalDatePart(1, 12, "月份"),
+    worldYearDay: optionalDatePart(1, 31, "日期"),
+  })
+  .refine((data) => data.worldYearMonth === null || data.worldYear !== null, {
+    error: "請先填世界觀年份",
+    path: ["worldYearMonth"],
+  })
+  .refine((data) => data.worldYearDay === null || data.worldYearMonth !== null, {
+    error: "請先填月份",
+    path: ["worldYearDay"],
+  });
 
 /**
  * 角色節點的生平時間線。只有角色節點能新增(跟 characters.avatar_path/
@@ -72,6 +97,8 @@ export async function createTimelineEvent(
     content: formData.get("content") ?? "",
     isSpoiler: formData.get("isSpoiler") === "on",
     worldYear: formData.get("worldYear") ?? "",
+    worldYearMonth: formData.get("worldYearMonth") ?? "",
+    worldYearDay: formData.get("worldYearDay") ?? "",
   });
   if (!parsed.success) {
     return { fieldErrors: parsed.error.flatten().fieldErrors };
@@ -96,31 +123,34 @@ export async function createTimelineEvent(
     .limit(1)
     .maybeSingle();
 
-  const worldYear = parsed.data.worldYear === "" ? null : Number(parsed.data.worldYear);
-
-  // migration 034 套用前 character_timeline_events 還沒有 world_year 這欄,
-  // 帶這欄 insert 會直接失敗——接住那個失敗,退回不含這欄的 insert,讓
-  // 新增時間點在套用 migration 之前還能正常運作,只是沒辦法填世界觀年份。
-  const withYear = await supabase.from("character_timeline_events").insert({
+  const basePayload = {
     node_id: nodeId,
     label: parsed.data.label,
     description: parsed.data.description,
     content: parsed.data.content,
     is_spoiler: parsed.data.isSpoiler,
     order_index: (last?.order_index ?? -1) + 1,
-    world_year: worldYear,
+  };
+
+  // migration 034/035 套用前 character_timeline_events 還沒有
+  // world_year/world_year_month/world_year_day 這些欄位,帶著 insert
+  // 會直接失敗——依序接住失敗,退回更少欄位的 insert,讓新增時間點在
+  // 套用 migration 之前還能正常運作,只是沒辦法填世界觀年份/月/日。
+  const withFullDate = await supabase.from("character_timeline_events").insert({
+    ...basePayload,
+    world_year: parsed.data.worldYear,
+    world_year_month: parsed.data.worldYearMonth,
+    world_year_day: parsed.data.worldYearDay,
   });
-  const error = withYear.error
-    ? (
-        await supabase.from("character_timeline_events").insert({
-          node_id: nodeId,
-          label: parsed.data.label,
-          description: parsed.data.description,
-          content: parsed.data.content,
-          is_spoiler: parsed.data.isSpoiler,
-          order_index: (last?.order_index ?? -1) + 1,
-        })
-      ).error
+
+  const withYearOnly = withFullDate.error
+    ? await supabase
+        .from("character_timeline_events")
+        .insert({ ...basePayload, world_year: parsed.data.worldYear })
+    : withFullDate;
+
+  const error = withYearOnly.error
+    ? (await supabase.from("character_timeline_events").insert(basePayload)).error
     : null;
   if (error) {
     return { error: "新增失敗,請確認你有這個節點的編輯權限" };
@@ -154,45 +184,51 @@ export async function updateTimelineEvent(
     content: formData.get("content") ?? "",
     isSpoiler: formData.get("isSpoiler") === "on",
     worldYear: formData.get("worldYear") ?? "",
+    worldYearMonth: formData.get("worldYearMonth") ?? "",
+    worldYearDay: formData.get("worldYearDay") ?? "",
   });
   if (!parsed.success) {
     return { fieldErrors: parsed.error.flatten().fieldErrors };
   }
 
-  const worldYear = parsed.data.worldYear === "" ? null : Number(parsed.data.worldYear);
   const supabase = await createClient();
+  const basePayload = {
+    label: parsed.data.label,
+    description: parsed.data.description,
+    content: parsed.data.content,
+    is_spoiler: parsed.data.isSpoiler,
+    updated_at: new Date().toISOString(),
+  };
 
-  // migration 034 套用前還沒有 world_year 這欄,帶這欄 update 會直接
-  // 失敗——接住那個失敗,退回不含這欄的 update。
-  const withYear = await supabase
+  // migration 034/035 套用前還沒有 world_year/world_year_month/
+  // world_year_day 這些欄位,帶著 update 會直接失敗——依序接住失敗,
+  // 退回更少欄位的 update。
+  const withFullDate = await supabase
     .from("character_timeline_events")
     .update(
       {
-        label: parsed.data.label,
-        description: parsed.data.description,
-        content: parsed.data.content,
-        is_spoiler: parsed.data.isSpoiler,
-        world_year: worldYear,
-        updated_at: new Date().toISOString(),
+        ...basePayload,
+        world_year: parsed.data.worldYear,
+        world_year_month: parsed.data.worldYearMonth,
+        world_year_day: parsed.data.worldYearDay,
       },
       { count: "exact" },
     )
     .eq("id", eventId);
-  const { error, count } = withYear.error
+
+  const withYearOnly = withFullDate.error
     ? await supabase
         .from("character_timeline_events")
-        .update(
-          {
-            label: parsed.data.label,
-            description: parsed.data.description,
-            content: parsed.data.content,
-            is_spoiler: parsed.data.isSpoiler,
-            updated_at: new Date().toISOString(),
-          },
-          { count: "exact" },
-        )
+        .update({ ...basePayload, world_year: parsed.data.worldYear }, { count: "exact" })
         .eq("id", eventId)
-    : withYear;
+    : withFullDate;
+
+  const { error, count } = withYearOnly.error
+    ? await supabase
+        .from("character_timeline_events")
+        .update(basePayload, { count: "exact" })
+        .eq("id", eventId)
+    : withYearOnly;
   if (error || count === 0) {
     return { error: "更新失敗,請確認你有這個節點的編輯權限" };
   }

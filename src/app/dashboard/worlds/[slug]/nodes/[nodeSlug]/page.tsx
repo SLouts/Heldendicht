@@ -253,6 +253,8 @@ export default async function NodeDetailPage({
       imageUrl: await getNodeMediaSignedUrl(e.image_path),
       isSpoiler: e.is_spoiler,
       worldYear: e.world_year,
+      worldYearMonth: e.world_year_month,
+      worldYearDay: e.world_year_day,
     })),
   );
 

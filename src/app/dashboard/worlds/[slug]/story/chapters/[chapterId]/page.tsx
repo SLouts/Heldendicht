@@ -8,6 +8,74 @@ import { StepEditForm } from "./StepEditForm";
 import { StepContent } from "./StepContent";
 import { unwrapRelation } from "@/lib/unwrapRelation";
 
+type ChapterDetail = {
+  id: string;
+  scope: "official" | "character";
+  character_id: string | null;
+  title: string;
+  description: string | null;
+  order_index: number;
+  character: { id: string; title: string } | { id: string; title: string }[] | null;
+  year_start: number | null;
+  year_end: number | null;
+  year_start_month: number | null;
+  year_start_day: number | null;
+  year_end_month: number | null;
+  year_end_day: number | null;
+};
+
+const CHAPTER_COLUMNS_CORE =
+  "id, scope, character_id, title, description, order_index, character:nodes!story_chapters_character_id_fkey(id, title)";
+
+const NO_DATE_PARTS = {
+  year_start_month: null,
+  year_start_day: null,
+  year_end_month: null,
+  year_end_day: null,
+} as const;
+
+/**
+ * migration 034/035 套用前 story_chapters 還沒有 year_start/year_end
+ * (034)或月/日這四欄(035),select 會直接失敗——依序接住失敗,退回更少
+ * 欄位的查詢,讓章節詳細頁在套用 migration 之前還能正常開啟,只是編輯
+ * 表單暫時看不到對應的欄位。
+ */
+async function fetchChapterDetail(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  chapterId: string,
+  worldId: string,
+): Promise<ChapterDetail | null> {
+  const fullDate = await supabase
+    .from("story_chapters")
+    .select(
+      `${CHAPTER_COLUMNS_CORE}, year_start, year_end, year_start_month, year_start_day, year_end_month, year_end_day`,
+    )
+    .eq("id", chapterId)
+    .eq("world_id", worldId)
+    .maybeSingle();
+  if (!fullDate.error) return fullDate.data;
+
+  const yearOnly = await supabase
+    .from("story_chapters")
+    .select(`${CHAPTER_COLUMNS_CORE}, year_start, year_end`)
+    .eq("id", chapterId)
+    .eq("world_id", worldId)
+    .maybeSingle();
+  if (!yearOnly.error) {
+    return yearOnly.data ? { ...yearOnly.data, ...NO_DATE_PARTS } : null;
+  }
+
+  const none = await supabase
+    .from("story_chapters")
+    .select(CHAPTER_COLUMNS_CORE)
+    .eq("id", chapterId)
+    .eq("world_id", worldId)
+    .maybeSingle();
+  return none.data
+    ? { ...none.data, year_start: null, year_end: null, ...NO_DATE_PARTS }
+    : null;
+}
+
 export default async function ChapterDetailPage({
   params,
 }: PageProps<"/dashboard/worlds/[slug]/story/chapters/[chapterId]">) {
@@ -22,28 +90,7 @@ export default async function ChapterDetailPage({
     .maybeSingle();
   if (!world) notFound();
 
-  // migration 034 套用前 story_chapters 還沒有 year_start/year_end,select
-  // 會直接失敗——接住那個失敗,退回不含這兩欄的查詢,讓章節詳細頁在套用
-  // migration 之前還能正常開啟,只是編輯表單暫時看不到年份欄位。
-  const chapterWithYears = await supabase
-    .from("story_chapters")
-    .select(
-      "id, scope, character_id, title, description, order_index, year_start, year_end, character:nodes!story_chapters_character_id_fkey(id, title)",
-    )
-    .eq("id", chapterId)
-    .eq("world_id", world.id)
-    .maybeSingle();
-  const chapter = chapterWithYears.error
-    ? await supabase
-        .from("story_chapters")
-        .select(
-          "id, scope, character_id, title, description, order_index, character:nodes!story_chapters_character_id_fkey(id, title)",
-        )
-        .eq("id", chapterId)
-        .eq("world_id", world.id)
-        .maybeSingle()
-        .then((r) => (r.data ? { ...r.data, year_start: null, year_end: null } : null))
-    : chapterWithYears.data;
+  const chapter = await fetchChapterDetail(supabase, chapterId, world.id);
   if (!chapter) notFound();
 
   const character = unwrapRelation(chapter.character);
@@ -109,7 +156,11 @@ export default async function ChapterDetailPage({
           title={chapter.title}
           description={chapter.description ?? ""}
           yearStart={chapter.year_start}
+          yearStartMonth={chapter.year_start_month}
+          yearStartDay={chapter.year_start_day}
           yearEnd={chapter.year_end}
+          yearEndMonth={chapter.year_end_month}
+          yearEndDay={chapter.year_end_day}
         />
       )}
 

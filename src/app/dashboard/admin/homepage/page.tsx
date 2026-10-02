@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/dal";
 import { createClient } from "@/lib/supabase/server";
+import { fetchSiteSettings } from "@/lib/siteSettings";
 import { SiteSettingsForm } from "./SiteSettingsForm";
 
 export default async function SiteHomepageSettingsPage() {
@@ -18,23 +19,28 @@ export default async function SiteHomepageSettingsPage() {
     );
   }
 
-  const { data: settings } = await supabase
-    .from("site_settings")
-    .select("hero_title, hero_tagline, disclaimer_content")
-    .eq("id", true)
-    .single();
+  const settings = await fetchSiteSettings(supabase);
 
   return (
     <div>
       <BackLink />
       <h1 className="mt-2 text-2xl font-semibold">首頁內容</h1>
       <p className="mt-1 text-sm text-muted-foreground">
-        編輯首頁 Hero 區塊的標題、標語、測試版公告文字。「全站最新動態」是即時查詢,「平台特色」卡片跟底部 CTA 區塊目前還是固定內容,不在這裡編輯。
+        編輯首頁 Hero 區塊、平台特色三張卡片、底部 CTA 區塊的文字。「全站最新動態」是即時查詢,不在這裡編輯;CTA 的按鈕(登入/註冊/建立世界觀等)是跟登入狀態綁定的功能性連結,也不開放自訂。
       </p>
       <SiteSettingsForm
-        heroTitle={settings?.hero_title ?? ""}
-        heroTagline={settings?.hero_tagline ?? ""}
-        disclaimerContent={settings?.disclaimer_content ?? ""}
+        heroTitle={settings.hero_title}
+        heroTagline={settings.hero_tagline}
+        disclaimerContent={settings.disclaimer_content}
+        feature1Title={settings.feature1_title}
+        feature1Description={settings.feature1_description}
+        feature2Title={settings.feature2_title}
+        feature2Description={settings.feature2_description}
+        feature3Title={settings.feature3_title}
+        feature3Description={settings.feature3_description}
+        ctaHeading={settings.cta_heading}
+        ctaDescriptionGuest={settings.cta_description_guest}
+        ctaDescriptionMember={settings.cta_description_member}
       />
     </div>
   );

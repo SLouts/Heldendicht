@@ -748,6 +748,15 @@ export type Database = {
           hero_title: string;
           hero_tagline: string;
           disclaimer_content: string;
+          feature1_title: string;
+          feature1_description: string;
+          feature2_title: string;
+          feature2_description: string;
+          feature3_title: string;
+          feature3_description: string;
+          cta_heading: string;
+          cta_description_guest: string;
+          cta_description_member: string;
           updated_at: string;
         };
         Insert: Partial<Database["public"]["Tables"]["site_settings"]["Row"]>;

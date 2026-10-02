@@ -5,6 +5,7 @@ import { RecentActivityList, type RecentActivityItem } from "./RecentActivityLis
 import { PlatformFeatures } from "./PlatformFeatures";
 import { MarkdownText } from "@/components/MarkdownText";
 import { unwrapRelation } from "@/lib/unwrapRelation";
+import { fetchSiteSettings } from "@/lib/siteSettings";
 
 /**
  * 首頁——平台概覽與動態樞紐,不重複維護 /worlds 那份完整的世界觀卡片
@@ -18,11 +19,7 @@ export default async function Home() {
   const user = await getCurrentUser();
   const supabase = await createClient();
 
-  const { data: siteSettings } = await supabase
-    .from("site_settings")
-    .select("hero_title, hero_tagline, disclaimer_content")
-    .eq("id", true)
-    .single();
+  const siteSettings = await fetchSiteSettings(supabase);
 
   const { data: recentNodes } = await supabase
     .from("nodes")
@@ -89,19 +86,11 @@ export default async function Home() {
       <main className="mx-auto w-full max-w-7xl flex-1 px-6 py-12">
         <section className="py-8 text-center">
           <h1 className="font-display text-4xl font-bold tracking-tight sm:text-5xl">
-            {siteSettings?.hero_title ?? "編織架空宇宙,記錄英雄敘事"}
+            {siteSettings.hero_title}
           </h1>
-          <p className="mt-4 text-lg text-muted-foreground">
-            {siteSettings?.hero_tagline ??
-              "跟其他玩家一起建立世界觀、經營角色,把設定跟故事留在同一個地方。"}
-          </p>
+          <p className="mt-4 text-lg text-muted-foreground">{siteSettings.hero_tagline}</p>
           <div className="mx-auto mt-4 max-w-2xl text-xs text-muted-foreground [&_p]:mt-0 [&_p]:text-xs">
-            <MarkdownText
-              text={
-                siteSettings?.disclaimer_content ??
-                "Heldendicht 目前處於系統建置與公開測試階段。本站所有展示資料皆為測試用途,平台不對資料遺失、異常或非預期之系統變更負擔保責任,請創作者務必自行保留本地備份。投稿或瀏覽前請先閱讀[全站規則](/rules),若有系統問題或意見反饋,歡迎來信至 [heldendicht.cit@gmail.com](mailto:heldendicht.cit@gmail.com)。"
-              }
-            />
+            <MarkdownText text={siteSettings.disclaimer_content} />
           </div>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <Link
@@ -135,15 +124,19 @@ export default async function Home() {
 
         <section className="mt-12">
           <h2 className="text-xl font-semibold">平台特色</h2>
-          <PlatformFeatures />
+          <PlatformFeatures
+            features={[
+              { title: siteSettings.feature1_title, description: siteSettings.feature1_description },
+              { title: siteSettings.feature2_title, description: siteSettings.feature2_description },
+              { title: siteSettings.feature3_title, description: siteSettings.feature3_description },
+            ]}
+          />
         </section>
 
         <section className="mt-12 rounded-lg border border-border bg-surface p-8 text-center">
-          <h2 className="text-2xl font-semibold">加入這裡,開始寫下你的故事</h2>
+          <h2 className="text-2xl font-semibold">{siteSettings.cta_heading}</h2>
           <p className="mt-2 text-muted-foreground">
-            {user
-              ? "建立一個新的世界觀,或去找一個喜歡的世界觀投稿角色。"
-              : "註冊帳號,建立世界觀或加入別人的企劃,把設定跟角色寫進共筆世界。"}
+            {user ? siteSettings.cta_description_member : siteSettings.cta_description_guest}
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
             {user ? (

@@ -1,4 +1,11 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
+
+const ZOOM_STEP = 1.3;
+const MIN_ZOOM = 0.4;
+const MAX_ZOOM = 6;
 
 export type TimelineChapterItem = {
   id: string;
@@ -28,6 +35,10 @@ export type TimelineCharacterEventItem = {
  *
  * 純渲染元件,不查資料;呼叫端(dashboard/public 版 /story 頁面)各自
  * 查好資料、組好每個項目要連去哪裡的 href 再傳進來。
+ *
+ * 可以放大/縮小——「放大」只是把整條軸線的像素寬度拉長(章節/時間點
+ * 之間的間距跟著變大),不是真的改變字體或 dot 大小,軸線本身維持用
+ * overflow-x-auto 橫向捲動,不需要額外的手勢/縮放函式庫。
  */
 export function WorldStoryTimeline({
   chapters,
@@ -41,6 +52,7 @@ export function WorldStoryTimeline({
    * 沒設定(null/undefined)才退回用章節/時間點本身的最小/最大年份。 */
   yearRange?: { start: number; end: number } | null;
 }) {
+  const [zoom, setZoom] = useState(1);
   const timedChapters = chapters.filter(
     (c): c is TimelineChapterItem & { yearStart: number } => c.yearStart != null,
   );
@@ -60,13 +72,36 @@ export function WorldStoryTimeline({
   const minYear = yearRange ? yearRange.start : Math.min(...years);
   const maxYear = yearRange ? yearRange.end : Math.max(...years);
   const span = Math.max(maxYear - minYear, 1);
-  const trackWidth = Math.max(640, span * 36);
+  const trackWidth = Math.max(640, span * 36) * zoom;
   // 章節/時間點的實際年份有可能落在主辦設定的軸線範圍之外(範圍設太窄,
   // 或還沒更新)——夾在兩端,至少還看得到,不會整個跑出可視範圍外。
   const pct = (year: number) => Math.min(100, Math.max(0, ((year - minYear) / span) * 100));
 
   return (
     <div>
+      <div className="mb-2 flex items-center justify-end gap-1.5">
+        <button
+          type="button"
+          onClick={() => setZoom((z) => Math.max(MIN_ZOOM, z / ZOOM_STEP))}
+          disabled={zoom <= MIN_ZOOM}
+          aria-label="縮小時間軸"
+          className="rounded-lg border border-border bg-surface px-2 py-1 text-sm hover:bg-muted disabled:opacity-30"
+        >
+          −
+        </button>
+        <span className="w-12 text-center text-xs text-muted-foreground">
+          {Math.round(zoom * 100)}%
+        </span>
+        <button
+          type="button"
+          onClick={() => setZoom((z) => Math.min(MAX_ZOOM, z * ZOOM_STEP))}
+          disabled={zoom >= MAX_ZOOM}
+          aria-label="放大時間軸"
+          className="rounded-lg border border-border bg-surface px-2 py-1 text-sm hover:bg-muted disabled:opacity-30"
+        >
+          ＋
+        </button>
+      </div>
       <div className="overflow-x-auto pb-2">
         <div style={{ width: trackWidth }} className="min-w-full">
           {/* 章節(橫條/時間點),用連結點到章節詳細頁 */}

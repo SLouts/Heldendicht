@@ -534,3 +534,170 @@ export async function updateChapterParticipants(
   revalidatePath(`/worlds/${parsed.data.worldSlug}/story`);
   return undefined;
 }
+
+const SaveChapterSubmissionSchema = z
+  .object({
+    chapterId: z.uuid(),
+    worldSlug: z.string().min(1),
+    // 空字串/沒有這個欄位 = 共同投稿(character_node_id = null)。
+    characterNodeId: z
+      .string()
+      .optional()
+      .transform((v) => (v && v.trim() !== "" ? v : null)),
+    content: z.string(),
+    // 按的是「儲存草稿」還是「送出審核」——同一個表單兩個 submit 按鈕各自
+    // 帶不同的 name="intent" value,不需要額外的 JS 判斷。
+    intent: z.enum(["draft", "submit"]),
+  })
+  .refine((data) => data.intent !== "submit" || data.content.trim() !== "", {
+    error: "送出審核前請先填寫內容",
+    path: ["content"],
+  });
+
+/**
+ * 「副本」參與角色自己寫投稿——個人投稿(characterNodeId 有值)或整個
+ * 副本共用的共同投稿(characterNodeId 為 null)用同一個 action,差別只在
+ * 查詢/寫入時鎖定哪一列。
+ *
+ * 先試 UPDATE(鎖定 chapter_id + character_node_id,共同投稿額外用
+ * `.is()` 比對 null),0 筆就代表這個人/這個副本還沒有這一筆,改成
+ * INSERT 一筆新的——避免另外先查一次「有沒有這一筆」,也讓
+ * story_chapter_submissions_participant_update/_insert 這兩條 RLS
+ * policy 各自把關正確的情境(update 只在 draft/rejected 時才讓寫,insert
+ * 則是全新一筆)。
+ *
+ * 審核三欄位(reviewed_by/reviewed_at/review_note)每次參與者寫入都明確
+ * 清成 null——如果這一筆之前被退回過,代表退回意見已經隨著這次修訂、
+ * 重新送審而過期,畫面在使用者開始編輯前就會先顯示退回原因讓他知道要
+ * 改什麼,存檔送審的這一刻才清空(見 RLS_POLICIES.md #37)。
+ */
+export async function saveChapterSubmission(
+  _prevState: StoryFormState,
+  formData: FormData,
+): Promise<StoryFormState> {
+  const user = await requireUser();
+
+  const parsed = SaveChapterSubmissionSchema.safeParse({
+    chapterId: formData.get("chapterId"),
+    worldSlug: formData.get("worldSlug"),
+    characterNodeId: formData.get("characterNodeId") ?? "",
+    content: formData.get("content") ?? "",
+    intent: formData.get("intent"),
+  });
+  if (!parsed.success) {
+    return { fieldErrors: parsed.error.flatten().fieldErrors };
+  }
+
+  const { chapterId, worldSlug, characterNodeId, content, intent } = parsed.data;
+  const status: "pending" | "draft" = intent === "submit" ? "pending" : "draft";
+  const now = new Date().toISOString();
+
+  const supabase = await createClient();
+
+  const writePayload = {
+    content,
+    status,
+    reviewed_by: null,
+    reviewed_at: null,
+    review_note: null,
+    updated_by: user.id,
+    updated_at: now,
+    ...(intent === "submit" ? { submitted_by: user.id, submitted_at: now } : {}),
+  };
+
+  let updateQuery = supabase
+    .from("story_chapter_submissions")
+    .update(writePayload, { count: "exact" })
+    .eq("chapter_id", chapterId);
+  updateQuery =
+    characterNodeId === null
+      ? updateQuery.is("character_node_id", null)
+      : updateQuery.eq("character_node_id", characterNodeId);
+  const { error: updateError, count } = await updateQuery;
+
+  if (updateError) {
+    return { error: "儲存失敗,請稍後再試" };
+  }
+
+  if (count === 0) {
+    const { error: insertError } = await supabase.from("story_chapter_submissions").insert({
+      chapter_id: chapterId,
+      character_node_id: characterNodeId,
+      ...writePayload,
+    });
+    if (insertError) {
+      return {
+        error:
+          insertError.code === "23505"
+            ? "這筆投稿目前正在審核中或已核准,暫時無法編輯,請等待主辦處理"
+            : "儲存失敗,你可能不是這個副本的參與角色",
+      };
+    }
+  }
+
+  revalidatePath(`/dashboard/worlds/${worldSlug}/story/chapters/${chapterId}`);
+  revalidatePath(`/worlds/${worldSlug}/story/chapters/${chapterId}`);
+  return undefined;
+}
+
+const ReviewChapterSubmissionSchema = z
+  .object({
+    submissionId: z.uuid(),
+    chapterId: z.uuid(),
+    worldSlug: z.string().min(1),
+    decision: z.enum(["approved", "rejected"]),
+    reviewNote: z.string(),
+  })
+  .refine((data) => data.decision !== "rejected" || data.reviewNote.trim() !== "", {
+    error: "退回投稿前請填寫退回原因,讓參與者知道要怎麼修改",
+    path: ["reviewNote"],
+  });
+
+/**
+ * staff 核准/退回一筆「副本」投稿——只有世界觀 staff/site_admin 能成功
+ * (story_chapter_submissions_staff_write policy 擋非 staff),這裡不重複
+ * 判斷權限,交給資料庫。核准時一併清空 review_note(核准不需要留言);
+ * 退回時要求必填退回原因。
+ */
+export async function reviewChapterSubmission(
+  _prevState: StoryFormState,
+  formData: FormData,
+): Promise<StoryFormState> {
+  const user = await requireUser();
+
+  const parsed = ReviewChapterSubmissionSchema.safeParse({
+    submissionId: formData.get("submissionId"),
+    chapterId: formData.get("chapterId"),
+    worldSlug: formData.get("worldSlug"),
+    decision: formData.get("decision"),
+    reviewNote: formData.get("reviewNote") ?? "",
+  });
+  if (!parsed.success) {
+    return { fieldErrors: parsed.error.flatten().fieldErrors };
+  }
+
+  const supabase = await createClient();
+  const { error, count } = await supabase
+    .from("story_chapter_submissions")
+    .update(
+      {
+        status: parsed.data.decision,
+        reviewed_by: user.id,
+        reviewed_at: new Date().toISOString(),
+        review_note: parsed.data.decision === "rejected" ? parsed.data.reviewNote.trim() : null,
+      },
+      { count: "exact" },
+    )
+    .eq("id", parsed.data.submissionId);
+
+  if (error) {
+    return { error: "審核失敗,請稍後再試" };
+  }
+  if (count === 0) {
+    return { error: "你沒有權限審核這筆投稿" };
+  }
+
+  revalidatePath(`/dashboard/worlds/${parsed.data.worldSlug}/story/chapters/${parsed.data.chapterId}`);
+  revalidatePath(`/worlds/${parsed.data.worldSlug}/story/chapters/${parsed.data.chapterId}`);
+  return undefined;
+}

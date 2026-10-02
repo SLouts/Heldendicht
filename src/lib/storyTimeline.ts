@@ -1,5 +1,6 @@
 import type { createClient } from "@/lib/supabase/server";
 import { unwrapRelation } from "@/lib/unwrapRelation";
+import type { StoryChapterSubmissionStatus } from "@/lib/supabase/database.types";
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 
@@ -326,4 +327,103 @@ export async function fetchCharacterParticipantChapters(
     .map((row) => unwrapRelation(row.chapter))
     .filter((c): c is CharacterParticipantChapterRow => c !== null)
     .sort((a, b) => (a.year_start ?? Infinity) - (b.year_start ?? Infinity));
+}
+
+export type ChapterSubmissionRow = {
+  id: string;
+  chapter_id: string;
+  character_node_id: string | null;
+  character_title: string | null;
+  character_slug: string | null;
+  status: StoryChapterSubmissionStatus;
+  content: string;
+  submitted_at: string | null;
+  reviewed_at: string | null;
+  review_note: string | null;
+  updated_at: string;
+};
+
+/**
+ * 查一個章節底下所有的「副本」投稿(個人投稿 + 共同投稿),給章節詳細頁
+ * 用——哪些列查得到完全交給 story_chapter_submissions_select RLS 決定
+ * (staff 看全部;同一副本的參與角色看得到這個章節底下所有投稿,不限
+ * 狀態;其他人只看得到已核准的),這裡不另外收斂。
+ *
+ * migration 037 套用前這張表還不存在,select 會失敗,這裡當作「還沒有
+ * 任何投稿」,不影響既有的章節詳細頁顯示。
+ */
+export async function fetchChapterSubmissions(
+  supabase: SupabaseServerClient,
+  chapterId: string,
+): Promise<ChapterSubmissionRow[]> {
+  const result = await supabase
+    .from("story_chapter_submissions")
+    .select(
+      "id, chapter_id, character_node_id, status, content, submitted_at, reviewed_at, review_note, updated_at, character:nodes(title, slug)",
+    )
+    .eq("chapter_id", chapterId)
+    .order("created_at", { ascending: true });
+  if (result.error || !result.data) return [];
+
+  return result.data.map((row) => {
+    const character = unwrapRelation(row.character);
+    return {
+      id: row.id,
+      chapter_id: row.chapter_id,
+      character_node_id: row.character_node_id,
+      character_title: character?.title ?? null,
+      character_slug: character?.slug ?? null,
+      status: row.status,
+      content: row.content,
+      submitted_at: row.submitted_at,
+      reviewed_at: row.reviewed_at,
+      review_note: row.review_note,
+      updated_at: row.updated_at,
+    };
+  });
+}
+
+export type CharacterApprovedSubmissionRow = {
+  id: string;
+  chapter_id: string;
+  chapter_title: string;
+  content: string;
+  updated_at: string;
+};
+
+/**
+ * 查這個角色節點自己、已核准公開的「副本」投稿內容——給角色自己的頁面
+ * 用,顯示在共同副本區塊裡每個章節底下(不是只顯示連結,實際內文也
+ * 顯示出來)。只查 status='approved',草稿/送審中/被退回的版本不會出現
+ * 在這裡(那些只有本人、同副本參與者、staff 在章節詳細頁看得到)。
+ * href 由呼叫端自己組(dashboard/public 路徑不同),跟
+ * fetchCharacterParticipantChapters 同一套慣例。
+ *
+ * migration 037 套用前這張表還不存在,select 會失敗,這裡當作「這個
+ * 角色還沒有任何已核准的投稿」,不影響既有的角色頁面顯示。
+ */
+export async function fetchCharacterApprovedSubmissions(
+  supabase: SupabaseServerClient,
+  nodeId: string,
+): Promise<CharacterApprovedSubmissionRow[]> {
+  const result = await supabase
+    .from("story_chapter_submissions")
+    .select("id, chapter_id, content, updated_at, chapter:story_chapters!inner(title)")
+    .eq("character_node_id", nodeId)
+    .eq("status", "approved");
+  if (result.error || !result.data) return [];
+
+  return result.data
+    .map((row) => {
+      const chapter = unwrapRelation(row.chapter);
+      if (!chapter) return null;
+      return {
+        id: row.id,
+        chapter_id: row.chapter_id,
+        chapter_title: chapter.title,
+        content: row.content,
+        updated_at: row.updated_at,
+      };
+    })
+    .filter((s): s is CharacterApprovedSubmissionRow => s !== null);
 }

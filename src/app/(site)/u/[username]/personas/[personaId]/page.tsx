@@ -85,6 +85,7 @@ export default async function PersonaDetailPage({
     { data: categoryFieldValueRows },
     { data: categoryFieldDefRows },
     { data: participantRows },
+    { data: approvedSubmissionRows },
   ] =
     // .in() 帶空陣列時 PostgREST 直接回傳空結果(不會出錯),所以這裡不用
     // 為了「這個 persona 還沒連結任何節點」的情況另外寫一套 fallback 型別,
@@ -150,6 +151,11 @@ export default async function PersonaDetailPage({
           "character_node_id, chapter:story_chapters(id, title, description, year_start, year_start_month, year_start_day, year_end, year_end_month, year_end_day)",
         )
         .in("character_node_id", nodeIds),
+      supabase
+        .from("story_chapter_submissions")
+        .select("character_node_id, chapter_id, content")
+        .in("character_node_id", nodeIds)
+        .eq("status", "approved"),
     ]);
 
   const avatarUrl = getProfileMediaPublicUrl(persona.avatar_path);
@@ -235,6 +241,16 @@ export default async function PersonaDetailPage({
     participantChaptersByNode.set(row.character_node_id, list);
   }
 
+  // 每個節點自己已核准公開的「副本」投稿內容,依 chapter_id 查——顯示在
+  // 上面那份共同副本清單的對應章節底下,見下面 sharedChapterItems。
+  const approvedSubmissionByNodeAndChapter = new Map<string, Map<string, string>>();
+  for (const row of approvedSubmissionRows ?? []) {
+    if (!row.character_node_id) continue;
+    const map = approvedSubmissionByNodeAndChapter.get(row.character_node_id) ?? new Map();
+    map.set(row.chapter_id, row.content);
+    approvedSubmissionByNodeAndChapter.set(row.character_node_id, map);
+  }
+
   const tabs: NodeTab[] = [
     {
       key: "core",
@@ -305,6 +321,7 @@ export default async function PersonaDetailPage({
       })),
     );
 
+    const approvedSubmissionByChapter = approvedSubmissionByNodeAndChapter.get(node.id);
     const sharedChapterItems = (participantChaptersByNode.get(node.id) ?? [])
       .map((row) => unwrapRelation(row.chapter))
       .filter((c): c is NonNullable<typeof c> => c !== null)
@@ -319,6 +336,7 @@ export default async function PersonaDetailPage({
         yearEndMonth: c.year_end_month,
         yearEndDay: c.year_end_day,
         href: `/worlds/${world.slug}/story/chapters/${c.id}`,
+        submissionContent: approvedSubmissionByChapter?.get(c.id) ?? null,
       }));
 
     const fieldValues = fieldValuesByNode.get(node.id) ?? new Map<string, string>();

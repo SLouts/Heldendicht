@@ -3,7 +3,15 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { StepContent } from "@/app/dashboard/worlds/[slug]/story/chapters/[chapterId]/StepContent";
 import { unwrapRelation } from "@/lib/unwrapRelation";
-import { fetchChapterParticipants } from "@/lib/storyTimeline";
+import { fetchChapterParticipants, fetchChapterSubmissions } from "@/lib/storyTimeline";
+import { Badge } from "@/components/Badge";
+
+const SUBMISSION_STATUS_LABEL = {
+  draft: "草稿",
+  pending: "審核中",
+  approved: "已核准",
+  rejected: "已退回",
+} as const;
 
 /**
  * 公開版章節詳細頁,唯讀——沒有編輯/刪除/新增段落,可見度交給
@@ -34,7 +42,7 @@ export default async function PublicChapterDetailPage({
 
   const character = unwrapRelation(chapter.character);
 
-  const [{ data: steps }, { data: worldNodes }, participants] = await Promise.all([
+  const [{ data: steps }, { data: worldNodes }, participants, submissions] = await Promise.all([
     supabase
       .from("story_steps")
       .select(
@@ -44,6 +52,7 @@ export default async function PublicChapterDetailPage({
       .order("order_index"),
     supabase.from("nodes").select("title, slug, is_placeholder").eq("world_id", world.id),
     fetchChapterParticipants(supabase, chapterId),
+    chapter.scope === "official" ? fetchChapterSubmissions(supabase, chapterId) : Promise.resolve([]),
   ]);
   const stepLinkMap = new Map(
     (worldNodes ?? []).map((n) => [n.title, { slug: n.slug, isPlaceholder: n.is_placeholder }]),
@@ -79,6 +88,37 @@ export default async function PublicChapterDetailPage({
             </span>
           ))}
         </p>
+      )}
+
+      {submissions.length > 0 && (
+        <div className="mt-6">
+          <h2 className="text-lg font-semibold">副本投稿</h2>
+          <div className="mt-3 flex flex-col gap-3">
+            {submissions.map((s) => (
+              <div key={s.id} className="rounded-lg border border-border bg-surface p-3 text-sm">
+                <div className="flex items-center gap-2">
+                  <p className="font-medium">{s.character_title ?? "共同投稿(整個副本共用)"}</p>
+                  <Badge
+                    variant={
+                      s.status === "approved"
+                        ? "success"
+                        : s.status === "rejected"
+                          ? "danger"
+                          : s.status === "pending"
+                            ? "pending"
+                            : "neutral"
+                    }
+                  >
+                    {SUBMISSION_STATUS_LABEL[s.status]}
+                  </Badge>
+                </div>
+                <p className="mt-2 whitespace-pre-wrap text-muted-foreground">
+                  {s.content || "(尚未填寫內容)"}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
 
       <h2 className="mt-8 text-lg font-semibold">段落</h2>

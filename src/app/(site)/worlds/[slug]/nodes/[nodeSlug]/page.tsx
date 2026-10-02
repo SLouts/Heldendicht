@@ -9,7 +9,10 @@ import { NodeInfobox } from "./NodeInfobox";
 import { NodeContentPanel } from "@/components/NodeContentPanel";
 import { NODE_TYPE_LABEL, NODE_STATUS_LABEL } from "@/lib/nodeTypeLabels";
 import { unwrapRelation } from "@/lib/unwrapRelation";
-import { fetchCharacterParticipantChapters } from "@/lib/storyTimeline";
+import {
+  fetchCharacterParticipantChapters,
+  fetchCharacterApprovedSubmissions,
+} from "@/lib/storyTimeline";
 
 /**
  * 公開版節點頁面——可見度完全交給 nodes_select_visible RLS
@@ -63,6 +66,7 @@ export default async function PublicNodeDetailPage({
     { data: categoryFieldValues },
     { data: timelineEvents },
     participantChapters,
+    approvedSubmissions,
     { data: relationships },
     { data: isStaff },
     { data: isMember },
@@ -130,6 +134,9 @@ export default async function PublicNodeDetailPage({
       : Promise.resolve({ data: null }),
     node.node_type === "character"
       ? fetchCharacterParticipantChapters(supabase, node.id)
+      : Promise.resolve([]),
+    node.node_type === "character"
+      ? fetchCharacterApprovedSubmissions(supabase, node.id)
       : Promise.resolve([]),
     supabase
       .from("relationships")
@@ -254,6 +261,9 @@ export default async function PublicNodeDetailPage({
     })),
   );
 
+  const approvedSubmissionByChapter = new Map(
+    approvedSubmissions.map((s) => [s.chapter_id, s.content]),
+  );
   const sharedChapterItems = participantChapters.map((c) => ({
     id: c.id,
     title: c.title,
@@ -265,6 +275,7 @@ export default async function PublicNodeDetailPage({
     yearEndMonth: c.year_end_month,
     yearEndDay: c.year_end_day,
     href: `/worlds/${world.slug}/story/chapters/${c.id}`,
+    submissionContent: approvedSubmissionByChapter.get(c.id) ?? null,
   }));
 
   const isCharacter = node.node_type === "character" && character;

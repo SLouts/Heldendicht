@@ -5,10 +5,12 @@ import { createClient } from "@/lib/supabase/server";
 import { deleteChapter } from "@/lib/actions/story";
 import { EditChapterForm } from "./EditChapterForm";
 import { ChapterParticipantsForm } from "./ChapterParticipantsForm";
+import { ChapterSubmissionForm } from "./ChapterSubmissionForm";
+import { ReviewSubmissionForm } from "./ReviewSubmissionForm";
 import { StepEditForm } from "./StepEditForm";
 import { StepContent } from "./StepContent";
 import { unwrapRelation } from "@/lib/unwrapRelation";
-import { fetchChapterParticipants } from "@/lib/storyTimeline";
+import { fetchChapterParticipants, fetchChapterSubmissions } from "@/lib/storyTimeline";
 
 type ChapterDetail = {
   id: string;
@@ -82,7 +84,7 @@ export default async function ChapterDetailPage({
   params,
 }: PageProps<"/dashboard/worlds/[slug]/story/chapters/[chapterId]">) {
   const { slug, chapterId } = await params;
-  await requireUser();
+  const user = await requireUser();
   const supabase = await createClient();
 
   const { data: world } = await supabase
@@ -104,6 +106,7 @@ export default async function ChapterDetailPage({
     { data: characterNodes },
     { data: worldNodes },
     participants,
+    submissions,
   ] = await Promise.all([
     supabase.rpc("is_world_staff", { p_world_id: world.id }),
     chapter.scope === "character" && chapter.character_id
@@ -127,9 +130,34 @@ export default async function ChapterDetailPage({
       .select("title, slug, is_placeholder")
       .eq("world_id", world.id),
     fetchChapterParticipants(supabase, chapterId),
+    chapter.scope === "official" ? fetchChapterSubmissions(supabase, chapterId) : Promise.resolve([]),
   ]);
 
   const canManage = Boolean(isStaff) || Boolean(owns);
+
+  // 這個章節被標記參與的角色裡,哪幾個是「我自己」擁有的——用來判斷
+  // 我能不能編輯某一筆個人投稿,以及我算不算「這個副本的參與者」之一
+  // (因此也能接手編輯共同投稿)。
+  const myParticipantCharacterIds = new Set(
+    participants.length > 0
+      ? (
+          await supabase
+            .from("characters")
+            .select("node_id")
+            .eq("owner_id", user.id)
+            .in(
+              "node_id",
+              participants.map((p) => p.character_node_id),
+            )
+        ).data?.map((c) => c.node_id) ?? []
+      : [],
+  );
+  const isParticipant = myParticipantCharacterIds.size > 0;
+  const submissionByCharacter = new Map(
+    submissions.filter((s) => s.character_node_id).map((s) => [s.character_node_id as string, s]),
+  );
+  const groupSubmission = submissions.find((s) => s.character_node_id === null) ?? null;
+  const pendingSubmissions = submissions.filter((s) => s.status === "pending");
   // [[節點名稱]] 用世界觀內所有節點的標題比對,查不到就原樣顯示——段落
   // 文字比較隨手,不像 nodes.content 那樣自動建立佔位節點。
   const stepLinkMap = new Map(
@@ -204,6 +232,74 @@ export default async function ChapterDetailPage({
               characterOptions={characterNodes ?? []}
               selectedCharacterIds={participants.map((p) => p.character_node_id)}
             />
+          )}
+
+          {participants.length > 0 && (
+            <div className="mt-6">
+              <h2 className="text-lg font-semibold">副本投稿</h2>
+              <div className="mt-3 flex flex-col gap-3">
+                {participants.map((p) => {
+                  const mine = myParticipantCharacterIds.has(p.character_node_id);
+                  const submission = submissionByCharacter.get(p.character_node_id);
+                  if (!mine && !submission) return null;
+                  return mine ? (
+                    <ChapterSubmissionForm
+                      key={p.character_node_id}
+                      chapterId={chapter.id}
+                      worldSlug={world.slug}
+                      characterNodeId={p.character_node_id}
+                      label={p.title}
+                      status={submission?.status ?? "none"}
+                      content={submission?.content ?? ""}
+                      reviewNote={submission?.review_note ?? null}
+                    />
+                  ) : (
+                    <div key={p.character_node_id} className="rounded-lg border border-border bg-surface p-3">
+                      <p className="text-sm font-medium">{p.title}</p>
+                      <p className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">
+                        {submission?.content || "(尚未填寫內容)"}
+                      </p>
+                    </div>
+                  );
+                })}
+
+                {isParticipant ? (
+                  <ChapterSubmissionForm
+                    chapterId={chapter.id}
+                    worldSlug={world.slug}
+                    characterNodeId={null}
+                    label="共同投稿(整個副本共用)"
+                    status={groupSubmission?.status ?? "none"}
+                    content={groupSubmission?.content ?? ""}
+                    reviewNote={groupSubmission?.review_note ?? null}
+                  />
+                ) : (
+                  groupSubmission && (
+                    <div className="rounded-lg border border-border bg-surface p-3">
+                      <p className="text-sm font-medium">共同投稿(整個副本共用)</p>
+                      <p className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">
+                        {groupSubmission.content || "(尚未填寫內容)"}
+                      </p>
+                    </div>
+                  )
+                )}
+              </div>
+            </div>
+          )}
+
+          {canManage && pendingSubmissions.length > 0 && (
+            <div className="mt-6">
+              <h2 className="text-lg font-semibold">待審核的副本投稿</h2>
+              <div className="mt-3 flex flex-col gap-3">
+                {pendingSubmissions.map((s) => (
+                  <div key={s.id} className="rounded-lg border border-border bg-surface p-3">
+                    <p className="text-sm font-medium">{s.character_title ?? "共同投稿"}</p>
+                    <p className="mt-2 whitespace-pre-wrap text-sm">{s.content}</p>
+                    <ReviewSubmissionForm submissionId={s.id} chapterId={chapter.id} worldSlug={world.slug} />
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
         </>
       )}

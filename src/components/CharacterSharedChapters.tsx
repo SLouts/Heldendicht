@@ -12,6 +12,10 @@ export type SharedChapterItem = {
   yearEndMonth: number | null;
   yearEndDay: number | null;
   href: string;
+  /** 這個角色自己已核准的「副本」投稿內容(story_chapter_submissions),
+   * 沒有投稿或還沒核准就是 null——跟 description(章節本身的說明)分開
+   * 顯示,見下方渲染。 */
+  submissionContent?: string | null;
 };
 
 /**
@@ -52,6 +56,9 @@ export function CharacterSharedChapters({ chapters }: { chapters: SharedChapterI
                   <p className="mt-0.5 text-sm text-muted-foreground">{chapter.description}</p>
                 )}
               </Link>
+              {chapter.submissionContent && (
+                <p className="mt-1 whitespace-pre-wrap text-sm">{chapter.submissionContent}</p>
+              )}
             </li>
           );
         })}

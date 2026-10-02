@@ -40,6 +40,11 @@ export type NotificationType =
   | "followed_node"
   | "followed_world_join";
 export type FieldInputType = "text" | "select" | "range";
+export type StoryChapterSubmissionStatus =
+  | "draft"
+  | "pending"
+  | "approved"
+  | "rejected";
 
 export type Database = {
   public: {
@@ -1086,6 +1091,47 @@ export type Database = {
           },
         ];
       };
+      story_chapter_submissions: {
+        Row: {
+          id: string;
+          chapter_id: string;
+          character_node_id: string | null;
+          status: StoryChapterSubmissionStatus;
+          content: string;
+          submitted_by: string | null;
+          submitted_at: string | null;
+          reviewed_by: string | null;
+          reviewed_at: string | null;
+          review_note: string | null;
+          updated_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<
+          Database["public"]["Tables"]["story_chapter_submissions"]["Row"]
+        > & {
+          chapter_id: string;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["story_chapter_submissions"]["Row"]
+        >;
+        Relationships: [
+          {
+            foreignKeyName: "story_chapter_submissions_chapter_id_fkey";
+            columns: ["chapter_id"];
+            isOneToOne: false;
+            referencedRelation: "story_chapters";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "story_chapter_submissions_character_node_id_fkey";
+            columns: ["character_node_id"];
+            isOneToOne: false;
+            referencedRelation: "nodes";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       notes: {
         Row: {
           id: string;
@@ -1320,6 +1366,7 @@ export type Database = {
       report_target_type: ReportTargetType;
       report_status: ReportStatus;
       story_scope: StoryScope;
+      story_chapter_submission_status: StoryChapterSubmissionStatus;
       notification_type: NotificationType;
     };
   };

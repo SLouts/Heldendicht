@@ -225,3 +225,105 @@ export async function fetchWorldCharacterTimelineEvents(
     })
     .filter((e): e is WorldCharacterEventRow => e !== null);
 }
+
+export type ChapterParticipant = {
+  character_node_id: string;
+  title: string;
+  slug: string;
+};
+
+/**
+ * 查這個世界觀所有官方章節各自標記了哪些角色參與("副本")——給世界觀
+ * 整體時間軸的章節列表用,一次查完整個世界觀,不用每個章節各自查一次。
+ *
+ * migration 036 套用前這張表還不存在,select 會失敗,這裡當作「沒有
+ * 任何章節標記了參與者」,不影響既有的章節清單顯示。
+ */
+export async function fetchOfficialChapterParticipants(
+  supabase: SupabaseServerClient,
+  worldId: string,
+): Promise<Map<string, ChapterParticipant[]>> {
+  const result = await supabase
+    .from("story_chapter_participants")
+    .select(
+      "chapter_id, character:nodes!story_chapter_participants_character_node_id_fkey(id, title, slug), chapter:story_chapters!inner(world_id, scope)",
+    )
+    .eq("chapter.world_id", worldId)
+    .eq("chapter.scope", "official");
+
+  const map = new Map<string, ChapterParticipant[]>();
+  if (result.error || !result.data) return map;
+
+  for (const row of result.data) {
+    const character = unwrapRelation(row.character);
+    if (!character) continue;
+    const list = map.get(row.chapter_id) ?? [];
+    list.push({ character_node_id: character.id, title: character.title, slug: character.slug });
+    map.set(row.chapter_id, list);
+  }
+  return map;
+}
+
+/**
+ * 查單一章節標記了哪些角色參與——給章節詳細頁用(顯示參與名單 +
+ * 編輯表單預先勾選)。
+ */
+export async function fetchChapterParticipants(
+  supabase: SupabaseServerClient,
+  chapterId: string,
+): Promise<ChapterParticipant[]> {
+  const result = await supabase
+    .from("story_chapter_participants")
+    .select(
+      "character_node_id, character:nodes!story_chapter_participants_character_node_id_fkey(title, slug)",
+    )
+    .eq("chapter_id", chapterId);
+  if (result.error || !result.data) return [];
+
+  return result.data
+    .map((row) => {
+      const character = unwrapRelation(row.character);
+      return character
+        ? { character_node_id: row.character_node_id, title: character.title, slug: character.slug }
+        : null;
+    })
+    .filter((p): p is ChapterParticipant => p !== null);
+}
+
+export type CharacterParticipantChapterRow = {
+  id: string;
+  title: string;
+  description: string | null;
+  year_start: number | null;
+  year_start_month: number | null;
+  year_start_day: number | null;
+  year_end: number | null;
+  year_end_month: number | null;
+  year_end_day: number | null;
+};
+
+/**
+ * 查這個角色節點被標記參與的所有官方章節("副本")——給角色自己的頁面
+ * 用,顯示成唯讀的「共同副本」區塊,跟這個角色自己的 character_timeline_
+ * events 個人時間點是分開的兩件事。
+ *
+ * migration 036 套用前這張表還不存在,select 會失敗,這裡當作「這個
+ * 角色沒有被標記參與任何章節」,不影響既有的角色頁面顯示。
+ */
+export async function fetchCharacterParticipantChapters(
+  supabase: SupabaseServerClient,
+  nodeId: string,
+): Promise<CharacterParticipantChapterRow[]> {
+  const result = await supabase
+    .from("story_chapter_participants")
+    .select(
+      "chapter:story_chapters!inner(id, title, description, year_start, year_start_month, year_start_day, year_end, year_end_month, year_end_day)",
+    )
+    .eq("character_node_id", nodeId);
+  if (result.error || !result.data) return [];
+
+  return result.data
+    .map((row) => unwrapRelation(row.chapter))
+    .filter((c): c is CharacterParticipantChapterRow => c !== null)
+    .sort((a, b) => (a.year_start ?? Infinity) - (b.year_start ?? Infinity));
+}

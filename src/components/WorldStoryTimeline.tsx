@@ -2,11 +2,16 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { worldDateValue, formatWorldDate } from "@/lib/worldDate";
+import { worldDateValue, formatWorldDate, formatWorldDateRange } from "@/lib/worldDate";
 
 const ZOOM_STEP = 1.3;
 const MIN_ZOOM = 0.4;
 const MAX_ZOOM = 6;
+
+export type TimelineChapterParticipant = {
+  title: string;
+  href: string;
+};
 
 export type TimelineChapterItem = {
   id: string;
@@ -19,6 +24,9 @@ export type TimelineChapterItem = {
   yearEndMonth: number | null;
   yearEndDay: number | null;
   href: string;
+  /** 這個章節標記了哪些角色共同參與("副本")——沒有標記就是空陣列,
+   * 不特別顯示參與者這行。 */
+  participants: TimelineChapterParticipant[];
 };
 
 export type TimelineCharacterEventItem = {
@@ -191,22 +199,21 @@ export function WorldStoryTimeline({
   );
 }
 
-function formatChapterDateRange(chapter: TimelineChapterItem): string | null {
-  if (chapter.yearStart == null) return null;
-  const start = formatWorldDate(chapter.yearStart, chapter.yearStartMonth, chapter.yearStartDay);
-  if (chapter.yearEnd == null) return start;
-  const end = formatWorldDate(chapter.yearEnd, chapter.yearEndMonth, chapter.yearEndDay);
-  return `${start} ~ ${end}`;
-}
-
 function ChapterPlainList({ chapters }: { chapters: TimelineChapterItem[] }) {
   return (
     <ul className="mt-3 divide-y divide-border">
       {chapters.map((chapter) => {
-        const dateLabel = formatChapterDateRange(chapter);
+        const dateLabel = formatWorldDateRange(
+          chapter.yearStart,
+          chapter.yearStartMonth,
+          chapter.yearStartDay,
+          chapter.yearEnd,
+          chapter.yearEndMonth,
+          chapter.yearEndDay,
+        );
         return (
-          <li key={chapter.id}>
-            <Link href={chapter.href} className="block py-3 hover:underline">
+          <li key={chapter.id} className="py-3">
+            <Link href={chapter.href} className="block hover:underline">
               <div className="flex flex-wrap items-baseline gap-2">
                 <span className="font-medium">{chapter.title}</span>
                 {dateLabel && (
@@ -217,6 +224,19 @@ function ChapterPlainList({ chapters }: { chapters: TimelineChapterItem[] }) {
                 <p className="mt-0.5 text-sm text-muted-foreground">{chapter.description}</p>
               )}
             </Link>
+            {chapter.participants.length > 0 && (
+              <p className="mt-1 text-xs text-muted-foreground">
+                共同副本:
+                {chapter.participants.map((p, i) => (
+                  <span key={p.href}>
+                    {i > 0 && "、"}
+                    <Link href={p.href} className="hover:underline">
+                      {p.title}
+                    </Link>
+                  </span>
+                ))}
+              </p>
+            )}
           </li>
         );
       })}

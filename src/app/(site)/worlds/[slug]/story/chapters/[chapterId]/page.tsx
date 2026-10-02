@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { StepContent } from "@/app/dashboard/worlds/[slug]/story/chapters/[chapterId]/StepContent";
 import { unwrapRelation } from "@/lib/unwrapRelation";
+import { fetchChapterParticipants } from "@/lib/storyTimeline";
 
 /**
  * 公開版章節詳細頁,唯讀——沒有編輯/刪除/新增段落,可見度交給
@@ -33,7 +34,7 @@ export default async function PublicChapterDetailPage({
 
   const character = unwrapRelation(chapter.character);
 
-  const [{ data: steps }, { data: worldNodes }] = await Promise.all([
+  const [{ data: steps }, { data: worldNodes }, participants] = await Promise.all([
     supabase
       .from("story_steps")
       .select(
@@ -42,6 +43,7 @@ export default async function PublicChapterDetailPage({
       .eq("chapter_id", chapterId)
       .order("order_index"),
     supabase.from("nodes").select("title, slug, is_placeholder").eq("world_id", world.id),
+    fetchChapterParticipants(supabase, chapterId),
   ]);
   const stepLinkMap = new Map(
     (worldNodes ?? []).map((n) => [n.title, { slug: n.slug, isPlaceholder: n.is_placeholder }]),
@@ -64,6 +66,20 @@ export default async function PublicChapterDetailPage({
           {chapter.scope === "official" ? "企劃時間軸" : `${character?.title ?? ""} 的時間軸`}
         </span>
       </div>
+
+      {chapter.scope === "official" && participants.length > 0 && (
+        <p className="mt-4 text-sm text-muted-foreground">
+          參與角色:
+          {participants.map((p, i) => (
+            <span key={p.character_node_id}>
+              {i > 0 && "、"}
+              <Link href={`/worlds/${world.slug}/nodes/${p.slug}`} className="hover:underline">
+                {p.title}
+              </Link>
+            </span>
+          ))}
+        </p>
+      )}
 
       <h2 className="mt-8 text-lg font-semibold">段落</h2>
       <div className="mt-3 flex flex-col gap-3">

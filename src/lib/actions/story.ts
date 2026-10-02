@@ -474,3 +474,63 @@ export async function updateStoryTimelineRange(
   revalidatePath(`/worlds/${parsed.data.worldSlug}/story`);
   return undefined;
 }
+
+const UpdateChapterParticipantsSchema = z.object({
+  chapterId: z.uuid(),
+  worldSlug: z.string().min(1),
+  characterNodeIds: z.array(z.uuid()),
+});
+
+/**
+ * 設定「副本」的參與角色名單(story_chapter_participants)——整批替換
+ * (先刪掉這個章節原本的所有標記,再依勾選的名單重新插入),不逐條 diff,
+ * 跟其他「checklist 式整批儲存」的慣例一致。
+ *
+ * 只有世界觀 staff/site_admin 能成功(story_chapter_participants_write
+ * policy 擋非 staff),這裡不重複判斷權限,交給資料庫。
+ */
+export async function updateChapterParticipants(
+  _prevState: StoryFormState,
+  formData: FormData,
+): Promise<StoryFormState> {
+  await requireUser();
+
+  const parsed = UpdateChapterParticipantsSchema.safeParse({
+    chapterId: formData.get("chapterId"),
+    worldSlug: formData.get("worldSlug"),
+    characterNodeIds: formData.getAll("characterNodeIds"),
+  });
+  if (!parsed.success) {
+    return { fieldErrors: parsed.error.flatten().fieldErrors };
+  }
+
+  const supabase = await createClient();
+
+  const { error: deleteError } = await supabase
+    .from("story_chapter_participants")
+    .delete()
+    .eq("chapter_id", parsed.data.chapterId);
+  if (deleteError) {
+    return { error: "更新參與角色失敗,請稍後再試" };
+  }
+
+  if (parsed.data.characterNodeIds.length > 0) {
+    const { error: insertError } = await supabase
+      .from("story_chapter_participants")
+      .insert(
+        parsed.data.characterNodeIds.map((characterNodeId) => ({
+          chapter_id: parsed.data.chapterId,
+          character_node_id: characterNodeId,
+        })),
+      );
+    if (insertError) {
+      return { error: "更新參與角色失敗,你可能沒有權限編輯這條時間軸" };
+    }
+  }
+
+  revalidatePath(`/dashboard/worlds/${parsed.data.worldSlug}/story/chapters/${parsed.data.chapterId}`);
+  revalidatePath(`/worlds/${parsed.data.worldSlug}/story/chapters/${parsed.data.chapterId}`);
+  revalidatePath(`/dashboard/worlds/${parsed.data.worldSlug}/story`);
+  revalidatePath(`/worlds/${parsed.data.worldSlug}/story`);
+  return undefined;
+}

@@ -7,6 +7,7 @@ import { WorldStoryTimeline } from "@/components/WorldStoryTimeline";
 import { StoryTimelineRangeForm } from "./StoryTimelineRangeForm";
 import {
   fetchOfficialChapters,
+  fetchOfficialChapterParticipants,
   fetchWorldCharacterTimelineEvents,
   fetchWorldStoryTimelineRange,
 } from "@/lib/storyTimeline";
@@ -35,14 +36,21 @@ export default async function StoryPage({
     .maybeSingle();
   if (!world) notFound();
 
-  const [{ data: isStaff }, { data: isAdmin }, chapters, characterEvents, timelineRange] =
-    await Promise.all([
-      supabase.rpc("is_world_staff", { p_world_id: world.id }),
-      supabase.rpc("is_world_admin", { p_world_id: world.id }),
-      fetchOfficialChapters(supabase, world.id),
-      fetchWorldCharacterTimelineEvents(supabase, world.id),
-      fetchWorldStoryTimelineRange(supabase, world.id),
-    ]);
+  const [
+    { data: isStaff },
+    { data: isAdmin },
+    chapters,
+    characterEvents,
+    timelineRange,
+    participantsByChapter,
+  ] = await Promise.all([
+    supabase.rpc("is_world_staff", { p_world_id: world.id }),
+    supabase.rpc("is_world_admin", { p_world_id: world.id }),
+    fetchOfficialChapters(supabase, world.id),
+    fetchWorldCharacterTimelineEvents(supabase, world.id),
+    fetchWorldStoryTimelineRange(supabase, world.id),
+    fetchOfficialChapterParticipants(supabase, world.id),
+  ]);
 
   const newChapterHref = `/dashboard/worlds/${world.slug}/story/chapters/new`;
 
@@ -57,6 +65,10 @@ export default async function StoryPage({
     yearEndMonth: c.year_end_month,
     yearEndDay: c.year_end_day,
     href: `/dashboard/worlds/${world.slug}/story/chapters/${c.id}`,
+    participants: (participantsByChapter.get(c.id) ?? []).map((p) => ({
+      title: p.title,
+      href: `/dashboard/worlds/${world.slug}/nodes/${p.slug}`,
+    })),
   }));
   const characterEventItems = characterEvents.map((e) => ({
     id: e.id,

@@ -1055,6 +1055,37 @@ export type Database = {
           },
         ];
       };
+      story_chapter_participants: {
+        Row: {
+          chapter_id: string;
+          character_node_id: string;
+          created_at: string;
+        };
+        Insert: {
+          chapter_id: string;
+          character_node_id: string;
+          created_at?: string;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["story_chapter_participants"]["Row"]
+        >;
+        Relationships: [
+          {
+            foreignKeyName: "story_chapter_participants_chapter_id_fkey";
+            columns: ["chapter_id"];
+            isOneToOne: false;
+            referencedRelation: "story_chapters";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "story_chapter_participants_character_node_id_fkey";
+            columns: ["character_node_id"];
+            isOneToOne: false;
+            referencedRelation: "nodes";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       notes: {
         Row: {
           id: string;

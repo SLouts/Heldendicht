@@ -29,3 +29,20 @@ export function formatWorldDate(
   const dd = String(day).padStart(2, "0");
   return `${year}.${mm}.${dd}`;
 }
+
+/** 章節/副本這種「可能有起迄」的日期範圍共用格式化——沒有起始年份就回
+ * null(代表這筆還沒填年份);只有起始、沒有結束就只顯示起始那一個。 */
+export function formatWorldDateRange(
+  yearStart: number | null,
+  yearStartMonth?: number | null,
+  yearStartDay?: number | null,
+  yearEnd?: number | null,
+  yearEndMonth?: number | null,
+  yearEndDay?: number | null,
+): string | null {
+  if (yearStart == null) return null;
+  const start = formatWorldDate(yearStart, yearStartMonth, yearStartDay);
+  if (yearEnd == null) return start;
+  const end = formatWorldDate(yearEnd, yearEndMonth, yearEndDay);
+  return `${start} ~ ${end}`;
+}

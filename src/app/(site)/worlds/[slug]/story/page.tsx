@@ -5,6 +5,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { WorldStoryTimeline } from "@/components/WorldStoryTimeline";
 import {
   fetchOfficialChapters,
+  fetchOfficialChapterParticipants,
   fetchWorldCharacterTimelineEvents,
   fetchWorldStoryTimelineRange,
 } from "@/lib/storyTimeline";
@@ -31,10 +32,11 @@ export default async function PublicStoryPage({
     .maybeSingle();
   if (!world) notFound();
 
-  const [chapters, characterEvents, timelineRange] = await Promise.all([
+  const [chapters, characterEvents, timelineRange, participantsByChapter] = await Promise.all([
     fetchOfficialChapters(supabase, world.id),
     fetchWorldCharacterTimelineEvents(supabase, world.id),
     fetchWorldStoryTimelineRange(supabase, world.id),
+    fetchOfficialChapterParticipants(supabase, world.id),
   ]);
 
   const chapterItems = chapters.map((c) => ({
@@ -48,6 +50,10 @@ export default async function PublicStoryPage({
     yearEndMonth: c.year_end_month,
     yearEndDay: c.year_end_day,
     href: `/worlds/${world.slug}/story/chapters/${c.id}`,
+    participants: (participantsByChapter.get(c.id) ?? []).map((p) => ({
+      title: p.title,
+      href: `/worlds/${world.slug}/nodes/${p.slug}`,
+    })),
   }));
   const characterEventItems = characterEvents.map((e) => ({
     id: e.id,

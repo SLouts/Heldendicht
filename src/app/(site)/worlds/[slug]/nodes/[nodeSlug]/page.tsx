@@ -9,6 +9,7 @@ import { NodeInfobox } from "./NodeInfobox";
 import { NodeContentPanel } from "@/components/NodeContentPanel";
 import { NODE_TYPE_LABEL, NODE_STATUS_LABEL } from "@/lib/nodeTypeLabels";
 import { unwrapRelation } from "@/lib/unwrapRelation";
+import { fetchCharacterParticipantChapters } from "@/lib/storyTimeline";
 
 /**
  * 公開版節點頁面——可見度完全交給 nodes_select_visible RLS
@@ -61,6 +62,7 @@ export default async function PublicNodeDetailPage({
     { data: categoryFieldDefs },
     { data: categoryFieldValues },
     { data: timelineEvents },
+    participantChapters,
     { data: relationships },
     { data: isStaff },
     { data: isMember },
@@ -126,6 +128,9 @@ export default async function PublicNodeDetailPage({
           .eq("node_id", node.id)
           .order("order_index", { ascending: true })
       : Promise.resolve({ data: null }),
+    node.node_type === "character"
+      ? fetchCharacterParticipantChapters(supabase, node.id)
+      : Promise.resolve([]),
     supabase
       .from("relationships")
       .select(
@@ -249,6 +254,19 @@ export default async function PublicNodeDetailPage({
     })),
   );
 
+  const sharedChapterItems = participantChapters.map((c) => ({
+    id: c.id,
+    title: c.title,
+    description: c.description,
+    yearStart: c.year_start,
+    yearStartMonth: c.year_start_month,
+    yearStartDay: c.year_start_day,
+    yearEnd: c.year_end,
+    yearEndMonth: c.year_end_month,
+    yearEndDay: c.year_end_day,
+    href: `/worlds/${world.slug}/story/chapters/${c.id}`,
+  }));
+
   const isCharacter = node.node_type === "character" && character;
   const extraBadges = node.status === "pending" ? (
     <span className="rounded-full bg-badge-pending-bg px-2 py-0.5 text-xs text-badge-pending-fg">
@@ -317,6 +335,7 @@ export default async function PublicNodeDetailPage({
             fileAttachments={fileAttachments}
             sections={sections ?? []}
             timelineEventItems={timelineEventItems}
+            sharedChapterItems={sharedChapterItems}
             relationships={relationships ?? []}
             categoryFields={categoryFields}
           />

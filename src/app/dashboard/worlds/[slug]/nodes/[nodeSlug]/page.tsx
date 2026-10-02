@@ -20,7 +20,8 @@ import { ReportForm } from "@/components/ReportForm";
 import { NODE_TYPE_LABEL, NODE_STATUS_LABEL } from "@/lib/nodeTypeLabels";
 import { getNodeMediaSignedUrl } from "@/lib/nodeMedia";
 import { unwrapRelation } from "@/lib/unwrapRelation";
-import { fetchCharacterTimelineEvents } from "@/lib/storyTimeline";
+import { fetchCharacterTimelineEvents, fetchCharacterParticipantChapters } from "@/lib/storyTimeline";
+import { CharacterSharedChapters } from "@/components/CharacterSharedChapters";
 
 export default async function NodeDetailPage({
   params,
@@ -145,6 +146,10 @@ export default async function NodeDetailPage({
     node.node_type === "character"
       ? await fetchCharacterTimelineEvents(supabase, node.id)
       : [];
+  const participantChapters =
+    node.node_type === "character"
+      ? await fetchCharacterParticipantChapters(supabase, node.id)
+      : [];
 
   // 一般成員只能改選開放投稿的分類,或是節點目前已經掛著的那個分類
   // (即使那個分類後來被關閉,也不會因此把選項憑空拿掉、逼他們選別的)。
@@ -257,6 +262,19 @@ export default async function NodeDetailPage({
       worldYearDay: e.world_year_day,
     })),
   );
+
+  const sharedChapterItems = participantChapters.map((c) => ({
+    id: c.id,
+    title: c.title,
+    description: c.description,
+    yearStart: c.year_start,
+    yearStartMonth: c.year_start_month,
+    yearStartDay: c.year_start_day,
+    yearEnd: c.year_end,
+    yearEndMonth: c.year_end_month,
+    yearEndDay: c.year_end_day,
+    href: `/dashboard/worlds/${world.slug}/story/chapters/${c.id}`,
+  }));
 
   const category = categories?.find((c) => c.id === node.category_id);
   const extraBadges =
@@ -474,6 +492,7 @@ export default async function NodeDetailPage({
           {node.node_type === "character" && (
             <div className="mt-10">
               <CharacterTimelineDisplay events={timelineEventItems} />
+              <CharacterSharedChapters chapters={sharedChapterItems} />
             </div>
           )}
 

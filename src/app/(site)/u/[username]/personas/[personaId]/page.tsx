@@ -84,6 +84,7 @@ export default async function PersonaDetailPage({
     { data: fieldDefRows },
     { data: categoryFieldValueRows },
     { data: categoryFieldDefRows },
+    { data: participantRows },
   ] =
     // .in() 帶空陣列時 PostgREST 直接回傳空結果(不會出錯),所以這裡不用
     // 為了「這個 persona 還沒連結任何節點」的情況另外寫一套 fallback 型別,
@@ -143,6 +144,12 @@ export default async function PersonaDetailPage({
         )
         .in("category_id", categoryIds)
         .order("order_index", { ascending: true }),
+      supabase
+        .from("story_chapter_participants")
+        .select(
+          "character_node_id, chapter:story_chapters(id, title, description, year_start, year_start_month, year_start_day, year_end, year_end_month, year_end_day)",
+        )
+        .in("character_node_id", nodeIds),
     ]);
 
   const avatarUrl = getProfileMediaPublicUrl(persona.avatar_path);
@@ -217,6 +224,17 @@ export default async function PersonaDetailPage({
     categoryFieldDefsByCategory.set(row.category_id, list);
   }
 
+  // 這個化身被標記參與的官方章節("副本")——跟角色自己的個人時間點是
+  // 分開的兩件事,見 CharacterSharedChapters。
+  const participantChaptersByNode = new Map<string, NonNullable<typeof participantRows>>();
+  for (const row of participantRows ?? []) {
+    const chapter = unwrapRelation(row.chapter);
+    if (!chapter) continue;
+    const list = participantChaptersByNode.get(row.character_node_id) ?? [];
+    list.push(row);
+    participantChaptersByNode.set(row.character_node_id, list);
+  }
+
   const tabs: NodeTab[] = [
     {
       key: "core",
@@ -287,6 +305,22 @@ export default async function PersonaDetailPage({
       })),
     );
 
+    const sharedChapterItems = (participantChaptersByNode.get(node.id) ?? [])
+      .map((row) => unwrapRelation(row.chapter))
+      .filter((c): c is NonNullable<typeof c> => c !== null)
+      .map((c) => ({
+        id: c.id,
+        title: c.title,
+        description: c.description,
+        yearStart: c.year_start,
+        yearStartMonth: c.year_start_month,
+        yearStartDay: c.year_start_day,
+        yearEnd: c.year_end,
+        yearEndMonth: c.year_end_month,
+        yearEndDay: c.year_end_day,
+        href: `/worlds/${world.slug}/story/chapters/${c.id}`,
+      }));
+
     const fieldValues = fieldValuesByNode.get(node.id) ?? new Map<string, string>();
     // 共用欄位(character_type 是 NULL)+ PC 專屬欄位都要出現(persona 只有
     // PC 能連,見 chk_persona_only_pc),不用再依 character_type 篩一次。
@@ -325,6 +359,7 @@ export default async function PersonaDetailPage({
               fileAttachments={fileAttachments}
               sections={sectionsByNode.get(node.id) ?? []}
               timelineEventItems={timelineEventItems}
+              sharedChapterItems={sharedChapterItems}
               relationships={relationshipsByNode.get(node.id) ?? []}
               categoryFields={categoryFields}
             />

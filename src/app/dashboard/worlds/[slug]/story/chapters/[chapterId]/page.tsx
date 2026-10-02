@@ -4,9 +4,11 @@ import { requireUser } from "@/lib/dal";
 import { createClient } from "@/lib/supabase/server";
 import { deleteChapter } from "@/lib/actions/story";
 import { EditChapterForm } from "./EditChapterForm";
+import { ChapterParticipantsForm } from "./ChapterParticipantsForm";
 import { StepEditForm } from "./StepEditForm";
 import { StepContent } from "./StepContent";
 import { unwrapRelation } from "@/lib/unwrapRelation";
+import { fetchChapterParticipants } from "@/lib/storyTimeline";
 
 type ChapterDetail = {
   id: string;
@@ -101,6 +103,7 @@ export default async function ChapterDetailPage({
     { data: steps },
     { data: characterNodes },
     { data: worldNodes },
+    participants,
   ] = await Promise.all([
     supabase.rpc("is_world_staff", { p_world_id: world.id }),
     chapter.scope === "character" && chapter.character_id
@@ -123,6 +126,7 @@ export default async function ChapterDetailPage({
       .from("nodes")
       .select("title, slug, is_placeholder")
       .eq("world_id", world.id),
+    fetchChapterParticipants(supabase, chapterId),
   ]);
 
   const canManage = Boolean(isStaff) || Boolean(owns);
@@ -173,6 +177,35 @@ export default async function ChapterDetailPage({
             刪除這條時間軸章節
           </button>
         </form>
+      )}
+
+      {chapter.scope === "official" && (
+        <>
+          {!canManage && participants.length > 0 && (
+            <p className="mt-4 text-sm text-muted-foreground">
+              參與角色:
+              {participants.map((p, i) => (
+                <span key={p.character_node_id}>
+                  {i > 0 && "、"}
+                  <Link
+                    href={`/dashboard/worlds/${world.slug}/nodes/${p.slug}`}
+                    className="hover:underline"
+                  >
+                    {p.title}
+                  </Link>
+                </span>
+              ))}
+            </p>
+          )}
+          {canManage && (
+            <ChapterParticipantsForm
+              chapterId={chapter.id}
+              worldSlug={world.slug}
+              characterOptions={characterNodes ?? []}
+              selectedCharacterIds={participants.map((p) => p.character_node_id)}
+            />
+          )}
+        </>
       )}
 
       <div className="mt-8 flex items-center justify-between">

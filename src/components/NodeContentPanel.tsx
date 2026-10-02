@@ -7,6 +7,7 @@ import {
   type CategoryFieldWithValue,
 } from "@/app/dashboard/worlds/[slug]/nodes/[nodeSlug]/CategoryFieldsForm";
 import { NodeTabs, type NodeTab } from "@/app/(site)/worlds/[slug]/nodes/[nodeSlug]/NodeTabs";
+import { CharacterSharedChapters, type SharedChapterItem } from "@/components/CharacterSharedChapters";
 import type { Database } from "@/lib/supabase/database.types";
 import { unwrapRelation } from "@/lib/unwrapRelation";
 
@@ -58,6 +59,7 @@ export function NodeContentPanel({
   fileAttachments,
   sections,
   timelineEventItems,
+  sharedChapterItems = [],
   relationships,
   categoryFields,
 }: {
@@ -69,6 +71,9 @@ export function NodeContentPanel({
   fileAttachments: { id: string; url: string; file_name: string }[];
   sections: NodeSectionItem[];
   timelineEventItems: NodeTimelineEventItem[];
+  /** 這個角色被標記參與的官方章節("副本"),唯讀——跟 timelineEventItems
+   * (自己的個人時間點)是分開的兩件事,見 CharacterSharedChapters。 */
+  sharedChapterItems?: SharedChapterItem[];
   relationships: NodeRelationshipRow[];
   categoryFields?: CategoryFieldWithValue[];
 }) {
@@ -116,11 +121,16 @@ export function NodeContentPanel({
     },
   ];
 
-  if (timelineEventItems.length > 0) {
+  if (timelineEventItems.length > 0 || sharedChapterItems.length > 0) {
     tabs.push({
       key: "timeline",
       label: "時間軸",
-      content: <CharacterTimelineDisplay events={timelineEventItems} />,
+      content: (
+        <>
+          <CharacterTimelineDisplay events={timelineEventItems} />
+          <CharacterSharedChapters chapters={sharedChapterItems} />
+        </>
+      ),
     });
   }
 

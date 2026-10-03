@@ -8,53 +8,36 @@ type Props = {
   heroTitle: string;
   heroTagline: string;
   disclaimerContent: string;
-  feature1Title: string;
-  feature1Description: string;
-  feature2Title: string;
-  feature2Description: string;
-  feature3Title: string;
-  feature3Description: string;
   ctaHeading: string;
   ctaDescriptionGuest: string;
   ctaDescriptionMember: string;
+  staffContactUsername: string;
 };
 
 /**
- * 首頁文案編輯——右側即時預覽照抄 `(site)/page.tsx` 的排版(Hero 置中
- * 區塊、三張特色卡片、CTA 區塊),讓站務改之前能先看到實際呈現效果,
- * 跟 NewCharacterForm/NewNodeForm 的「即時預覽」是同一套慣例。
- *
- * CTA 區塊的訪客/會員說明文字分開編輯,但預覽固定顯示「訪客會看到的
- * 版本」——站務編輯當下未必是最適合判斷「會員版本」畫面的情境,固定
- * 顯示訪客版本比較符合多數訪問者會看到的樣子。
+ * 首頁文案編輯——右側即時預覽照抄 `(site)/page.tsx` Hero 區塊的排版
+ * (置中、max-w-2xl、text-xs 公告文字),讓站務改之前能先看到實際
+ * 呈現效果,跟 NewCharacterForm/NewNodeForm 的「即時預覽」是同一套慣例。
+ * 「平台特色」卡片清單在這個表單之外,見同一頁下方的 OrderedContentEditor
+ * (siteFeatureCards.ts)。
  */
 export function SiteSettingsForm({
   heroTitle: initialHeroTitle,
   heroTagline: initialHeroTagline,
   disclaimerContent: initialDisclaimerContent,
-  feature1Title: initialFeature1Title,
-  feature1Description: initialFeature1Description,
-  feature2Title: initialFeature2Title,
-  feature2Description: initialFeature2Description,
-  feature3Title: initialFeature3Title,
-  feature3Description: initialFeature3Description,
   ctaHeading: initialCtaHeading,
   ctaDescriptionGuest: initialCtaDescriptionGuest,
   ctaDescriptionMember: initialCtaDescriptionMember,
+  staffContactUsername: initialStaffContactUsername,
 }: Props) {
   const [state, formAction, pending] = useActionState(updateSiteSettings, undefined);
   const [heroTitle, setHeroTitle] = useState(initialHeroTitle);
   const [heroTagline, setHeroTagline] = useState(initialHeroTagline);
   const [disclaimerContent, setDisclaimerContent] = useState(initialDisclaimerContent);
-  const [feature1Title, setFeature1Title] = useState(initialFeature1Title);
-  const [feature1Description, setFeature1Description] = useState(initialFeature1Description);
-  const [feature2Title, setFeature2Title] = useState(initialFeature2Title);
-  const [feature2Description, setFeature2Description] = useState(initialFeature2Description);
-  const [feature3Title, setFeature3Title] = useState(initialFeature3Title);
-  const [feature3Description, setFeature3Description] = useState(initialFeature3Description);
   const [ctaHeading, setCtaHeading] = useState(initialCtaHeading);
   const [ctaDescriptionGuest, setCtaDescriptionGuest] = useState(initialCtaDescriptionGuest);
   const [ctaDescriptionMember, setCtaDescriptionMember] = useState(initialCtaDescriptionMember);
+  const [staffContactUsername, setStaffContactUsername] = useState(initialStaffContactUsername);
 
   const fieldError = (key: string) =>
     state && "fieldErrors" in state ? state.fieldErrors[key]?.[0] : undefined;
@@ -122,73 +105,6 @@ export function SiteSettingsForm({
         </div>
 
         <div className="flex flex-col gap-4 border-t border-border pt-4">
-          <h2 className="text-sm font-semibold text-muted-foreground">平台特色(三張卡片)</h2>
-
-          {(
-            [
-              {
-                key: "feature1",
-                title: feature1Title,
-                setTitle: setFeature1Title,
-                description: feature1Description,
-                setDescription: setFeature1Description,
-              },
-              {
-                key: "feature2",
-                title: feature2Title,
-                setTitle: setFeature2Title,
-                description: feature2Description,
-                setDescription: setFeature2Description,
-              },
-              {
-                key: "feature3",
-                title: feature3Title,
-                setTitle: setFeature3Title,
-                description: feature3Description,
-                setDescription: setFeature3Description,
-              },
-            ] as const
-          ).map((f, i) => (
-            <div key={f.key} className="flex flex-col gap-2 rounded-lg border border-border p-3">
-              <p className="text-xs font-medium text-muted-foreground">第 {i + 1} 張卡片</p>
-              <div className="flex flex-col gap-1">
-                <label htmlFor={`${f.key}Title`} className="text-sm font-medium">
-                  標題
-                </label>
-                <input
-                  id={`${f.key}Title`}
-                  name={`${f.key}Title`}
-                  required
-                  value={f.title}
-                  onChange={(e) => f.setTitle(e.target.value)}
-                  className="rounded-lg border border-border bg-surface px-3 py-2"
-                />
-                {fieldError(`${f.key}Title`) && (
-                  <p className="text-sm text-danger">{fieldError(`${f.key}Title`)}</p>
-                )}
-              </div>
-              <div className="flex flex-col gap-1">
-                <label htmlFor={`${f.key}Description`} className="text-sm font-medium">
-                  說明文字
-                </label>
-                <textarea
-                  id={`${f.key}Description`}
-                  name={`${f.key}Description`}
-                  required
-                  rows={3}
-                  value={f.description}
-                  onChange={(e) => f.setDescription(e.target.value)}
-                  className="rounded-lg border border-border bg-surface px-3 py-2 text-sm"
-                />
-                {fieldError(`${f.key}Description`) && (
-                  <p className="text-sm text-danger">{fieldError(`${f.key}Description`)}</p>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="flex flex-col gap-4 border-t border-border pt-4">
           <h2 className="text-sm font-semibold text-muted-foreground">底部 CTA 區塊</h2>
 
           <div className="flex flex-col gap-1">
@@ -243,6 +159,31 @@ export function SiteSettingsForm({
           </div>
         </div>
 
+        <div className="flex flex-col gap-4 border-t border-border pt-4">
+          <h2 className="text-sm font-semibold text-muted-foreground">站務聯絡人</h2>
+
+          <div className="flex flex-col gap-1">
+            <label htmlFor="staffContactUsername" className="text-sm font-medium">
+              全站頁尾「聯繫站務人員」要連去的帳號(網址代號)
+            </label>
+            <input
+              id="staffContactUsername"
+              name="staffContactUsername"
+              placeholder="例如 peilinmu"
+              value={staffContactUsername}
+              onChange={(e) => setStaffContactUsername(e.target.value)}
+              className="rounded-lg border border-border bg-surface px-3 py-2"
+            />
+            <p className="text-xs text-muted-foreground">
+              留空代表還沒設定,連結會顯示 404。填這個人的網址代號(個人頁面網址
+              /u/後面那一段),不是暱稱。
+            </p>
+            {fieldError("staffContactUsername") && (
+              <p className="text-sm text-danger">{fieldError("staffContactUsername")}</p>
+            )}
+          </div>
+        </div>
+
         {state && "error" in state && <p className="text-sm text-danger">{state.error}</p>}
 
         <button
@@ -263,19 +204,6 @@ export function SiteSettingsForm({
             <div className="mx-auto mt-3 max-w-2xl text-xs text-muted-foreground [&_p]:mt-0 [&_p]:text-xs">
               <MarkdownText text={disclaimerContent} />
             </div>
-          </div>
-
-          <div className="grid gap-2 border-t border-border pt-4 sm:grid-cols-1">
-            {[
-              { title: feature1Title, description: feature1Description },
-              { title: feature2Title, description: feature2Description },
-              { title: feature3Title, description: feature3Description },
-            ].map((f) => (
-              <div key={f.title} className="rounded-lg border border-border bg-surface p-3">
-                <h3 className="font-display text-sm font-semibold">{f.title}</h3>
-                <p className="mt-1 text-xs text-muted-foreground">{f.description}</p>
-              </div>
-            ))}
           </div>
 
           <div className="rounded-lg border border-border bg-surface p-4 text-center">

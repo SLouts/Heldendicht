@@ -2,10 +2,10 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/dal";
 import { RecentActivityList, type RecentActivityItem } from "./RecentActivityList";
-import { PlatformFeatures } from "./PlatformFeatures";
+import { FeatureCardsCarousel } from "./FeatureCardsCarousel";
 import { MarkdownText } from "@/components/MarkdownText";
 import { unwrapRelation } from "@/lib/unwrapRelation";
-import { fetchSiteSettings } from "@/lib/siteSettings";
+import { fetchSiteSettings, fetchSiteFeatureCards } from "@/lib/siteSettings";
 
 /**
  * 首頁——平台概覽與動態樞紐,不重複維護 /worlds 那份完整的世界觀卡片
@@ -19,7 +19,10 @@ export default async function Home() {
   const user = await getCurrentUser();
   const supabase = await createClient();
 
-  const siteSettings = await fetchSiteSettings(supabase);
+  const [siteSettings, featureCards] = await Promise.all([
+    fetchSiteSettings(supabase),
+    fetchSiteFeatureCards(supabase),
+  ]);
 
   const { data: recentNodes } = await supabase
     .from("nodes")
@@ -122,16 +125,12 @@ export default async function Home() {
           <RecentActivityList items={recentActivity} />
         </section>
 
-        <section className="mt-12">
-          <h2 className="text-xl font-semibold">平台特色</h2>
-          <PlatformFeatures
-            features={[
-              { title: siteSettings.feature1_title, description: siteSettings.feature1_description },
-              { title: siteSettings.feature2_title, description: siteSettings.feature2_description },
-              { title: siteSettings.feature3_title, description: siteSettings.feature3_description },
-            ]}
-          />
-        </section>
+        {featureCards.length > 0 && (
+          <section className="mt-12">
+            <h2 className="text-xl font-semibold">平台特色</h2>
+            <FeatureCardsCarousel cards={featureCards} />
+          </section>
+        )}
 
         <section className="mt-12 rounded-lg border border-border bg-surface p-8 text-center">
           <h2 className="text-2xl font-semibold">{siteSettings.cta_heading}</h2>

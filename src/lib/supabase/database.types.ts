@@ -742,21 +742,30 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["site_rule_fields"]["Row"]>;
         Relationships: [];
       };
+      site_feature_cards: {
+        Row: {
+          id: string;
+          label: string;
+          content: string;
+          order_index: number;
+          created_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["site_feature_cards"]["Row"]> & {
+          label: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["site_feature_cards"]["Row"]>;
+        Relationships: [];
+      };
       site_settings: {
         Row: {
           id: boolean;
           hero_title: string;
           hero_tagline: string;
           disclaimer_content: string;
-          feature1_title: string;
-          feature1_description: string;
-          feature2_title: string;
-          feature2_description: string;
-          feature3_title: string;
-          feature3_description: string;
           cta_heading: string;
           cta_description_guest: string;
           cta_description_member: string;
+          staff_contact_username: string | null;
           updated_at: string;
         };
         Insert: Partial<Database["public"]["Tables"]["site_settings"]["Row"]>;

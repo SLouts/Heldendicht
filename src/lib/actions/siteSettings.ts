@@ -28,18 +28,6 @@ const DisclaimerSchema = z
   .min(1, { error: "請輸入公告文字" })
   .max(2000, { error: "公告文字最多 2000 字" });
 
-const FeatureTitleSchema = z
-  .string()
-  .trim()
-  .min(1, { error: "請輸入標題" })
-  .max(40, { error: "標題最多 40 字" });
-
-const FeatureDescriptionSchema = z
-  .string()
-  .trim()
-  .min(1, { error: "請輸入說明文字" })
-  .max(300, { error: "說明文字最多 300 字" });
-
 const CtaHeadingSchema = z
   .string()
   .trim()
@@ -52,31 +40,35 @@ const CtaDescriptionSchema = z
   .min(1, { error: "請輸入說明文字" })
   .max(300, { error: "說明文字最多 300 字" });
 
+// 跟 profile.ts 的 UsernameSchema 同一套規則(網址代號格式),留空代表
+// 清空設定(/staff 連結查不到人,維持 404)。
+const StaffContactUsernameSchema = z.union([
+  z.string().regex(/^[a-z0-9_-]{3,20}$/, {
+    error: "網址代號只能用小寫英文、數字、底線與連字號,長度 3~20",
+  }),
+  z.literal(""),
+]);
+
 const SITE_SETTINGS_FIELDS = [
   ["heroTitle", HeroTitleSchema],
   ["heroTagline", HeroTaglineSchema],
   ["disclaimerContent", DisclaimerSchema],
-  ["feature1Title", FeatureTitleSchema],
-  ["feature1Description", FeatureDescriptionSchema],
-  ["feature2Title", FeatureTitleSchema],
-  ["feature2Description", FeatureDescriptionSchema],
-  ["feature3Title", FeatureTitleSchema],
-  ["feature3Description", FeatureDescriptionSchema],
   ["ctaHeading", CtaHeadingSchema],
   ["ctaDescriptionGuest", CtaDescriptionSchema],
   ["ctaDescriptionMember", CtaDescriptionSchema],
 ] as const;
 
 /**
- * 首頁文案(Hero 標題/標語/測試版公告 + 平台特色三張卡片 + 底部 CTA
- * 標題/說明文字)——只有站務能改,交給 site_settings_update 這條 RLS
+ * 首頁文案(Hero 標題/標語/測試版公告 + 底部 CTA 標題/說明文字 + 站務
+ * 聯絡人 username)——只有站務能改,交給 site_settings_update 這條 RLS
  * policy(限 is_site_admin())把關,這裡不重複檢查。全站只有這一列資料
  * (見 migration 032 的單例表設計),不需要 id 參數,update 時不帶
- * .eq() 條件也只會動到那一列。
+ * .eq() 條件也只會動到那一列。「平台特色」卡片(migration 040 起)是
+ * 獨立的清單,改在 siteFeatureCards.ts 管理,不在這份表單裡。
  *
- * 九個欄位共用同一套「每個都必填、各自長度上限」的驗證形狀,用一張
- * [formKey, schema] 對照表跑迴圈驗證,避免十二組幾乎一樣的
- * safeParse/fieldErrors 樣板重複十二次。
+ * 六個固定欄位共用同一套「每個都必填、各自長度上限」的驗證形狀,用一張
+ * [formKey, schema] 對照表跑迴圈驗證;staffContactUsername 允許空字串
+ * (清空設定),格式規則單獨驗證。
  */
 export async function updateSiteSettings(
   _prevState: SiteSettingsFormState,
@@ -94,6 +86,12 @@ export async function updateSiteSettings(
       values[key] = parsed.data;
     }
   }
+  const staffContactUsername = StaffContactUsernameSchema.safeParse(
+    formData.get("staffContactUsername") ?? "",
+  );
+  if (!staffContactUsername.success) {
+    fieldErrors.staffContactUsername = [staffContactUsername.error.issues[0].message];
+  }
   if (Object.keys(fieldErrors).length > 0) {
     return { fieldErrors };
   }
@@ -105,33 +103,40 @@ export async function updateSiteSettings(
     disclaimer_content: values.disclaimerContent,
     updated_at: new Date().toISOString(),
   };
+  const ctaPayload = {
+    cta_heading: values.ctaHeading,
+    cta_description_guest: values.ctaDescriptionGuest,
+    cta_description_member: values.ctaDescriptionMember,
+  };
 
-  // migration 038 套用前 site_settings 還沒有 feature*/cta_* 這幾欄,
-  // update 會直接失敗——接住那個失敗,退回只存 Hero 那三欄,讓站務在
-  // 套用 migration 之前至少還能改 Hero 區塊,不會整個表單都存不進去。
-  const withNewFields = await supabase
+  // migration 038/039 套用前 site_settings 還沒有 cta_*/staff_contact_
+  // username 這幾欄,update 會直接失敗——依序接住失敗,退回更少欄位的
+  // update,讓站務在套用 migration 之前至少還能改 Hero 區塊,不會整個
+  // 表單都存不進去。
+  const full = await supabase
     .from("site_settings")
     .update({
       ...basePayload,
-      feature1_title: values.feature1Title,
-      feature1_description: values.feature1Description,
-      feature2_title: values.feature2Title,
-      feature2_description: values.feature2Description,
-      feature3_title: values.feature3Title,
-      feature3_description: values.feature3Description,
-      cta_heading: values.ctaHeading,
-      cta_description_guest: values.ctaDescriptionGuest,
-      cta_description_member: values.ctaDescriptionMember,
+      ...ctaPayload,
+      staff_contact_username: staffContactUsername.data! || null,
     })
     .eq("id", true);
 
-  const { error } = withNewFields.error
+  const withoutStaffContact = full.error
+    ? await supabase
+        .from("site_settings")
+        .update({ ...basePayload, ...ctaPayload })
+        .eq("id", true)
+    : full;
+
+  const { error } = withoutStaffContact.error
     ? await supabase.from("site_settings").update(basePayload).eq("id", true)
-    : withNewFields;
+    : withoutStaffContact;
   if (error) {
     return { error: "儲存失敗,請確認你是站務管理員" };
   }
 
   revalidatePath("/");
+  revalidatePath("/staff");
   return undefined;
 }

@@ -49,9 +49,9 @@ export default async function SiteHomepageSettingsPage() {
       />
 
       <div className="mt-10 border-t border-border pt-6">
-        <h2 className="text-lg font-semibold">平台特色卡片</h2>
+        <h2 className="text-lg font-semibold">What&apos;s New 卡片</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          首頁「平台特色」區塊的卡片清單,數量不限,可以新增/刪除/排序。內容支援簡易
+          首頁「What&apos;s New」區塊的卡片清單,數量不限,可以新增/刪除/排序。內容支援簡易
           markdown,要推廣某個世界觀就直接在內容裡放
           [文字](/worlds/該世界觀slug) 連結。
         </p>

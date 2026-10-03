@@ -127,7 +127,7 @@ export default async function Home() {
 
         {featureCards.length > 0 && (
           <section className="mt-12">
-            <h2 className="text-xl font-semibold">平台特色</h2>
+            <h2 className="text-xl font-semibold">What&apos;s New</h2>
             <FeatureCardsCarousel cards={featureCards} />
           </section>
         )}

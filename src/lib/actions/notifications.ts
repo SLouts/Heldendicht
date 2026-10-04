@@ -25,10 +25,3 @@ export async function markAllNotificationsRead(): Promise<void> {
     .eq("is_read", false);
   revalidatePath("/dashboard", "layout");
 }
-
-export async function deleteNotification(id: string): Promise<void> {
-  await requireUser();
-  const supabase = await createClient();
-  await supabase.from("notifications").delete().eq("id", id);
-  revalidatePath("/dashboard", "layout");
-}

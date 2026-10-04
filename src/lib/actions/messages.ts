@@ -157,20 +157,3 @@ export async function createMessageAttachmentUploadTicket(
 
   return { path: data.path, token: data.token };
 }
-
-/**
- * 把跟某個對話對象之間、對方傳給我的訊息都標記已讀。用在開啟對話串頁面時。
- */
-export async function markConversationRead(
-  counterpartId: string,
-): Promise<void> {
-  const user = await requireUser();
-  const supabase = await createClient();
-  await supabase
-    .from("direct_messages")
-    .update({ read_at: new Date().toISOString() })
-    .eq("sender_id", counterpartId)
-    .eq("recipient_id", user.id)
-    .is("read_at", null);
-  revalidatePath("/dashboard", "layout");
-}

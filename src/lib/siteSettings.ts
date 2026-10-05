@@ -1,4 +1,6 @@
 import type { createClient } from "@/lib/supabase/server";
+import { unwrapRelation } from "@/lib/unwrapRelation";
+import { getWorldMediaSignedUrls } from "@/lib/worldMedia";
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 
@@ -88,10 +90,14 @@ export type SiteFeatureCardItem = {
 };
 
 /**
- * 查首頁「平台特色」卡片清單(migration 040)——數量不固定,照
- * order_index 排序。migration 040 套用前這張表還不存在,select 會直接
- * 失敗,這裡當作「還沒有任何卡片」,首頁的卡片區塊就不會顯示,不影響
- * 其餘既有內容。
+ * 查首頁 What's New 區塊的文字卡片清單(migration 040)——只查
+ * card_type='text' 的列,不含 migration 041 新增的「勾選世界觀」卡片
+ * (那些用 fetchFeaturedWorldCards 另外查,形狀完全不同,世界觀卡片不是
+ * OrderedContentEditor 能編輯的標題+內容形狀)。數量不固定,照
+ * order_index 排序。
+ *
+ * migration 040 套用前這張表還不存在,select 會直接失敗,這裡當作
+ * 「還沒有任何卡片」,首頁的卡片區塊就不會顯示,不影響其餘既有內容。
  */
 export async function fetchSiteFeatureCards(
   supabase: SupabaseServerClient,
@@ -99,6 +105,54 @@ export async function fetchSiteFeatureCards(
   const result = await supabase
     .from("site_feature_cards")
     .select("id, label, content")
+    .eq("card_type", "text")
     .order("order_index", { ascending: true });
   return result.data ?? [];
+}
+
+export type FeaturedWorldCardItem = {
+  id: string;
+  slug: string;
+  name: string;
+  tagline: string | null;
+  bannerUrl: string | null;
+  iconUrl: string | null;
+};
+
+/**
+ * 查首頁 What's New 區塊被站務勾選展示的公開世界觀(migration 041)——
+ * 不複製世界觀資料,每次都即時查 worlds 表目前的名稱/橫幅/一句話介紹,
+ * 跟個人頁面的 WorldCard 共用同一套簽名 URL 邏輯(見 getWorldMediaSignedUrls
+ * 的說明)。
+ *
+ * 可見度交給 worlds 本身的 RLS:用內嵌關聯查 world:worlds(...),如果那個
+ * 世界觀後來被主辦改成非公開,內嵌關聯對一般訪客會是 null,這裡直接
+ * 篩掉,不會把該世界觀的資料洩漏出去。
+ *
+ * migration 041 套用前 card_type/world_id 這兩欄還不存在,select 會直接
+ * 失敗,這裡當作「還沒有任何世界觀卡片」。
+ */
+export async function fetchFeaturedWorldCards(
+  supabase: SupabaseServerClient,
+): Promise<FeaturedWorldCardItem[]> {
+  const result = await supabase
+    .from("site_feature_cards")
+    .select("world:worlds(id, slug, name, tagline, banner_path, icon_path)")
+    .eq("card_type", "world")
+    .order("order_index", { ascending: true });
+  if (result.error || !result.data) return [];
+
+  const worlds = result.data
+    .map((row) => unwrapRelation(row.world))
+    .filter((w): w is NonNullable<typeof w> => w !== null);
+
+  const mediaUrls = await getWorldMediaSignedUrls(worlds);
+  return worlds.map((w, i) => ({
+    id: w.id,
+    slug: w.slug,
+    name: w.name,
+    tagline: w.tagline,
+    bannerUrl: mediaUrls[i].bannerUrl,
+    iconUrl: mediaUrls[i].iconUrl,
+  }));
 }

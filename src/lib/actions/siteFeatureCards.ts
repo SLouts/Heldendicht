@@ -54,6 +54,7 @@ export async function createSiteFeatureCard(
   const { data: last } = await supabase
     .from("site_feature_cards")
     .select("order_index")
+    .eq("card_type", "text")
     .order("order_index", { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -124,7 +125,10 @@ export async function deleteSiteFeatureCard(fieldId: string): Promise<void> {
   revalidatePath("/");
 }
 
-/** 上移/下移一張卡片:跟相鄰的卡片互換 order_index。 */
+/** 上移/下移一張文字卡片:跟相鄰的「同樣是文字卡片」互換 order_index
+ * ——限定 card_type='text'(見 moveOrderedItem 的 group 參數),不然
+ * 「相鄰」可能找到世界觀卡片,order_index 是同一個欄位但兩種型態各自
+ * 獨立排序,混在一起互換沒有意義。 */
 export async function moveSiteFeatureCard(
   fieldId: string,
   direction: "up" | "down",
@@ -136,10 +140,61 @@ export async function moveSiteFeatureCard(
     supabase,
     table: "site_feature_cards",
     itemId: fieldId,
+    group: { column: "card_type", value: "text" },
     direction,
   });
   if (error) throw new Error(error);
 
   revalidatePath(ADMIN_HOMEPAGE_PATH);
   revalidatePath("/");
+}
+
+const WorldIdsSchema = z.array(z.uuid());
+
+/**
+ * 整批設定首頁 What's New 要展示的「世界觀卡片」(勾選清單,全部替換)
+ * ——跟 updateChapterParticipants 同一套慣例:先刪掉所有 card_type='world'
+ * 的列,再依勾選的世界觀清單重新插入,不逐條 diff。不在這裡檢查
+ * 「是不是公開世界觀」——呼叫端(管理頁)只會列出公開世界觀讓站務勾選,
+ * 而且就算之後有世界觀被改成非公開,首頁顯示端也會因為內嵌關聯查不到
+ * 資料而自動跳過那張卡片(見 fetchFeaturedWorldCards 的說明),不是
+ * 安全邊界,只是省一次重複判斷。
+ */
+export async function updateFeaturedWorlds(
+  _prevState: FeatureCardFormState,
+  formData: FormData,
+): Promise<FeatureCardFormState> {
+  await requireUser();
+
+  const parsed = WorldIdsSchema.safeParse(formData.getAll("worldIds"));
+  if (!parsed.success) {
+    return { error: "資料格式錯誤,請重新整理頁面再試一次" };
+  }
+
+  const supabase = await createClient();
+
+  const { error: deleteError } = await supabase
+    .from("site_feature_cards")
+    .delete()
+    .eq("card_type", "world");
+  if (deleteError) {
+    return { error: "更新失敗,請確認你是站方管理員" };
+  }
+
+  if (parsed.data.length > 0) {
+    const { error: insertError } = await supabase.from("site_feature_cards").insert(
+      parsed.data.map((worldId, i) => ({
+        card_type: "world",
+        world_id: worldId,
+        order_index: i,
+      })),
+    );
+    if (insertError) {
+      return { error: "更新失敗,請確認你是站方管理員" };
+    }
+  }
+
+  revalidatePath(ADMIN_HOMEPAGE_PATH);
+  revalidatePath("/");
+  return undefined;
 }

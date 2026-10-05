@@ -745,16 +745,24 @@ export type Database = {
       site_feature_cards: {
         Row: {
           id: string;
+          card_type: string;
           label: string;
           content: string;
+          world_id: string | null;
           order_index: number;
           created_at: string;
         };
-        Insert: Partial<Database["public"]["Tables"]["site_feature_cards"]["Row"]> & {
-          label: string;
-        };
+        Insert: Partial<Database["public"]["Tables"]["site_feature_cards"]["Row"]>;
         Update: Partial<Database["public"]["Tables"]["site_feature_cards"]["Row"]>;
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "site_feature_cards_world_id_fkey";
+            columns: ["world_id"];
+            isOneToOne: false;
+            referencedRelation: "worlds";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       site_settings: {
         Row: {

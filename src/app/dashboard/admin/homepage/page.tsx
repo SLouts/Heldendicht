@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/dal";
 import { createClient } from "@/lib/supabase/server";
-import { fetchSiteSettings, fetchSiteFeatureCards } from "@/lib/siteSettings";
+import {
+  fetchSiteSettings,
+  fetchSiteFeatureCards,
+  fetchFeaturedWorldCards,
+} from "@/lib/siteSettings";
 import { OrderedContentEditor } from "@/components/OrderedContentEditor";
 import {
   createSiteFeatureCard,
@@ -10,6 +14,7 @@ import {
   updateSiteFeatureCard,
 } from "@/lib/actions/siteFeatureCards";
 import { SiteSettingsForm } from "./SiteSettingsForm";
+import { FeaturedWorldsForm } from "./FeaturedWorldsForm";
 
 export default async function SiteHomepageSettingsPage() {
   await requireUser();
@@ -26,9 +31,11 @@ export default async function SiteHomepageSettingsPage() {
     );
   }
 
-  const [settings, featureCards] = await Promise.all([
+  const [settings, featureCards, featuredWorlds, { data: publicWorlds }] = await Promise.all([
     fetchSiteSettings(supabase),
     fetchSiteFeatureCards(supabase),
+    fetchFeaturedWorldCards(supabase),
+    supabase.from("worlds").select("id, name").eq("is_public", true).order("name"),
   ]);
 
   return (
@@ -64,6 +71,17 @@ export default async function SiteHomepageSettingsPage() {
           newLabel="新增卡片"
           newLabelPlaceholder="例如「10 月更新公告」"
           emptyText="還沒有設定任何特色卡片,首頁不會顯示這個區塊。"
+        />
+      </div>
+
+      <div className="mt-10 border-t border-border pt-6">
+        <h2 className="text-lg font-semibold">What&apos;s New 世界觀卡片</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          勾選要在首頁展示的公開世界觀,呈現方式跟個人頁面的世界觀卡片一樣(橫幅+頭貼+一句話介紹),內容即時讀取世界觀目前的資料,不用另外維護文字。
+        </p>
+        <FeaturedWorldsForm
+          worldOptions={publicWorlds ?? []}
+          selectedWorldIds={featuredWorlds.map((w) => w.id)}
         />
       </div>
     </div>

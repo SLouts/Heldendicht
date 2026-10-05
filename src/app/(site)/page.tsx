@@ -5,7 +5,11 @@ import { RecentActivityList, type RecentActivityItem } from "./RecentActivityLis
 import { FeatureCardsCarousel } from "./FeatureCardsCarousel";
 import { MarkdownText } from "@/components/MarkdownText";
 import { unwrapRelation } from "@/lib/unwrapRelation";
-import { fetchSiteSettings, fetchSiteFeatureCards } from "@/lib/siteSettings";
+import {
+  fetchSiteSettings,
+  fetchSiteFeatureCards,
+  fetchFeaturedWorldCards,
+} from "@/lib/siteSettings";
 
 /**
  * 首頁——平台概覽與動態樞紐,不重複維護 /worlds 那份完整的世界觀卡片
@@ -19,9 +23,10 @@ export default async function Home() {
   const user = await getCurrentUser();
   const supabase = await createClient();
 
-  const [siteSettings, featureCards] = await Promise.all([
+  const [siteSettings, featureCards, featuredWorldCards] = await Promise.all([
     fetchSiteSettings(supabase),
     fetchSiteFeatureCards(supabase),
+    fetchFeaturedWorldCards(supabase),
   ]);
 
   const { data: recentNodes } = await supabase
@@ -125,10 +130,10 @@ export default async function Home() {
           <RecentActivityList items={recentActivity} />
         </section>
 
-        {featureCards.length > 0 && (
+        {(featureCards.length > 0 || featuredWorldCards.length > 0) && (
           <section className="mt-12">
             <h2 className="text-xl font-semibold">What&apos;s New</h2>
-            <FeatureCardsCarousel cards={featureCards} />
+            <FeatureCardsCarousel cards={featureCards} worldCards={featuredWorldCards} />
           </section>
         )}
 

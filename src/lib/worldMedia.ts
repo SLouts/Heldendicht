@@ -45,3 +45,17 @@ export async function getWorldMediaSignedUrls(
     })),
   );
 }
+
+/**
+ * 專門給 og:image 用的簽名 URL——效期比一般的 5 分鐘長很多(1 小時),
+ * 因為分享連結被 Discord/搜尋引擎等外部服務抓取的時間點不可預期,5 分鐘
+ * 太容易過期變成破圖。只給「公開世界觀」的橫幅呼叫這個函式——公開世界觀
+ * 的橫幅本來就是任何人都看得到的內容,延長這張圖單獨的簽名效期不會
+ * 洩漏非公開資料;私人世界觀不要呼叫這個函式。
+ */
+export async function getWorldOgImageUrl(path: string | null): Promise<string | null> {
+  if (!path) return null;
+  const admin = createAdminClient();
+  const { data } = await admin.storage.from(WORLD_MEDIA_BUCKET).createSignedUrl(path, 3600);
+  return data?.signedUrl ?? null;
+}

@@ -1,7 +1,9 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getWorldMediaSignedUrl } from "@/lib/worldMedia";
+import { getCurrentUser } from "@/lib/dal";
+import { getWorldMediaSignedUrl, getWorldOgImageUrl } from "@/lib/worldMedia";
 import { getWorldMapSignedUrl } from "@/lib/worldmap";
 import { WorldHero } from "@/app/dashboard/worlds/[slug]/WorldHero";
 import { WorldStatCards } from "@/app/dashboard/worlds/[slug]/WorldStatCards";
@@ -21,11 +23,47 @@ import { unwrapRelation } from "@/lib/unwrapRelation";
 
 const RECENT_CHANGES_LIMIT = 8;
 
+/**
+ * 分頁標題/分享預覽卡(og:title/description/image)——標題交給 root
+ * layout 的 title.template 補上「｜ Heldendicht」。og:image 只有公開
+ * 世界觀才簽(見 getWorldOgImageUrl 的說明),非公開世界觀/沒設定橫幅
+ * 就不帶圖,交給分享平台自己的預設樣式。
+ */
+export async function generateMetadata({
+  params,
+}: PageProps<"/worlds/[slug]">): Promise<Metadata> {
+  const { slug } = await params;
+  const supabase = await createClient();
+  const { data: world } = await supabase
+    .from("worlds")
+    .select("name, tagline, description, banner_path, is_public")
+    .eq("slug", slug)
+    .maybeSingle();
+  if (!world) return {};
+
+  const description = world.tagline || world.description || undefined;
+  const ogImage =
+    world.is_public && world.banner_path
+      ? await getWorldOgImageUrl(world.banner_path)
+      : null;
+
+  return {
+    title: world.name,
+    description,
+    openGraph: {
+      title: world.name,
+      description,
+      images: ogImage ? [ogImage] : undefined,
+    },
+  };
+}
+
 export default async function WorldPage({
   params,
 }: PageProps<"/worlds/[slug]">) {
   const { slug } = await params;
   const supabase = await createClient();
+  const user = await getCurrentUser();
 
   const { data: world } = await supabase
     .from("worlds")
@@ -229,7 +267,7 @@ export default async function WorldPage({
           )}
         </div>
 
-        <WorldQuickBar worldSlug={slug} />
+        <WorldQuickBar worldSlug={slug} isLoggedIn={Boolean(user)} />
       </div>
 
       {/* 電腦版把這幾個數字挪回側邊欄用文字列呈現,這裡的卡片只在手機版顯示。 */}

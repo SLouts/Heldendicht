@@ -1,9 +1,10 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/dal";
 import { getAttachmentSignedUrl } from "@/lib/attachments";
-import { getNodeMediaSignedUrl } from "@/lib/nodeMedia";
+import { getNodeMediaSignedUrl, getNodeOgImageUrl } from "@/lib/nodeMedia";
 import { NodeHero } from "@/app/dashboard/worlds/[slug]/nodes/[nodeSlug]/NodeHero";
 import { NodeInfobox } from "./NodeInfobox";
 import { NodeContentPanel } from "@/components/NodeContentPanel";
@@ -25,6 +26,53 @@ import {
  * 用 NodeTabs 分頁切換主文/時間軸/補充區塊/人際關係,側邊欄(4 欄)用
  * NodeInfobox 資訊卡;手機收成單欄堆疊,資訊卡在上、分頁內容在下。
  */
+function buildNodeDescription(content: string): string | undefined {
+  const flat = content.replace(/\s+/g, " ").trim();
+  if (!flat) return undefined;
+  return flat.length > 120 ? `${flat.slice(0, 120)}…` : flat;
+}
+
+/**
+ * 分頁標題「條目名稱 ｜ 世界觀名稱 ｜ Heldendicht」+ 分享預覽卡。
+ * og:image 只有「所屬世界觀公開」才簽(見 getNodeOgImageUrl 的說明),
+ * 代表圖優先用 image_path,角色節點沒有就退回 avatar_path。
+ */
+export async function generateMetadata({
+  params,
+}: PageProps<"/worlds/[slug]/nodes/[nodeSlug]">): Promise<Metadata> {
+  const { slug, nodeSlug } = await params;
+  const supabase = await createClient();
+
+  const { data: world } = await supabase
+    .from("worlds")
+    .select("id, name, is_public")
+    .eq("slug", slug)
+    .maybeSingle();
+  if (!world) return {};
+
+  const { data: node } = await supabase
+    .from("nodes")
+    .select("title, content, image_path, characters(avatar_path)")
+    .eq("world_id", world.id)
+    .eq("slug", nodeSlug)
+    .maybeSingle();
+  if (!node) return {};
+
+  const character = unwrapRelation(node.characters);
+  const imagePath = node.image_path ?? character?.avatar_path ?? null;
+  const ogImage = world.is_public ? await getNodeOgImageUrl(imagePath) : null;
+  const description = buildNodeDescription(node.content);
+
+  return {
+    title: `${node.title} ｜ ${world.name}`,
+    description,
+    openGraph: {
+      title: `${node.title} ｜ ${world.name}`,
+      description,
+      images: ogImage ? [ogImage] : undefined,
+    },
+  };
+}
 export default async function PublicNodeDetailPage({
   params,
 }: PageProps<"/worlds/[slug]/nodes/[nodeSlug]">) {

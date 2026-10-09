@@ -55,8 +55,14 @@ const almanac = Cormorant_Garamond({
   style: ["italic"],
 });
 
+// 個別頁面(世界觀/條目/角色頁等)用 generateMetadata 把自己的標題塞進
+// title.template,瀏覽器分頁、分享連結、搜尋引擎才看得出「這是哪個世界觀
+// 的哪個條目」,不是每一頁都顯示同一個「Heldendicht」。
 export const metadata: Metadata = {
-  title: "Heldendicht",
+  title: {
+    default: "Heldendicht",
+    template: "%s ｜ Heldendicht",
+  },
   description: "多世界觀企劃介紹與玩家共筆平台",
 };
 
@@ -68,7 +74,7 @@ const bootstrapArtTheme = `(function(){try{var v=localStorage.getItem(${JSON.str
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
-      lang="en"
+      lang="zh-Hant"
       className={`${geistSans.variable} ${geistMono.variable} ${script.variable} ${field.variable} ${scroll.variable} ${cartographer.variable} ${almanac.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -25,6 +26,49 @@ import { PersonaNodeSidebar } from "./PersonaNodeSidebar";
  * 但底下掛的世界觀節點是否出現在分頁列,由 nodes_select_visible(私人
  * 世界觀非成員、rejected 節點)決定,這裡不重複判斷一次。
  */
+/**
+ * 分頁標題「persona 名稱 ｜ 本尊擁有者 ｜ Heldendicht」+ 分享預覽卡——
+ * 頭貼走 profile-media 的公開網址(getProfileMediaPublicUrl),不是私人
+ * world-media/node-media 那種需要簽名、怕過期的網址,og:image 不會
+ * 因為連結被延後開啟而失效。
+ */
+export async function generateMetadata({
+  params,
+}: PageProps<"/u/[username]/personas/[personaId]">): Promise<Metadata> {
+  const { username, personaId } = await params;
+  const supabase = await createClient();
+
+  const { data: owner } = await supabase
+    .from("profiles")
+    .select("id, username, display_name")
+    .eq("username", username)
+    .maybeSingle();
+  if (!owner) return {};
+
+  const { data: persona } = await supabase
+    .from("character_personas")
+    .select("name, tagline, bio, avatar_path")
+    .eq("id", personaId)
+    .eq("owner_id", owner.id)
+    .maybeSingle();
+  if (!persona) return {};
+
+  const ownerLabel = owner.display_name || owner.username;
+  const title = `${persona.name} ｜ ${ownerLabel}`;
+  const description = persona.tagline || persona.bio || undefined;
+  const avatarUrl = getProfileMediaPublicUrl(persona.avatar_path);
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      images: avatarUrl ? [avatarUrl] : undefined,
+    },
+  };
+}
+
 export default async function PersonaDetailPage({
   params,
 }: PageProps<"/u/[username]/personas/[personaId]">) {

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -13,6 +14,35 @@ import { UnfollowButton } from "./UnfollowButton";
 import { unwrapRelation, toRelationArray } from "@/lib/unwrapRelation";
 
 const WORLD_CARDS_PREVIEW_LIMIT = 6;
+
+/** 分頁標題「暱稱/帳號 ｜ Heldendicht」+ 分享預覽卡,頭貼走 profile-media
+ * 的公開網址,不需要簽名。 */
+export async function generateMetadata({
+  params,
+}: PageProps<"/u/[username]">): Promise<Metadata> {
+  const { username } = await params;
+  const supabase = await createClient();
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("username, display_name, bio, avatar_path")
+    .eq("username", username)
+    .maybeSingle();
+  if (!profile) return {};
+
+  const title = profile.display_name || profile.username || "使用者";
+  const description = profile.bio || undefined;
+  const avatarUrl = getProfileMediaPublicUrl(profile.avatar_path);
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      images: avatarUrl ? [avatarUrl] : undefined,
+    },
+  };
+}
 
 export default async function PublicProfilePage({
   params,

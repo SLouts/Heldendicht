@@ -123,6 +123,15 @@ export default async function Home() {
               </Link>
             )}
           </div>
+          {!user && (
+            <p className="mt-3 text-xs text-muted-foreground">
+              目前採邀請制,註冊需要邀請碼——還沒有的話,歡迎洽{" "}
+              <Link href="/staff" className="underline underline-offset-2">
+                站務人員
+              </Link>
+              。
+            </p>
+          )}
         </section>
 
         <section className="mt-12">
@@ -167,6 +176,15 @@ export default async function Home() {
               </>
             )}
           </div>
+          {!user && (
+            <p className="mt-3 text-xs text-muted-foreground">
+              目前採邀請制,註冊需要邀請碼——還沒有的話,歡迎洽{" "}
+              <Link href="/staff" className="underline underline-offset-2">
+                站務人員
+              </Link>
+              。
+            </p>
+          )}
         </section>
       </main>
     </div>

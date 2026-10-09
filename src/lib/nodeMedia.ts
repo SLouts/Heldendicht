@@ -30,3 +30,16 @@ export async function getNodeMediaSignedUrl(
     .createSignedUrl(path, 300);
   return data?.signedUrl ?? null;
 }
+
+/**
+ * 專門給 og:image 用的簽名 URL——效期比一般的 5 分鐘長很多(1 小時),
+ * 理由跟 getWorldOgImageUrl 一樣:分享連結被 Discord/搜尋引擎等外部
+ * 服務抓取的時間點不可預期,5 分鐘太容易過期變成破圖。只給「所屬世界觀
+ * 公開」的節點圖片呼叫這個函式。
+ */
+export async function getNodeOgImageUrl(path: string | null): Promise<string | null> {
+  if (!path) return null;
+  const admin = createAdminClient();
+  const { data } = await admin.storage.from(NODE_MEDIA_BUCKET).createSignedUrl(path, 3600);
+  return data?.signedUrl ?? null;
+}

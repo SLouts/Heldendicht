@@ -7,10 +7,15 @@ export function RoleSelect({
   membershipId,
   worldSlug,
   currentRole,
+  disabled,
+  disabledReason,
 }: {
   membershipId: string;
   worldSlug: string;
   currentRole: "admin" | "editor" | "member";
+  /** 最後一位主辦不能把自己降級——停用整個選單,只能用「轉移主辦」處理。 */
+  disabled?: boolean;
+  disabledReason?: string;
 }) {
   const [role, setRole] = useState(currentRole);
   const [isPending, startTransition] = useTransition();
@@ -18,7 +23,8 @@ export function RoleSelect({
   return (
     <select
       value={role}
-      disabled={isPending}
+      disabled={isPending || disabled}
+      title={disabled ? disabledReason : undefined}
       onChange={(e) => {
         const next = e.target.value as "admin" | "editor" | "member";
         setRole(next);

@@ -14,12 +14,16 @@ export function NodeReviewForm({
   nodeSlug,
   status,
   existingNote,
+  isPlaceholder,
 }: {
   nodeId: string;
   worldSlug: string;
   nodeSlug: string;
   status: "pending" | "approved" | "rejected";
   existingNote: string | null;
+  /** WikiLink 自動建立、還沒補完類型/內文的待撰寫節點——核准按鈕先停用,
+   * 避免 staff 誤核准一個還沒有內容的佔位節點。 */
+  isPlaceholder: boolean;
 }) {
   const [note, setNote] = useState(existingNote ?? "");
   const [pending, setPending] = useState(false);
@@ -46,11 +50,16 @@ export function NodeReviewForm({
         placeholder="例如「這段設定跟世界觀衝突,請修改」"
         className="rounded-lg border border-border bg-background px-3 py-1.5 text-sm"
       />
+      {isPlaceholder && status !== "approved" && (
+        <p className="text-xs text-muted-foreground">
+          這是 WikiLink 自動建立的待撰寫節點,請先請建立者補上類型跟內文才能核准。
+        </p>
+      )}
       <div className="flex flex-wrap gap-2">
         {status !== "approved" && (
           <button
             type="button"
-            disabled={pending}
+            disabled={pending || isPlaceholder}
             onClick={() => void handle("approved")}
             className="rounded-lg bg-success px-3 py-1.5 text-sm text-success-foreground transition hover:bg-success-hover disabled:opacity-50"
           >

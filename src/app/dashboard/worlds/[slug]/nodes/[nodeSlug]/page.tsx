@@ -451,6 +451,7 @@ export default async function NodeDetailPage({
               nodeSlug={node.slug}
               status={node.status}
               existingNote={node.review_note}
+              isPlaceholder={node.is_placeholder}
             />
           )}
 

@@ -6,6 +6,7 @@ import { DashboardIdentityCard } from "./DashboardIdentityCard";
 import { DashboardPreferencesPanel } from "./DashboardPreferencesPanel";
 import { DashboardWorldsSection, type DashboardWorldItem } from "./DashboardWorldsSection";
 import { unwrapRelation } from "@/lib/unwrapRelation";
+import { getStaffReviewSummary } from "@/lib/reviewSummary";
 
 /**
  * 工作台首頁動線:先個人身分資訊、版面偏好,再進入世界觀選擇——不是一
@@ -21,6 +22,7 @@ export default async function DashboardPage() {
     { count: unreadNotificationCount },
     { count: unreadMessageCount },
     { data: isSiteAdmin },
+    reviewSummary,
   ] = await Promise.all([
     getCurrentProfile(),
     // RLS 的 memberships_select policy 已經保證這裡只會拿到自己的成員資格,
@@ -42,6 +44,9 @@ export default async function DashboardPage() {
       .eq("recipient_id", user.id)
       .is("read_at", null),
     supabase.rpc("is_site_admin"),
+    // 跟頁首通知鈴鐺共用同一份待審核統計(見 lib/reviewSummary.ts),
+    // 不要各自查一次、算出不一致的數字。
+    getStaffReviewSummary(supabase, user.id),
   ]);
 
   const avatarUrl = getProfileMediaPublicUrl(profile?.avatar_path ?? null);
@@ -73,6 +78,8 @@ export default async function DashboardPage() {
         <DashboardPreferencesPanel
           unreadNotificationCount={unreadNotificationCount ?? 0}
           unreadMessageCount={unreadMessageCount ?? 0}
+          pendingReviewCount={reviewSummary.pendingNodesTotal + reviewSummary.openReportsTotal}
+          stubNodesCount={reviewSummary.stubNodesTotal}
         />
       </div>
 

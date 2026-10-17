@@ -35,6 +35,11 @@ export function WorldAdminLinks({
       label: "企劃規則與手冊",
       description: "編輯「規則」分頁顯示給玩家看的內容",
     },
+    {
+      href: `/dashboard/worlds/${worldSlug}/reviews`,
+      label: "審核佇列",
+      description: "預覽未正式過審的節點,個別或批次核准/駁回",
+    },
     ...(!isSolo
       ? [
           {

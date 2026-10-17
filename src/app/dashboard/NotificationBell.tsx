@@ -6,6 +6,7 @@ import {
   markAllNotificationsRead,
   markNotificationRead,
 } from "@/lib/actions/notifications";
+import { ART_THEME_ATTR, type ArtTheme } from "@/lib/artTheme";
 
 export type NotificationItem = {
   id: string;
@@ -48,6 +49,7 @@ export type ReviewWorldSummary = {
   worldSlug: string;
   worldName: string;
   pendingNodesCount: number;
+  stubNodesCount: number;
   openReportsCount: number;
 };
 
@@ -69,6 +71,17 @@ export function NotificationBell({
   const badgeCount = unreadCount + reviewCount;
   const close = () => setOpen(false);
 
+  // 下拉選單依主題切換版型——跟 Hero/Bell 外觀那套「六份都渲染,CSS 決定
+  // 哪份可見」慣例不同:這裡面的連結/表單是真的互動元素,六份都渲染會讓
+  // 同樣的「N 個節點待審核」連結在 DOM 裡重複 6 次(畫面上只看到一份)。
+  // 這個元件本來就是 Client Component,改成只讀目前的 data-art-theme
+  // 渲染「一份」,用 MutationObserver 監聽屬性變化,讓 ArtThemeSwitcher
+  // 即時切換主題時這裡也跟著換,不用整頁重新整理。
+  const [theme, setTheme] = useState<ArtTheme>(() => {
+    if (typeof document === "undefined") return "script";
+    return (document.documentElement.getAttribute(ART_THEME_ATTR) as ArtTheme) || "script";
+  });
+
   useEffect(() => {
     if (!open) return;
     function handleClick(e: MouseEvent) {
@@ -79,6 +92,15 @@ export function NotificationBell({
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, [open]);
+
+  useEffect(() => {
+    const el = document.documentElement;
+    const observer = new MutationObserver(() => {
+      setTheme((el.getAttribute(ART_THEME_ATTR) as ArtTheme) || "script");
+    });
+    observer.observe(el, { attributes: true, attributeFilter: [ART_THEME_ATTR] });
+    return () => observer.disconnect();
+  }, []);
 
   function onNotifClick(n: NotificationItem) {
     if (!n.isRead) void markNotificationRead(n.id);
@@ -104,6 +126,7 @@ export function NotificationBell({
       {open && (
         <>
           {/* ---------- 劇本手稿:場記表(預設) ---------- */}
+          {theme === "script" && (
           <div className="bell-variant bell-script absolute right-0 z-20 mt-2 w-96 border border-border bg-surface p-3 shadow-lg">
             <div className="flex items-center justify-between">
               <span className="text-sm font-bold uppercase tracking-wide">場記表</span>
@@ -134,7 +157,7 @@ export function NotificationBell({
                         <tr key={`${w.worldSlug}-nodes`} className="cursor-pointer hover:bg-muted">
                           <td className="border-b border-border py-2 pr-2">審核</td>
                           <td className="border-b border-border py-2 pr-2">
-                            <Link href={`/dashboard/worlds/${w.worldSlug}`} onClick={close}>
+                            <Link href={`/dashboard/worlds/${w.worldSlug}/reviews`} onClick={close}>
                               {w.pendingNodesCount} 個節點待審核
                             </Link>
                           </td>
@@ -179,8 +202,10 @@ export function NotificationBell({
               </div>
             )}
           </div>
+          )}
 
           {/* ---------- 田野筆記:標本標籤 ---------- */}
+          {theme === "field" && (
           <div className="bell-variant bell-field absolute right-0 z-20 mt-2 w-80 rounded border border-border bg-surface p-3 shadow-lg">
             <div className="flex items-center justify-between">
               <span className="font-display text-lg">待複查</span>
@@ -201,7 +226,7 @@ export function NotificationBell({
                     <div className="bell-field-tag-k">採集地</div>
                     <div className="bell-field-tag-v">{w.worldName}</div>
                     {w.pendingNodesCount > 0 && (
-                      <Link href={`/dashboard/worlds/${w.worldSlug}`} onClick={close} className="mt-1 block text-sm hover:underline">
+                      <Link href={`/dashboard/worlds/${w.worldSlug}/reviews`} onClick={close} className="mt-1 block text-sm hover:underline">
                         {w.pendingNodesCount} 個節點待審核
                       </Link>
                     )}
@@ -238,8 +263,10 @@ export function NotificationBell({
               </div>
             )}
           </div>
+          )}
 
           {/* ---------- 東方玄幻:手札 ---------- */}
+          {theme === "wuxia" && (
           <div className="bell-variant bell-wuxia absolute right-0 z-20 mt-2 w-80 rounded border border-border bg-surface p-2 shadow-lg">
             <div className="flex items-center justify-between px-1 py-1">
               <span className="font-display text-lg">手札</span>
@@ -259,7 +286,7 @@ export function NotificationBell({
                   <div key={w.worldSlug} className="bell-wuxia-note">
                     <span className="bell-wuxia-seal-badge">{w.worldName}</span>
                     {w.pendingNodesCount > 0 && (
-                      <Link href={`/dashboard/worlds/${w.worldSlug}`} onClick={close} className="block text-sm hover:underline">
+                      <Link href={`/dashboard/worlds/${w.worldSlug}/reviews`} onClick={close} className="block text-sm hover:underline">
                         {w.pendingNodesCount} 個節點待審核
                       </Link>
                     )}
@@ -295,8 +322,10 @@ export function NotificationBell({
               </div>
             )}
           </div>
+          )}
 
           {/* ---------- 羊皮紙卷軸:捲軸紀事 ---------- */}
+          {theme === "scroll" && (
           <div className="bell-variant bell-scroll absolute right-0 z-20 mt-2 w-80 border border-border bg-surface p-3 shadow-lg">
             <div className="flex items-center justify-between border-b border-border pb-2">
               <span className="font-display text-base italic">捲軸紀事</span>
@@ -316,7 +345,7 @@ export function NotificationBell({
                   <div key={w.worldSlug} className="flex flex-col gap-1 py-2 text-sm">
                     <span className="text-xs font-semibold text-muted-foreground">{w.worldName}</span>
                     {w.pendingNodesCount > 0 && (
-                      <Link href={`/dashboard/worlds/${w.worldSlug}`} onClick={close} className="hover:underline">
+                      <Link href={`/dashboard/worlds/${w.worldSlug}/reviews`} onClick={close} className="hover:underline">
                         {w.pendingNodesCount} 個節點待審核
                       </Link>
                     )}
@@ -355,8 +384,10 @@ export function NotificationBell({
               </div>
             )}
           </div>
+          )}
 
           {/* ---------- 製圖師手記:探勘日誌 ---------- */}
+          {theme === "cartographer" && (
           <div className="bell-variant bell-cartographer absolute right-0 z-20 mt-2 w-80 rounded border-2 border-border bg-surface p-3 shadow-lg">
             <div className="flex items-center justify-between">
               <span className="font-display text-sm uppercase tracking-wide">探勘日誌</span>
@@ -378,7 +409,7 @@ export function NotificationBell({
                     <div className="mt-1 text-sm font-semibold">{w.worldName}</div>
                     {w.pendingNodesCount > 0 && (
                       <Link
-                        href={`/dashboard/worlds/${w.worldSlug}`}
+                        href={`/dashboard/worlds/${w.worldSlug}/reviews`}
                         onClick={close}
                         className="mt-1 block text-sm hover:underline"
                       >
@@ -418,8 +449,10 @@ export function NotificationBell({
               </div>
             )}
           </div>
+          )}
 
           {/* ---------- 占星曆書:星象紀事 ---------- */}
+          {theme === "almanac" && (
           <div className="bell-variant bell-almanac absolute right-0 z-20 mt-2 w-80 rounded border border-border bg-surface p-2 shadow-lg">
             <div className="flex items-center justify-between px-1 py-1">
               <span className="font-display text-lg italic">星象紀事</span>
@@ -439,7 +472,7 @@ export function NotificationBell({
                   <div key={w.worldSlug} className="bell-almanac-note">
                     <span className="bell-almanac-badge">{w.worldName}</span>
                     {w.pendingNodesCount > 0 && (
-                      <Link href={`/dashboard/worlds/${w.worldSlug}`} onClick={close} className="block text-sm hover:underline">
+                      <Link href={`/dashboard/worlds/${w.worldSlug}/reviews`} onClick={close} className="block text-sm hover:underline">
                         {w.pendingNodesCount} 個節點待審核
                       </Link>
                     )}
@@ -475,6 +508,7 @@ export function NotificationBell({
               </div>
             )}
           </div>
+          )}
         </>
       )}
     </div>

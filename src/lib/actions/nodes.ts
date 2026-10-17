@@ -242,7 +242,7 @@ export async function reviewNode(
   const user = await requireUser();
   const supabase = await createClient();
 
-  const { error, count } = await supabase
+  let query = supabase
     .from("nodes")
     .update(
       {
@@ -254,15 +254,64 @@ export async function reviewNode(
       { count: "exact" },
     )
     .eq("id", nodeId);
+  // 待撰寫的佔位節點(WikiLink 自動建立、還沒補完類型/內文)不能核准——
+  // 前端已經停用按鈕,這裡加一次 DB 層防呆,避免繞過 UI 直接呼叫 action。
+  if (decision === "approved") {
+    query = query.eq("is_placeholder", false);
+  }
+  const { error, count } = await query;
 
   // 這兩個 action 是直接綁在按鈕上的(沒有走 useActionState 顯示錯誤訊息),
   // 頁面已經先用 isStaff/canDelete 擋過一次 UI,這裡失敗就直接丟例外即可。
   if (error || count === 0) {
-    throw new Error(error?.message ?? "你沒有權限審核這個節點");
+    throw new Error(
+      error?.message ??
+        (decision === "approved"
+          ? "這是待撰寫的佔位節點,請先補完類型跟內文才能核准"
+          : "你沒有權限審核這個節點"),
+    );
   }
 
   revalidatePath(`/dashboard/worlds/${worldSlug}/nodes/${nodeSlug}`);
   revalidatePath(`/dashboard/worlds/${worldSlug}`);
+  revalidatePath(`/dashboard/worlds/${worldSlug}/reviews`);
+}
+
+/**
+ * 審核佇列頁(/dashboard/worlds/[slug]/reviews)批次核准/駁回用——跟
+ * reviewNode 共用同一套權限/防呆邏輯,差別只在一次處理多個節點 id、
+ * 不帶審核意見(批次操作沒有逐筆留言的介面)。待撰寫的佔位節點一樣不能
+ * 用這個批次核准,理由同 reviewNode。
+ */
+export async function batchReviewNodes(
+  nodeIds: string[],
+  worldSlug: string,
+  decision: "approved" | "rejected",
+): Promise<{ succeeded: number; failed: number }> {
+  const user = await requireUser();
+  if (nodeIds.length === 0) return { succeeded: 0, failed: 0 };
+  const supabase = await createClient();
+
+  let query = supabase
+    .from("nodes")
+    .update(
+      {
+        status: decision,
+        reviewed_by: user.id,
+        reviewed_at: new Date().toISOString(),
+      },
+      { count: "exact" },
+    )
+    .in("id", nodeIds);
+  if (decision === "approved") {
+    query = query.eq("is_placeholder", false);
+  }
+  const { count } = await query;
+
+  revalidatePath(`/dashboard/worlds/${worldSlug}/reviews`);
+  revalidatePath(`/dashboard/worlds/${worldSlug}`);
+  const succeeded = count ?? 0;
+  return { succeeded, failed: nodeIds.length - succeeded };
 }
 
 /**

@@ -80,7 +80,7 @@ export default async function NewNodePage({
       >
         ← 返回世界觀
       </Link>
-      <h1 className="mt-2 text-2xl font-semibold">在「{world.name}」新增節點</h1>
+      <h1 className="mt-2 text-2xl font-semibold">在「{world.name}」新增條目</h1>
       <NewNodeForm
         worldId={world.id}
         worldSlug={world.slug}

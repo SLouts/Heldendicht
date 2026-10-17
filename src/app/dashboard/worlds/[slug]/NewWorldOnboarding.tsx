@@ -25,7 +25,7 @@ export function NewWorldOnboarding({
     {
       href: `/dashboard/worlds/${worldSlug}/settings`,
       title: "補上世界觀基本資料",
-      description: "上傳橫幅/Icon、寫詳細介紹,讓首頁看起來更完整。",
+      description: "上傳橫幅/Icon、寫導讀,讓首頁看起來更完整。",
     },
     {
       href: `/dashboard/worlds/${worldSlug}/character-template`,

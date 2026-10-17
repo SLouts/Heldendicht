@@ -57,7 +57,7 @@ export function SettingsForm({
 
       <div className="flex flex-col gap-1">
         <label htmlFor="description" className="text-sm font-medium">
-          詳細介紹
+          導讀
         </label>
         <textarea
           id="description"

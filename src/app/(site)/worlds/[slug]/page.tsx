@@ -10,15 +10,12 @@ import { WorldStatCards } from "@/app/dashboard/worlds/[slug]/WorldStatCards";
 import { WorldMainTabs } from "@/components/WorldMainTabs";
 import { Badge } from "@/components/Badge";
 import { EmptyState } from "@/components/EmptyState";
-import { NodeSearchBox } from "@/components/NodeSearchBox";
 import { NodeTabs, type NodeTab } from "@/app/(site)/worlds/[slug]/nodes/[nodeSlug]/NodeTabs";
 import { WorldRulesTab } from "./WorldRulesTab";
 import { WorldRecentChangesTab } from "./WorldRecentChangesTab";
 import { WorldSidebar } from "./WorldSidebar";
 import { WorldQuickBar } from "./WorldQuickBar";
-import { WorldDirectoryTab, type CategoryGroup, type TypeGroup } from "./WorldDirectoryTab";
 import { WorldAnnouncementsSection } from "./WorldAnnouncementsSection";
-import { FALLBACK_NODE_TYPE_ORDER } from "@/lib/nodeTypeLabels";
 import { unwrapRelation } from "@/lib/unwrapRelation";
 
 const RECENT_CHANGES_LIMIT = 8;
@@ -86,19 +83,15 @@ export default async function WorldPage({
   // 成員/status <> rejected 等),這裡不再額外用 status='approved' 之類
   // 的條件收斂一次。跟登入後唯一的差異只有「不能建立/編輯」。
   //
-  // 電腦版把「條目與節點目錄/搜尋」收回同一頁用 client tab 切換(維持
-  // 改版前的做法),所以節點/分類/關係線這幾份跟 /directory 路由重複的
-  // 資料在這裡也要撈一次——手機版另外走 WorldMainTabs 的路由式分頁,
-  // 不用到這些。
+  // 電腦版把「世界導讀/企劃規則與手冊/近期變更」收回同一頁用 client tab
+  // 切換(維持改版前的做法)。「條目目錄」這份內容已經併入「世界觀百科」
+  // (/directory 路由),不在這裡重複撈一次分類/關係線資料。
   const [
     { data: nodes },
-    { data: relationships },
-    { data: categories },
     { data: worldRules },
     { data: recentNodes },
     { data: firstMapLayer },
     { data: announcements },
-    { data: categoryFields },
     bannerUrl,
     iconUrl,
   ] = await Promise.all([
@@ -110,18 +103,6 @@ export default async function WorldPage({
         .eq("world_id", world.id)
         .order("node_type")
         .order("title"),
-      supabase
-        .from("relationships")
-        .select(
-          "id, label, status, node_a:nodes!relationships_node_a_id_fkey(title), node_b:nodes!relationships_node_b_id_fkey(title)",
-        )
-        .eq("world_id", world.id)
-        .order("created_at", { ascending: false }),
-      supabase
-        .from("world_content_categories")
-        .select("id, name, description, accepts_submissions, parent_id")
-        .eq("world_id", world.id)
-        .order("order_index", { ascending: true }),
       supabase
         .from("world_rule_fields")
         .select("id, label, content")
@@ -146,11 +127,6 @@ export default async function WorldPage({
         .select("id, title, content, created_at, updated_at")
         .eq("world_id", world.id)
         .order("created_at", { ascending: false }),
-      supabase
-        .from("world_category_fields")
-        .select("category_id, label, example_value")
-        .eq("world_id", world.id)
-        .order("order_index", { ascending: true }),
       getWorldMediaSignedUrl(world.banner_path),
       getWorldMediaSignedUrl(world.icon_path),
     ]);
@@ -168,24 +144,6 @@ export default async function WorldPage({
   const pcCount = nodeRows.filter(
     (n) => n.node_type === "character" && unwrapRelation(n.characters)?.character_type === "pc",
   ).length;
-
-  const uncategorizedNodes = nodeRows.filter((n) => n.category_id == null);
-  const characterNodes = uncategorizedNodes.filter((n) => n.node_type === "character");
-  const categoryGroups: CategoryGroup[] = (categories ?? []).map((category) => ({
-    category,
-    nodes: nodeRows.filter((n) => n.category_id === category.id),
-  }));
-  const uncategorizedByType: TypeGroup[] = FALLBACK_NODE_TYPE_ORDER.map((nodeType) => ({
-    nodeType,
-    nodes: uncategorizedNodes.filter((n) => n.node_type === nodeType),
-  })).filter((g) => g.nodes.length > 0);
-
-  // 條目目錄分類清單頂端的「複製分類範本」要用——同一份 category_id →
-  // 欄位清單的分組邏輯跟 NewNodeForm/nodes/new/page.tsx 一致。
-  const fieldsByCategory: Record<string, { label: string; exampleValue: string }[]> = {};
-  for (const f of categoryFields ?? []) {
-    (fieldsByCategory[f.category_id] ??= []).push({ label: f.label, exampleValue: f.example_value });
-  }
 
   const descriptionContent = world.description ? (
     <p className="max-w-2xl whitespace-pre-wrap text-sm text-muted-foreground">
@@ -224,24 +182,6 @@ export default async function WorldPage({
 
   const desktopTabs: NodeTab[] = [
     { key: "overview", label: "世界導讀", content: overviewTabContent },
-    {
-      key: "directory",
-      label: "條目目錄",
-      content: (
-        <div className="flex flex-col gap-6">
-          <NodeSearchBox worldId={world.id} basePath={`/worlds/${slug}/nodes`} />
-          <WorldDirectoryTab
-            categoryGroups={categoryGroups}
-            uncategorizedByType={uncategorizedByType}
-            characterNodes={characterNodes}
-            relationships={relationships}
-            defaultPcQuota={world.default_pc_quota}
-            worldSlug={slug}
-            fieldsByCategory={fieldsByCategory}
-          />
-        </div>
-      ),
-    },
     {
       key: "recent",
       label: "近期變更",
@@ -311,6 +251,9 @@ export default async function WorldPage({
             defaultPcQuota={world.default_pc_quota}
             navMenu={
               <>
+                <Link href={`/worlds/${slug}/directory`} className="hover:underline">
+                  世界觀百科
+                </Link>
                 <Link href={`/worlds/${slug}/story`} className="hover:underline">
                   故事時間軸
                 </Link>
@@ -327,7 +270,7 @@ export default async function WorldPage({
         </div>
 
         <div className="lg:order-1 lg:col-span-9 lg:min-w-0">
-          <NodeTabs tabs={desktopTabs} />
+          <NodeTabs tabs={desktopTabs} syncParam="tab" />
         </div>
       </div>
     </div>

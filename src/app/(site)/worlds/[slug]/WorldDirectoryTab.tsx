@@ -133,6 +133,7 @@ export function WorldDirectoryTab({
                     nodes={categoryNodes}
                     worldSlug={worldSlug}
                     copyTemplateText={categoryTemplateText(category.id)}
+                    hasSubcategories={childGroups.length > 0}
                   />
                   {childGroups.length > 0 && (
                     <div className="mt-3 flex flex-col gap-3">
@@ -225,20 +226,27 @@ function NodeList({
   nodes,
   worldSlug,
   copyTemplateText,
+  hasSubcategories,
 }: {
   nodes: DirectoryNodeRow[] | null | undefined;
   worldSlug: string;
   copyTemplateText?: string;
+  /** 這個分類底下還有子分類——直接收錄的節點是空的不代表整個分類是空的,
+   * 內容可能都在子分類裡,訊息要說清楚,不要讓人誤以為分類本身沒內容。 */
+  hasSubcategories?: boolean;
 }) {
   const hasNodes = Boolean(nodes && nodes.length > 0);
+  const emptyMessage = hasSubcategories
+    ? "本分類沒有直接收錄的節點,內容在下方子分類。"
+    : "目前還沒有節點。";
   if (!hasNodes && !copyTemplateText) {
-    return <p className="mt-3 text-sm text-muted-foreground">目前還沒有節點。</p>;
+    return <p className="mt-3 text-sm text-muted-foreground">{emptyMessage}</p>;
   }
 
   return (
     <ul className="mt-3 divide-y divide-border">
       {copyTemplateText && <CopyTemplateRow templateText={copyTemplateText} />}
-      {!hasNodes && <li className="py-3 text-sm text-muted-foreground">目前還沒有節點。</li>}
+      {!hasNodes && <li className="py-3 text-sm text-muted-foreground">{emptyMessage}</li>}
       {(nodes ?? []).map((node) => {
         const character = characterInfo(node);
         const category = nodeCategory({

@@ -55,7 +55,7 @@ export default function NewWorldPage() {
 
         <div className="flex flex-col gap-1">
           <label htmlFor="description" className="text-sm font-medium">
-            詳細介紹(選填)
+            導讀(選填)
           </label>
           <textarea
             id="description"

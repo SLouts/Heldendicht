@@ -56,7 +56,7 @@ export async function generateMetadata({
   const ownerLabel = owner.display_name || owner.username;
   const title = `${persona.name} ｜ ${ownerLabel}`;
   const description = persona.tagline || persona.bio || undefined;
-  const avatarUrl = getProfileMediaPublicUrl(persona.avatar_path);
+  const avatarUrl = getProfileMediaPublicUrl(persona.avatar_path) ?? "/og-default.png";
 
   return {
     title,
@@ -64,7 +64,7 @@ export async function generateMetadata({
     openGraph: {
       title,
       description,
-      images: avatarUrl ? [avatarUrl] : undefined,
+      images: [avatarUrl],
     },
   };
 }

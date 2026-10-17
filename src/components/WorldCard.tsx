@@ -17,6 +17,7 @@ export function WorldCard({
   bannerUrl,
   iconUrl,
   badge,
+  stats,
   viewable = true,
 }: {
   slug: string;
@@ -25,6 +26,9 @@ export function WorldCard({
   bannerUrl?: string | null;
   iconUrl?: string | null;
   badge?: string;
+  /** 選填的額外資訊列(例如條目數/參與人數/最後更新時間),顯示在簡介
+   * 下方——只有 /worlds 列表頁會傳,個人頁面的展示卡片維持原本的簡潔版面。 */
+  stats?: React.ReactNode;
   viewable?: boolean;
 }) {
   const content = (
@@ -60,6 +64,7 @@ export function WorldCard({
           {tagline && (
             <p className="mt-0.5 truncate text-sm text-muted-foreground">{tagline}</p>
           )}
+          {stats && <div className="mt-1.5 text-xs text-muted-foreground">{stats}</div>}
           {!viewable && (
             <p className="mt-0.5 text-xs text-muted-foreground">私人世界觀,你目前看不到內容</p>
           )}

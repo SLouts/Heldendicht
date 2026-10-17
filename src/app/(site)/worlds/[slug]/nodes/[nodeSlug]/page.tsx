@@ -60,7 +60,8 @@ export async function generateMetadata({
 
   const character = unwrapRelation(node.characters);
   const imagePath = node.image_path ?? character?.avatar_path ?? null;
-  const ogImage = world.is_public ? await getNodeOgImageUrl(imagePath) : null;
+  const ogImage =
+    (world.is_public ? await getNodeOgImageUrl(imagePath) : null) ?? "/og-default.png";
   const description = buildNodeDescription(node.content);
 
   return {
@@ -69,7 +70,7 @@ export async function generateMetadata({
     openGraph: {
       title: `${node.title} ｜ ${world.name}`,
       description,
-      images: ogImage ? [ogImage] : undefined,
+      images: [ogImage],
     },
   };
 }

@@ -60,6 +60,11 @@ export function SiteSettingsForm({
               onChange={(e) => setHeroTitle(e.target.value)}
               className="rounded-lg border border-border bg-surface px-3 py-2"
             />
+            <p className="text-xs text-muted-foreground">
+              請填一般文字(例如 Cogito-ergo-sum),不要貼特殊花體 Unicode 字元——
+              花體視覺效果這裡會自動套用 CSS 字型,特殊字元容易造成複製貼上跑掉、
+              螢幕報讀器唸不出來等問題。
+            </p>
             {fieldError("heroTitle") && <p className="text-sm text-danger">{fieldError("heroTitle")}</p>}
           </div>
 
@@ -199,7 +204,7 @@ export function SiteSettingsForm({
         <p className="text-xs font-medium text-muted-foreground">即時預覽</p>
         <div className="mt-2 flex flex-col gap-4 rounded-lg border border-border bg-background p-6">
           <div className="text-center">
-            <h1 className="font-display text-2xl font-bold tracking-tight">{heroTitle}</h1>
+            <h1 className="hero-title-flourish text-3xl font-bold tracking-tight">{heroTitle}</h1>
             <p className="mt-3 text-sm text-muted-foreground">{heroTagline}</p>
             <div className="mx-auto mt-3 max-w-2xl text-xs text-muted-foreground [&_p]:mt-0 [&_p]:text-xs">
               <MarkdownText text={disclaimerContent} />

@@ -10,6 +10,30 @@ import type { NodeType } from "@/lib/supabase/database.types";
 const NODE_TYPE_FILTER_ORDER: NodeType[] = ["character", ...FALLBACK_NODE_TYPE_ORDER];
 const DEBOUNCE_MS = 300;
 
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/** 把搜尋結果的標題/內文片段裡,符合目前查詢字串的部分標亮出來(不分大小寫)。 */
+function Highlighted({ text, query }: { text: string; query: string }) {
+  const trimmed = query.trim();
+  if (!trimmed) return <>{text}</>;
+  const parts = text.split(new RegExp(`(${escapeRegExp(trimmed)})`, "gi"));
+  return (
+    <>
+      {parts.map((part, i) =>
+        part.toLowerCase() === trimmed.toLowerCase() ? (
+          <mark key={i} className="rounded-sm bg-primary/25 text-foreground">
+            {part}
+          </mark>
+        ) : (
+          part
+        ),
+      )}
+    </>
+  );
+}
+
 export function NodeSearchBox({
   worldId,
   basePath,
@@ -21,6 +45,10 @@ export function NodeSearchBox({
   const [query, setQuery] = useState("");
   const [nodeType, setNodeType] = useState<NodeType | "all">("all");
   const [results, setResults] = useState<NodeSearchResult[] | null>(null);
+  // 跟目前顯示的 results 對應的查詢字串——標亮要用這個,不能直接用
+  // query state:debounce 期間使用者可能已經繼續打字,query 會比畫面上
+  // 顯示的這批結果新,拿來標亮會對不上實際命中的字。
+  const [highlightQuery, setHighlightQuery] = useState("");
   const [isPending, startTransition] = useTransition();
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -32,6 +60,7 @@ export function NodeSearchBox({
     startTransition(async () => {
       const found = await searchWorldNodes(worldId, q, type);
       setResults(found);
+      setHighlightQuery(q);
     });
   }
 
@@ -109,14 +138,16 @@ export function NodeSearchBox({
                 <span className="rounded-full bg-badge-info-bg px-2 py-0.5 text-xs text-badge-info-fg">
                   {NODE_TYPE_LABEL[result.nodeType]}
                 </span>
-                <span className="font-medium">{result.title}</span>
+                <span className="font-medium">
+                  <Highlighted text={result.title} query={highlightQuery} />
+                </span>
                 <span className="text-xs text-muted-foreground">
                   {formatRelativeTime(result.updatedAt)}
                 </span>
               </Link>
               {result.snippet && (
                 <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">
-                  {result.snippet}
+                  <Highlighted text={result.snippet} query={highlightQuery} />
                 </p>
               )}
             </li>

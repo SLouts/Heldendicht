@@ -93,7 +93,7 @@ export default async function Home() {
     <div className="flex flex-1 flex-col bg-background">
       <main className="mx-auto w-full max-w-7xl flex-1 px-6 py-12">
         <section className="py-8 text-center">
-          <h1 className="font-display text-4xl font-bold tracking-tight sm:text-5xl">
+          <h1 className="hero-title-flourish text-5xl font-bold tracking-tight sm:text-6xl">
             {siteSettings.hero_title}
           </h1>
           <p className="mt-4 text-lg text-muted-foreground">{siteSettings.hero_tagline}</p>

@@ -52,6 +52,34 @@ function clampScale(k: number) {
   return Math.min(MAX_SCALE, Math.max(MIN_SCALE, k));
 }
 
+/**
+ * 算出讓所有節點都在畫面內的初始縮放/平移——之前固定從 {x:0,y:0,k:1}
+ * 開始,節點配置範圍一大就會有節點跑到畫面外,還可能被右上角的
+ * 「+ − 重置」按鈕擋住。改成依節點座標範圍算出剛好放得下的縮放比例,
+ * 置中顯示,並且只縮小不放大(k 最大 1,避免節點很少時被放得過大、
+ * 文字標籤反而糊成一團)。「重置」按鈕也呼叫這個函式,回到這個
+ * 剛好放得下全部節點的視角,而不是回到可能裁切節點的 1:1 視角。
+ */
+function computeFitTransform(nodes: GraphNodeData[], width: number, height: number): Transform {
+  if (nodes.length === 0) return { x: 0, y: 0, k: 1 };
+  // 留給節點圓點本身+下方文字標籤的空間,不要讓邊緣節點的標籤被裁到。
+  const PADDING = 56;
+  const xs = nodes.map((n) => n.x);
+  const ys = nodes.map((n) => n.y);
+  const minX = Math.min(...xs);
+  const maxX = Math.max(...xs);
+  const minY = Math.min(...ys);
+  const maxY = Math.max(...ys);
+  const boxWidth = Math.max(maxX - minX, 1);
+  const boxHeight = Math.max(maxY - minY, 1);
+  const scaleX = (width - PADDING * 2) / boxWidth;
+  const scaleY = (height - PADDING * 2) / boxHeight;
+  const k = clampScale(Math.min(scaleX, scaleY, 1));
+  const centerX = (minX + maxX) / 2;
+  const centerY = (minY + maxY) / 2;
+  return { k, x: width / 2 - centerX * k, y: height / 2 - centerY * k };
+}
+
 export default function StoryMapGraph({
   nodes,
   relEdges,
@@ -69,7 +97,9 @@ export default function StoryMapGraph({
   basePath: string;
 }) {
   const svgRef = useRef<SVGSVGElement>(null);
-  const [transform, setTransform] = useState<Transform>({ x: 0, y: 0, k: 1 });
+  const [transform, setTransform] = useState<Transform>(() =>
+    computeFitTransform(nodes, width, height),
+  );
   const [visibleCategories, setVisibleCategories] = useState<Set<NodeCategory>>(
     () => new Set(NODE_CATEGORIES),
   );
@@ -228,7 +258,7 @@ export default function StoryMapGraph({
   }
 
   function resetView() {
-    setTransform({ x: 0, y: 0, k: 1 });
+    setTransform(computeFitTransform(nodes, width, height));
   }
 
   return (

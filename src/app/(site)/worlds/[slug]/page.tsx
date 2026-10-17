@@ -23,8 +23,9 @@ const RECENT_CHANGES_LIMIT = 8;
 /**
  * 分頁標題/分享預覽卡(og:title/description/image)——標題交給 root
  * layout 的 title.template 補上「｜ Heldendicht」。og:image 只有公開
- * 世界觀才簽(見 getWorldOgImageUrl 的說明),非公開世界觀/沒設定橫幅
- * 就不帶圖,交給分享平台自己的預設樣式。
+ * 世界觀才簽自己的橫幅(見 getWorldOgImageUrl 的說明),非公開世界觀/
+ * 沒設定橫幅就退回全站預設的分享預覽圖(/og-default.png),不要整個
+ * 沒有圖、退回分享平台自己的空白預覽。
  */
 export async function generateMetadata({
   params,
@@ -40,9 +41,9 @@ export async function generateMetadata({
 
   const description = world.tagline || world.description || undefined;
   const ogImage =
-    world.is_public && world.banner_path
+    (world.is_public && world.banner_path
       ? await getWorldOgImageUrl(world.banner_path)
-      : null;
+      : null) ?? "/og-default.png";
 
   return {
     title: world.name,
@@ -50,7 +51,7 @@ export async function generateMetadata({
     openGraph: {
       title: world.name,
       description,
-      images: ogImage ? [ogImage] : undefined,
+      images: [ogImage],
     },
   };
 }

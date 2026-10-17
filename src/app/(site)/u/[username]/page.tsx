@@ -31,7 +31,7 @@ export async function generateMetadata({
 
   const title = profile.display_name || profile.username || "使用者";
   const description = profile.bio || undefined;
-  const avatarUrl = getProfileMediaPublicUrl(profile.avatar_path);
+  const avatarUrl = getProfileMediaPublicUrl(profile.avatar_path) ?? "/og-default.png";
 
   return {
     title,
@@ -39,7 +39,7 @@ export async function generateMetadata({
     openGraph: {
       title,
       description,
-      images: avatarUrl ? [avatarUrl] : undefined,
+      images: [avatarUrl],
     },
   };
 }

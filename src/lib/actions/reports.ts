@@ -62,7 +62,7 @@ export async function createReport(
  */
 export async function resolveReport(
   reportId: string,
-  worldSlug: string,
+  revalidatePathStr: string,
   status: "resolved" | "dismissed",
 ): Promise<void> {
   const user = await requireUser();
@@ -80,5 +80,5 @@ export async function resolveReport(
     throw new Error(error?.message ?? "你沒有權限處理這個檢舉");
   }
 
-  revalidatePath(`/dashboard/worlds/${worldSlug}/reports`);
+  revalidatePath(revalidatePathStr);
 }

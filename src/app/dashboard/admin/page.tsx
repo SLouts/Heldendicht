@@ -31,6 +31,16 @@ export default async function SiteAdminPage() {
       description: "編輯首頁標題、標語、測試版公告文字",
     },
     {
+      href: "/dashboard/admin/worlds",
+      label: "全站世界觀列表",
+      description: "查看所有世界觀(含非公開)的條目數、成員數、主辦",
+    },
+    {
+      href: "/dashboard/admin/reports",
+      label: "全站檢舉總覽",
+      description: "跨所有世界觀查看並處理檢舉",
+    },
+    {
       href: "/dashboard/admin/rules",
       label: "全站規則",
       description: "投稿或使用本站要遵守的規定、授權或權利聲明",

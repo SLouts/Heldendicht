@@ -13,10 +13,19 @@ const STATUS_LABEL: Record<string, string> = {
 
 type ReporterProfile = { display_name: string | null; username: string | null; email: string | null };
 
+const STATUS_FILTERS = ["open", "resolved", "dismissed", "all"] as const;
+type StatusFilter = (typeof STATUS_FILTERS)[number];
+
 export default async function WorldReportsPage({
   params,
+  searchParams,
 }: PageProps<"/dashboard/worlds/[slug]/reports">) {
   const { slug } = await params;
+  const sp = await searchParams;
+  const statusFilter: StatusFilter =
+    typeof sp.status === "string" && STATUS_FILTERS.includes(sp.status as StatusFilter)
+      ? (sp.status as StatusFilter)
+      : "open";
   await requireUser();
   const supabase = await createClient();
 
@@ -94,9 +103,11 @@ export default async function WorldReportsPage({
       : Promise.resolve({ data: [] }),
   ]);
 
-  const reports = [...(nodeReports.data ?? []), ...(relReports.data ?? [])].sort(
+  const allReports = [...(nodeReports.data ?? []), ...(relReports.data ?? [])].sort(
     (a, b) => (a.created_at < b.created_at ? 1 : -1),
   );
+  const reports =
+    statusFilter === "all" ? allReports : allReports.filter((r) => r.status === statusFilter);
 
   return (
     <div>
@@ -107,6 +118,23 @@ export default async function WorldReportsPage({
         ← 返回世界觀
       </Link>
       <h1 className="mt-2 text-2xl font-semibold">檢舉列表</h1>
+
+      <div className="mt-4 flex flex-wrap gap-2">
+        {(["open", "resolved", "dismissed", "all"] as const).map((status) => (
+          <Link
+            key={status}
+            href={status === "open" ? `/dashboard/worlds/${world.slug}/reports` : `/dashboard/worlds/${world.slug}/reports?status=${status}`}
+            className={
+              "rounded-full px-3 py-1 text-xs " +
+              (statusFilter === status
+                ? "bg-primary text-primary-foreground"
+                : "bg-badge-neutral-bg text-badge-neutral-fg hover:opacity-80")
+            }
+          >
+            {status === "all" ? "全部" : STATUS_LABEL[status]}
+          </Link>
+        ))}
+      </div>
 
       <ul className="mt-6 flex flex-col gap-3">
         {reports.map((report) => {
@@ -163,14 +191,14 @@ export default async function WorldReportsPage({
               {report.status === "open" && (
                 <div className="mt-3 flex gap-2">
                   <form
-                    action={resolveReport.bind(null, report.id, world.slug, "resolved")}
+                    action={resolveReport.bind(null, report.id, `/dashboard/worlds/${world.slug}/reports`, "resolved")}
                   >
                     <button className="rounded-lg bg-success px-3 py-1.5 text-sm text-success-foreground transition hover:bg-success-hover">
                       標記已處理
                     </button>
                   </form>
                   <form
-                    action={resolveReport.bind(null, report.id, world.slug, "dismissed")}
+                    action={resolveReport.bind(null, report.id, `/dashboard/worlds/${world.slug}/reports`, "dismissed")}
                   >
                     <button className="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm">
                       駁回(不處理)
@@ -182,7 +210,9 @@ export default async function WorldReportsPage({
           );
         })}
         {reports.length === 0 && (
-          <li className="text-sm text-muted-foreground">目前沒有任何檢舉。</li>
+          <li className="text-sm text-muted-foreground">
+            {statusFilter === "all" ? "目前沒有任何檢舉。" : `目前沒有${STATUS_LABEL[statusFilter]}的檢舉。`}
+          </li>
         )}
       </ul>
     </div>

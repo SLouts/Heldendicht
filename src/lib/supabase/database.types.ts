@@ -33,6 +33,11 @@ export type RelationshipDeletionRequestStatus = "pending" | "approved" | "reject
 export type NoteVisibility = "private" | "world";
 export type ReportTargetType = "relationship" | "node";
 export type ReportStatus = "open" | "resolved" | "dismissed";
+export type ReportReasonCategory =
+  | "infringement"
+  | "content_violation"
+  | "setting_conflict"
+  | "other";
 export type StoryScope = "official" | "character";
 export type AttachmentKind = "image" | "file";
 export type NotificationType =
@@ -62,6 +67,10 @@ export type Database = {
           featured_world_id: string | null;
           created_at: string;
           updated_at: string;
+          is_suspended: boolean;
+          suspended_at: string | null;
+          suspended_by: string | null;
+          suspended_reason: string | null;
         };
         Insert: Partial<Database["public"]["Tables"]["profiles"]["Row"]> & {
           id: string;
@@ -73,6 +82,13 @@ export type Database = {
             columns: ["featured_world_id"];
             isOneToOne: false;
             referencedRelation: "worlds";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "profiles_suspended_by_fkey";
+            columns: ["suspended_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
             referencedColumns: ["id"];
           },
         ];
@@ -949,6 +965,8 @@ export type Database = {
           resolved_by: string | null;
           resolved_at: string | null;
           created_at: string;
+          reason_category: ReportReasonCategory;
+          is_anonymous: boolean;
         };
         Insert: Partial<Database["public"]["Tables"]["reports"]["Row"]> & {
           target_type: ReportTargetType;
@@ -968,6 +986,30 @@ export type Database = {
           {
             foreignKeyName: "reports_resolved_by_fkey";
             columns: ["resolved_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      staff_actions_log: {
+        Row: {
+          id: string;
+          actor_id: string;
+          target_type: string;
+          target_id: string | null;
+          action: string;
+          detail: string | null;
+          created_at: string;
+        };
+        Insert: Partial<
+          Database["public"]["Tables"]["staff_actions_log"]["Row"]
+        > & { actor_id: string; target_type: string; action: string };
+        Update: Partial<Database["public"]["Tables"]["staff_actions_log"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "staff_actions_log_actor_id_fkey";
+            columns: ["actor_id"];
             isOneToOne: false;
             referencedRelation: "profiles";
             referencedColumns: ["id"];
@@ -1349,6 +1391,14 @@ export type Database = {
           p_title: string;
           p_slug: string;
           p_content: string;
+          p_character_type: CharacterType;
+          p_owner_id?: string | null;
+        };
+        Returns: string;
+      };
+      convert_node_to_character: {
+        Args: {
+          p_node_id: string;
           p_character_type: CharacterType;
           p_owner_id?: string | null;
         };

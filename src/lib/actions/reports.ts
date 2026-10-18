@@ -11,12 +11,24 @@ export type ReportFormState =
   | { success: true }
   | undefined;
 
-const CreateReportSchema = z.object({
-  targetType: z.enum(["node", "relationship"]),
-  targetId: z.uuid(),
-  reason: z.string().min(1, { error: "請填寫檢舉原因" }),
-  redirectPath: z.string().min(1),
-});
+const CreateReportSchema = z
+  .object({
+    targetType: z.enum(["node", "relationship"]),
+    targetId: z.uuid(),
+    reasonCategory: z.enum(["infringement", "content_violation", "setting_conflict", "other"], {
+      error: "請選擇檢舉理由類別",
+    }),
+    reason: z.string().min(1, { error: "請填寫檢舉原因" }),
+    isAnonymous: z.boolean(),
+    redirectPath: z.string().min(1),
+  })
+  // 選「其他」時至少要寫 10 個字,不能只填「?」——跟 DB 層的
+  // reports_other_reason_min_length check constraint是同一個規則,這裡
+  // 先在送出前擋一次,給使用者看得懂的錯誤訊息。
+  .refine(
+    (data) => data.reasonCategory !== "other" || data.reason.trim().length >= 10,
+    { error: "選擇「其他」時,請至少描述 10 個字", path: ["reason"] },
+  );
 
 /**
  * 建立檢舉。任何登入的使用者都能檢舉自己看得到的節點/關係線
@@ -32,7 +44,9 @@ export async function createReport(
   const parsed = CreateReportSchema.safeParse({
     targetType: formData.get("targetType"),
     targetId: formData.get("targetId"),
+    reasonCategory: formData.get("reasonCategory"),
     reason: formData.get("reason"),
+    isAnonymous: formData.get("isAnonymous") === "on",
     redirectPath: formData.get("redirectPath"),
   });
   if (!parsed.success) {
@@ -45,6 +59,8 @@ export async function createReport(
     target_id: parsed.data.targetId,
     reporter_id: user.id,
     reason: parsed.data.reason,
+    reason_category: parsed.data.reasonCategory,
+    is_anonymous: parsed.data.isAnonymous,
   });
 
   if (error) {

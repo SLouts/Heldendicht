@@ -3,12 +3,7 @@ import { requireUser } from "@/lib/dal";
 import { createClient } from "@/lib/supabase/server";
 import { resolveReport } from "@/lib/actions/reports";
 import { unwrapRelation } from "@/lib/unwrapRelation";
-
-const STATUS_LABEL: Record<string, string> = {
-  open: "待處理",
-  resolved: "已處理",
-  dismissed: "已駁回",
-};
+import { REPORT_REASON_CATEGORY_LABEL, REPORT_STATUS_LABEL as STATUS_LABEL } from "@/lib/reportLabels";
 
 const STATUS_FILTERS = ["open", "resolved", "dismissed", "all"] as const;
 type StatusFilter = (typeof STATUS_FILTERS)[number];
@@ -53,7 +48,7 @@ export default async function AdminReportsPage({
     supabase
       .from("reports")
       .select(
-        "id, target_type, target_id, reason, status, created_at, reporter:profiles!reports_reporter_id_fkey(display_name, username, email)",
+        "id, target_type, target_id, reason, reason_category, status, is_anonymous, created_at, reporter:profiles!reports_reporter_id_fkey(display_name, username, email)",
       )
       .order("created_at", { ascending: false }),
   ]);
@@ -145,13 +140,21 @@ export default async function AdminReportsPage({
                 >
                   {STATUS_LABEL[report.status]}
                 </span>
+                <span className="rounded-full bg-badge-info-bg px-2 py-0.5 text-xs text-badge-info-fg">
+                  {REPORT_REASON_CATEGORY_LABEL[report.reason_category]}
+                </span>
               </div>
 
               <p className="mt-2 whitespace-pre-wrap text-sm">{report.reason}</p>
 
               <p className="mt-2 text-xs text-muted-foreground">
+                {/* 站務在這一頁一律看得到真實身分——檢舉人選的匿名只對世界觀
+                    主辦/編輯生效,不影響站務,所以這裡不用判斷 is_anonymous。 */}
                 {reporter?.display_name || reporter?.username || reporter?.email || "匿名"} 於{" "}
                 {new Date(report.created_at).toLocaleString("zh-TW")} 檢舉
+                {report.is_anonymous && (
+                  <span className="ml-1 text-badge-pending-fg">(對主辦匿名)</span>
+                )}
               </p>
 
               {report.status === "open" && (

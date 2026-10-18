@@ -9,6 +9,7 @@ import {
 } from "@/lib/actions/attachments";
 import { insertTextAtCursor } from "@/lib/insertAtCursor";
 import { CategorySelectOptions } from "@/components/CategorySelectOptions";
+import { ConvertToCharacterForm } from "./ConvertToCharacterForm";
 
 const NODE_ATTACHMENTS_BUCKET = "node-attachments";
 
@@ -141,10 +142,8 @@ export function EditNodeForm({
               <option value="event">事件</option>
               <option value="article">文章</option>
             </select>
-            <p className="mt-1 text-xs text-badge-pending-fg/80">
-              如果這個名稱其實該是角色,請改用「新增角色」重新建立,再手動把這個待撰寫節點刪掉。
-            </p>
           </div>
+          <ConvertToCharacterForm nodeId={nodeId} worldSlug={worldSlug} nodeSlug={nodeSlug} />
         </div>
       )}
 

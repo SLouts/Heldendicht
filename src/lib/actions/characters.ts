@@ -182,3 +182,36 @@ export async function createCharacter(
   revalidatePath(`/dashboard/worlds/${worldSlug}`);
   redirect(`/dashboard/worlds/${worldSlug}/nodes/${slug}`);
 }
+
+export type ConvertToCharacterState = { error: string } | undefined;
+
+/**
+ * 把 WikiLink 自動建立的待撰寫節點直接轉換成角色——呼叫 convert_node_to_character
+ * RPC(見 migration 045),節點 id/slug 都不變,原本指向這個節點的 wikilinks
+ * 自然繼續有效,不用像「刪掉重建」那樣弄丟連結關係。PC 只能轉換成自己的
+ * 角色(owner_id 由這裡帶入目前使用者 id),NPC 不指定擁有者,跟
+ * createCharacter 的慣例一致。
+ */
+export async function convertNodeToCharacter(
+  nodeId: string,
+  worldSlug: string,
+  nodeSlug: string,
+  characterType: "pc" | "npc",
+): Promise<ConvertToCharacterState> {
+  const user = await requireUser();
+  const supabase = await createClient();
+
+  const { error } = await supabase.rpc("convert_node_to_character", {
+    p_node_id: nodeId,
+    p_character_type: characterType,
+    p_owner_id: characterType === "pc" ? user.id : null,
+  });
+
+  if (error) {
+    return { error: error.message || "轉換失敗,請稍後再試" };
+  }
+
+  revalidatePath(`/dashboard/worlds/${worldSlug}/nodes/${nodeSlug}`);
+  revalidatePath(`/dashboard/worlds/${worldSlug}`);
+  return undefined;
+}

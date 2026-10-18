@@ -4,12 +4,7 @@ import { requireUser } from "@/lib/dal";
 import { createClient } from "@/lib/supabase/server";
 import { resolveReport } from "@/lib/actions/reports";
 import { unwrapRelation } from "@/lib/unwrapRelation";
-
-const STATUS_LABEL: Record<string, string> = {
-  open: "待處理",
-  resolved: "已處理",
-  dismissed: "已駁回",
-};
+import { REPORT_REASON_CATEGORY_LABEL, REPORT_STATUS_LABEL as STATUS_LABEL } from "@/lib/reportLabels";
 
 type ReporterProfile = { display_name: string | null; username: string | null; email: string | null };
 
@@ -36,9 +31,10 @@ export default async function WorldReportsPage({
     .maybeSingle();
   if (!world) notFound();
 
-  const { data: isStaff } = await supabase.rpc("is_world_staff", {
-    p_world_id: world.id,
-  });
+  const [{ data: isStaff }, { data: isSiteAdmin }] = await Promise.all([
+    supabase.rpc("is_world_staff", { p_world_id: world.id }),
+    supabase.rpc("is_site_admin"),
+  ]);
 
   if (!isStaff) {
     return (
@@ -87,7 +83,7 @@ export default async function WorldReportsPage({
       ? supabase
           .from("reports")
           .select(
-            "id, target_type, target_id, reason, status, created_at, reporter:profiles!reports_reporter_id_fkey(display_name, username, email)",
+            "id, target_type, target_id, reason, reason_category, status, is_anonymous, created_at, reporter:profiles!reports_reporter_id_fkey(display_name, username, email)",
           )
           .eq("target_type", "node")
           .in("target_id", nodeIds)
@@ -96,7 +92,7 @@ export default async function WorldReportsPage({
       ? supabase
           .from("reports")
           .select(
-            "id, target_type, target_id, reason, status, created_at, reporter:profiles!reports_reporter_id_fkey(display_name, username, email)",
+            "id, target_type, target_id, reason, reason_category, status, is_anonymous, created_at, reporter:profiles!reports_reporter_id_fkey(display_name, username, email)",
           )
           .eq("target_type", "relationship")
           .in("target_id", relIds)
@@ -179,13 +175,23 @@ export default async function WorldReportsPage({
                 >
                   {STATUS_LABEL[report.status]}
                 </span>
+                <span className="rounded-full bg-badge-info-bg px-2 py-0.5 text-xs text-badge-info-fg">
+                  {REPORT_REASON_CATEGORY_LABEL[report.reason_category]}
+                </span>
               </div>
 
               <p className="mt-2 whitespace-pre-wrap text-sm">{report.reason}</p>
 
               <p className="mt-2 text-xs text-muted-foreground">
-                {reporter?.display_name || reporter?.username || reporter?.email || "匿名"}{" "}
+                {/* 檢舉人勾選對主辦/編輯匿名時,這裡(世界觀自己的檢舉列表)不顯示真實身分;
+                    站務(site_admin)一律看得到,即使是在這個頁面。 */}
+                {report.is_anonymous && !isSiteAdmin
+                  ? "匿名"
+                  : reporter?.display_name || reporter?.username || reporter?.email || "匿名"}{" "}
                 於 {new Date(report.created_at).toLocaleString("zh-TW")} 檢舉
+                {report.is_anonymous && isSiteAdmin && (
+                  <span className="ml-1 text-badge-pending-fg">(對主辦匿名,僅站務看得到)</span>
+                )}
               </p>
 
               {report.status === "open" && (

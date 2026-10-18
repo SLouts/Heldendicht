@@ -8,32 +8,16 @@ import {
   type SimulationNodeDatum,
   type SimulationLinkDatum,
 } from "d3-force";
-import {
-  STORYMAP_NODE_RADIUS,
-  STORYMAP_MIN_LABEL_K,
-  estimateLabelWidth,
-} from "@/lib/storymapConstants";
+import { collisionRadiusForTitle } from "@/lib/storymapConstants";
 
 export type GraphNode = { id: string; title: string };
 export type GraphEdge = { source: string; target: string };
 
-/**
- * 碰撞半徑取「節點圓點半徑」和「標籤寬度的一半」中較大的值,讓距離近的
- * 節點至少留出放得下彼此標籤的距離,不會像之前固定用 44 那樣,標題長的
- * 節點(例如「回春丹beta」)還是會跟旁邊的節點擠在一起、標籤互相蓋住。
- *
- * 除以 STORYMAP_MIN_LABEL_K 是因為 StoryMapGraph.tsx 縮小到那個比例時
- * 標籤還會放大補償維持可讀,畫面上的標籤大小不會比這裡假設的更小——
- * 要讓「不重疊」在使用者實際會縮到的範圍內都成立,不能只算 k=1 的情況,
- * 要用標籤「最大可能撐開到多大」的情境去抓間距。
- */
-function collisionRadius(title: string): number {
-  const halfLabelWidth = estimateLabelWidth(title) / 2;
-  return Math.max(STORYMAP_NODE_RADIUS, halfLabelWidth / STORYMAP_MIN_LABEL_K);
-}
+/** 連線兩端節點之間留的額外空隙,避免兩個碰撞圓剛好內切、標籤邊框貼在一起。 */
+const LINK_GAP = 16;
 
 /**
- * 用 d3-force 算一次靜態的力導向版面配置(跑固定 300 個 tick 後停止,
+ * 用 d3-force 算一次靜態的力導向版面配置(跑固定 400 個 tick 後停止,
  * 不是持續動畫的模擬)。這個函式沒有用到任何 DOM API,可以直接在
  * Server Component 裡算完座標,整張 StoryMap 用純 SVG 伺服器端渲染,
  * 不需要載入任何 client-side JS。
@@ -60,13 +44,26 @@ export function computeGraphLayout<N extends GraphNode>(
       "link",
       forceLink<SimNode, SimulationLinkDatum<SimNode>>(simLinks)
         .id((d) => d.id)
-        .distance(110),
+        // 連線的「理想長度」直接用兩端節點各自的碰撞半徑相加,讓連線力
+        // 跟碰撞力拉往同一個目標、不互相打架——之前固定寫 110,碰撞半徑
+        // 改成依標籤大小動態計算後,很多時候碰撞需要的最小距離早就超過
+        // 110,兩個力各退一步的結果就是連線間還是會比碰撞半徑要求的更近,
+        // 標籤照樣疊在一起。
+        .distance((l) => {
+          const source = l.source as SimNode;
+          const target = l.target as SimNode;
+          return collisionRadiusForTitle(source.title) + collisionRadiusForTitle(target.title) + LINK_GAP;
+        })
+        // 連線力調弱,讓碰撞力主導最終距離——預設的連線力強度是依兩端
+        // 節點的連線數反比計算,對只有一兩條連線的節點來說還是偏強,
+        // 容易把它們拉到比碰撞半徑更近的地方。
+        .strength(0.3),
     )
     .force("center", forceCenter(width / 2, height / 2))
-    .force("collide", forceCollide<SimNode>((d) => collisionRadius(d.title)))
+    .force("collide", forceCollide<SimNode>((d) => collisionRadiusForTitle(d.title)).iterations(3))
     .stop();
 
-  for (let i = 0; i < 300; i++) simulation.tick();
+  for (let i = 0; i < 400; i++) simulation.tick();
 
   return simNodes.map((n) => ({
     ...(n as N),

@@ -31,6 +31,24 @@
   --badge-info-fg: #33506e;
   --badge-neutral-bg: #e2ded2;
   --badge-neutral-fg: #6b6558;
+
+  /* 關係圖譜/世界地圖標點的「屬性分類」圖例顏色——刻意不跟上面那組
+     語意化色彩變數(--primary、--badge-info-fg 等)共用。那組是給按鈕、
+     徽章等各自獨立的 UI 元素用的,每個六種美術方向各自調過色,同一個
+     變數在不同元件的用途不一樣,沒有「九種顏色彼此一定要能分辨」這個
+     限制;拿來給九種分類圖例共用,就會像「物產」用 --primary、「PC」
+     用 --badge-info-fg,剛好在某個主題(占星曆書)調出幾乎一樣的深藍色,
+     圖例上完全分不出來。改成獨立、不隨主題變動的一組九色,只為了
+     「彼此好分辨」設計,不用管跟各主題配色搭不搭。 */
+  --category-location: #2e86ab;
+  --category-item: #e67e22;
+  --category-pc: #16a085;
+  --category-npc: #8e44ad;
+  --category-faction: #c0392b;
+  --category-concept: #b7950b;
+  --category-event: #d81b60;
+  --category-article: #5d4037;
+  --category-placeholder: #7f8c8d;
 }
 
 @theme inline {

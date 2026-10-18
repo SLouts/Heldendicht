@@ -60,14 +60,18 @@ export const NODE_CATEGORY_LABELS: Record<NodeCategory, string> = {
   placeholder: "待撰寫",
 };
 
+// 專用、不隨六種美術方向變動的九色,詳見 globals.css 裡這組變數旁的
+// 說明——語意化色彩變數(--primary、--badge-info-fg 等)是給各自獨立的
+// UI 元素用的,不保證九種類別兩兩都能分辨,某些主題下會撞色(例如
+// 占星曆書的 --primary 跟 --badge-info-fg 幾乎是同一個深藍色)。
 export const NODE_CATEGORY_COLOR_VARS: Record<NodeCategory, string> = {
-  location: "var(--success)",
-  item: "var(--primary)",
-  pc: "var(--badge-info-fg)",
-  npc: "var(--muted-foreground)",
-  faction: "var(--danger)",
-  concept: "var(--badge-pending-fg)",
-  event: "var(--badge-neutral-fg)",
-  article: "var(--foreground)",
-  placeholder: "var(--muted-foreground)",
+  location: "var(--category-location)",
+  item: "var(--category-item)",
+  pc: "var(--category-pc)",
+  npc: "var(--category-npc)",
+  faction: "var(--category-faction)",
+  concept: "var(--category-concept)",
+  event: "var(--category-event)",
+  article: "var(--category-article)",
+  placeholder: "var(--category-placeholder)",
 };

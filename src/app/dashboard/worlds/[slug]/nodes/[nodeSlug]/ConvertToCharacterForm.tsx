@@ -25,8 +25,7 @@ export function ConvertToCharacterForm({
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  function handleConvert() {
     setError(null);
     startTransition(async () => {
       const result = await convertNodeToCharacter(nodeId, worldSlug, nodeSlug, characterType);
@@ -38,11 +37,12 @@ export function ConvertToCharacterForm({
     });
   }
 
+  // 這個節點已經在 EditNodeForm 的 <form> 裡面,不能再用巢狀 <form>——
+  // HTML 不允許 form 裡面再放 form,瀏覽器剖析時會直接把內層 <form>
+  // 標籤丟掉,造成實際 DOM 跟 React 預期的結構不一樣,觸發 hydration
+  // mismatch(只有待撰寫節點頁會出現這個區塊,所以症狀只出現在那裡)。
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="mt-3 flex flex-wrap items-end gap-2 rounded-lg border border-border bg-background p-3"
-    >
+    <div className="mt-3 flex flex-wrap items-end gap-2 rounded-lg border border-border bg-background p-3">
       <div className="flex flex-col gap-1">
         <label htmlFor="convert-character-type" className="text-xs font-medium">
           如果這個名稱其實是角色,直接轉換(會保留原本的 WikiLink 連結)
@@ -58,13 +58,14 @@ export function ConvertToCharacterForm({
         </select>
       </div>
       <button
-        type="submit"
+        type="button"
+        onClick={handleConvert}
         disabled={pending}
         className="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm transition hover:bg-muted disabled:opacity-50"
       >
         {pending ? "轉換中…" : "轉換成角色"}
       </button>
       {error && <p className="w-full text-xs text-danger">{error}</p>}
-    </form>
+    </div>
   );
 }

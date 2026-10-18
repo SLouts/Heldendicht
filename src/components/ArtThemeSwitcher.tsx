@@ -23,6 +23,23 @@ export function ArtThemeSwitcher() {
   });
   const rootRef = useRef<HTMLDivElement>(null);
 
+  // root layout 的 bootstrap script 只保證「一般情況下」在 hydrate 之前
+  // 把屬性設好;某些 notFound() 情境 Next.js 會整個丟棄 server 端的
+  // DOM、改成純 client-side render(不是 hydrate),這時 script 設好的
+  // 屬性也會跟著被洗掉,而且晚於 script 執行。這裡用同一份邏輯在
+  // mount 時補設一次,確保不管前面發生什麼,畫面上這個元件一出現,
+  // 屬性就一定是對的。
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(ART_THEME_STORAGE_KEY);
+      if (stored && (ART_THEMES as readonly { id: string }[]).some((t) => t.id === stored)) {
+        document.documentElement.setAttribute(ART_THEME_ATTR, stored);
+      }
+    } catch {
+      // 私密瀏覽模式等情境存取不到也無妨,維持目前已經套用的樣式即可。
+    }
+  }, []);
+
   useEffect(() => {
     if (!open) return;
     function handleClick(e: MouseEvent) {

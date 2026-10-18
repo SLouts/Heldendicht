@@ -9,7 +9,6 @@ import {
   Cormorant_Garamond,
   Pinyon_Script,
 } from "next/font/google";
-import Script from "next/script";
 import { ArtThemeSwitcher } from "@/components/ArtThemeSwitcher";
 import { SiteFooter } from "@/components/SiteFooter";
 import { ART_THEME_ATTR, ART_THEME_IDS, ART_THEME_STORAGE_KEY } from "@/lib/artTheme";
@@ -100,18 +99,28 @@ export const metadata: Metadata = {
 // 在 hydrate 之前就把上次選的美術方向套到 <html> 上,避免畫面先閃一下
 // 預設方向再跳成使用者選的方向。純讀 localStorage,沒有帳號層級的設定,
 // 訪客不登入也能用。
+//
+// 故意不用 next/script 的 beforeInteractive——那是靠伺服器在 HTML 裡
+// 輸出 self.__next_s.push(...) 來執行,只有真的走過這個 route 的完整
+// SSR/RSC render 才會有這段。404(notFound())這種情況 Next.js 會直接
+// 回傳 build time 就固定好的最小 error shell(<html id="__next_error__">),
+// 不會重新跑一次完整的 layout render,beforeInteractive script 就完全
+// 沒執行過,data-art-theme 也就永遠不會被設上去。改成直接塞一個原生
+// <script> 標籤進 <head>,是 HTML 本身的一部分,不管 Next.js 走哪條
+// render 路徑都一定會被瀏覽器解析、執行。
 const bootstrapArtTheme = `(function(){try{var v=localStorage.getItem(${JSON.stringify(ART_THEME_STORAGE_KEY)});if(v&&${JSON.stringify(ART_THEME_IDS)}.indexOf(v)>-1){document.documentElement.setAttribute(${JSON.stringify(ART_THEME_ATTR)},v);}}catch(e){}})();`;
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="zh-Hant"
+      suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} ${script.variable} ${field.variable} ${scroll.variable} ${cartographer.variable} ${almanac.variable} ${heroTitleFont.variable} h-full antialiased`}
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: bootstrapArtTheme }} />
+      </head>
       <body className="min-h-full flex flex-col">
-        <Script id="art-theme-bootstrap" strategy="beforeInteractive">
-          {bootstrapArtTheme}
-        </Script>
         {children}
         <SiteFooter />
         <ArtThemeSwitcher />

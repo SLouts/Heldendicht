@@ -199,6 +199,18 @@ export async function changePassword(
     return { error: "修改密碼失敗,請稍後再試" };
   }
 
+  // 清掉站務手動重設密碼時可能設下的「強制下次登入改密碼」旗標。
+  // app_metadata 只能透過管理 API 改,所以就算這個使用者本來沒被設過
+  // 這個旗標,這裡也是安全的 no-op。清完之後要 refreshSession()——
+  // proxy.ts 讀的是目前 JWT 裡夾帶的 claims,不會因為 Auth 後台的
+  // app_metadata 改了就自動更新,不换一張新 token 的話舊 token 到期前
+  // 都還是會被攔去改密碼頁面,變成改完密碼卻進不了 /dashboard。
+  const admin = createAdminClient();
+  await admin.auth.admin.updateUserById(user.id, {
+    app_metadata: { force_password_change: false },
+  });
+  await supabase.auth.refreshSession();
+
   return { success: true };
 }
 

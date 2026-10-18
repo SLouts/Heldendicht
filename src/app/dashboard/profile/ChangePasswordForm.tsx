@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState, useEffect, useRef } from "react";
 import { changePassword } from "@/lib/actions/auth";
 
@@ -72,7 +73,12 @@ export function ChangePasswordForm() {
         <p className="text-sm text-danger">{state.error}</p>
       )}
       {state && "success" in state && (
-        <p className="text-sm text-success">密碼已修改完成。</p>
+        <p className="text-sm text-success">
+          密碼已修改完成。
+          <Link href="/dashboard" className="ml-1 underline">
+            前往後台
+          </Link>
+        </p>
       )}
 
       <button

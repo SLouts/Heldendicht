@@ -60,6 +60,16 @@ export default async function SiteAdminPage() {
       label: "手動重設密碼",
       description: "協助使用者重設帳號密碼",
     },
+    {
+      href: "/dashboard/admin/users",
+      label: "使用者管理",
+      description: "搜尋使用者、查看資料、停權/解除停權",
+    },
+    {
+      href: "/dashboard/admin/audit-log",
+      label: "操作紀錄",
+      description: "查看站務的所有操作紀錄",
+    },
   ];
 
   return (

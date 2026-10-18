@@ -11,39 +11,46 @@ export function ResetUserPasswordForm() {
 
   return (
     <div className="mt-4 flex flex-col gap-3 rounded-lg border border-border bg-surface p-4">
-      <form action={formAction} className="flex flex-wrap items-end gap-3">
-        <div className="flex flex-col gap-1">
-          <label htmlFor="identifier" className="text-sm font-medium">
-            使用者(Email 或使用者名稱)
-          </label>
-          <input
-            id="identifier"
-            name="identifier"
-            required
-            className="w-56 rounded-lg border border-border bg-background px-3 py-2 text-sm"
-          />
+      <form action={formAction} className="flex flex-col gap-3">
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="flex flex-col gap-1">
+            <label htmlFor="identifier" className="text-sm font-medium">
+              使用者(Email 或使用者名稱)
+            </label>
+            <input
+              id="identifier"
+              name="identifier"
+              required
+              className="w-56 rounded-lg border border-border bg-background px-3 py-2 text-sm"
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label htmlFor="newPassword" className="text-sm font-medium">
+              新密碼
+            </label>
+            <input
+              id="newPassword"
+              name="newPassword"
+              type="text"
+              required
+              minLength={8}
+              placeholder="至少 8 個字元"
+              className="w-56 rounded-lg border border-border bg-background px-3 py-2 text-sm font-mono"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={pending}
+            className="rounded-lg bg-primary px-4 py-2 text-sm text-primary-foreground transition hover:bg-primary-hover disabled:opacity-50"
+          >
+            {pending ? "設定中…" : "設定新密碼"}
+          </button>
         </div>
-        <div className="flex flex-col gap-1">
-          <label htmlFor="newPassword" className="text-sm font-medium">
-            新密碼
-          </label>
-          <input
-            id="newPassword"
-            name="newPassword"
-            type="text"
-            required
-            minLength={8}
-            placeholder="至少 8 個字元"
-            className="w-56 rounded-lg border border-border bg-background px-3 py-2 text-sm font-mono"
-          />
-        </div>
-        <button
-          type="submit"
-          disabled={pending}
-          className="rounded-lg bg-primary px-4 py-2 text-sm text-primary-foreground transition hover:bg-primary-hover disabled:opacity-50"
-        >
-          {pending ? "設定中…" : "設定新密碼"}
-        </button>
+
+        <label className="flex items-center gap-2 text-sm text-muted-foreground">
+          <input type="checkbox" name="forcePasswordChange" />
+          強制對方下次登入時要先改密碼
+        </label>
       </form>
 
       {state && "error" in state && (

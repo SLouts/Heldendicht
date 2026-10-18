@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/dal";
@@ -6,6 +7,20 @@ import { NewCharacterForm } from "./NewCharacterForm";
 import { ImportCharacterForm } from "./ImportCharacterForm";
 import { CharacterCreateModeSwitch } from "./CharacterCreateModeSwitch";
 import { CharacterTemplatePreview } from "./CharacterTemplatePreview";
+
+export async function generateMetadata({
+  params,
+}: PageProps<"/dashboard/worlds/[slug]/characters/new">): Promise<Metadata> {
+  const { slug } = await params;
+  const supabase = await createClient();
+  const { data: world } = await supabase
+    .from("worlds")
+    .select("name")
+    .eq("slug", slug)
+    .maybeSingle();
+  if (!world) return {};
+  return { title: `${world.name} ｜ 新增角色` };
+}
 
 export default async function NewCharacterPage({
   params,

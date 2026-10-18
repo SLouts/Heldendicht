@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { requireUser, getCurrentProfile } from "@/lib/dal";
 import { createClient } from "@/lib/supabase/server";
@@ -7,6 +8,8 @@ import { DashboardPreferencesPanel } from "./DashboardPreferencesPanel";
 import { DashboardWorldsSection, type DashboardWorldItem } from "./DashboardWorldsSection";
 import { unwrapRelation } from "@/lib/unwrapRelation";
 import { getStaffReviewSummary } from "@/lib/reviewSummary";
+
+export const metadata: Metadata = { title: "後台首頁" };
 
 /**
  * 工作台首頁動線:先個人身分資訊、版面偏好,再進入世界觀選擇——不是一

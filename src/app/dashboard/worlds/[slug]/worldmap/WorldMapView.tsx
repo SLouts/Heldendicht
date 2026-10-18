@@ -437,7 +437,7 @@ export default function WorldMapView({
 
       {editMode && armedNodeId && (
         <p className="mb-2 rounded-lg bg-badge-info-bg px-3 py-2 text-sm text-badge-info-fg">
-          點擊地圖上的位置來放置節點。
+          點擊地圖上的位置來放置條目。
           <button
             type="button"
             onClick={() => setArmedNodeId(null)}
@@ -553,7 +553,7 @@ export default function WorldMapView({
             href={`${basePath}/${selectedNode.slug}`}
             className="underline"
           >
-            前往節點
+            前往條目
           </a>
           <button
             type="button"
@@ -567,13 +567,13 @@ export default function WorldMapView({
 
       {editMode && selectedLayer?.imageUrl && (
         <div className="mt-4">
-          <h3 className="text-sm font-semibold">尚未標示的節點</h3>
+          <h3 className="text-sm font-semibold">尚未標示的條目</h3>
           <p className="mt-1 text-xs text-muted-foreground">
-            這裡只列出完全還沒標在任何圖層上的節點——想把已經標在別張圖層的節點
+            這裡只列出完全還沒標在任何圖層上的條目——想把已經標在別張圖層的條目
             移過來,先在那張圖層把它從地圖移除,再回到這裡重新標示。
           </p>
           {unplacedNodes.length === 0 ? (
-            <p className="mt-1 text-sm text-muted-foreground">全部節點都已經標到地圖上了。</p>
+            <p className="mt-1 text-sm text-muted-foreground">全部條目都已經標到地圖上了。</p>
           ) : (
             <ul className="mt-2 flex flex-wrap gap-2">
               {unplacedNodes.map((n) => (

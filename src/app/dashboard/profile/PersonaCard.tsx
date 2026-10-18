@@ -189,7 +189,7 @@ export function PersonaCard({
           </p>
           {links.length === 0 ? (
             <p className="mt-1 text-sm text-muted-foreground">
-              還沒有連結任何世界觀的角色節點——到該角色的節點頁面選擇連結到這個身分。
+              還沒有連結任何世界觀的角色條目——到該角色的條目頁面選擇連結到這個身分。
             </p>
           ) : (
             <ul className="mt-2 flex flex-col gap-1">

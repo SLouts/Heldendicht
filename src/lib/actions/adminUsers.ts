@@ -110,6 +110,9 @@ export async function suspendUser(
   formData: FormData,
 ): Promise<void> {
   const actor = await requireUser();
+  if (userId === actor.id) {
+    throw new Error("不能把自己停權");
+  }
   const supabase = await createClient();
   const { data: isSiteAdmin } = await supabase.rpc("is_site_admin");
   if (!isSiteAdmin) {

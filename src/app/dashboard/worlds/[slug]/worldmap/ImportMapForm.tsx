@@ -24,8 +24,8 @@ export function ImportMapForm({
       <h3 className="text-sm font-semibold">從 USOMAP 匯入地點</h3>
       <p className="mt-1 text-xs text-muted-foreground">
         上傳 USOMAP(架空地圖產生器)匯出的 .geojson 檔案,會自動把 city / nation
-        / label 三種資料建立成地點節點,並直接標好在目前這張圖層上的位置。匯入的
-        節點跟手動新增的一樣要先審核。
+        / label 三種資料建立成地點條目,並直接標好在目前這張圖層上的位置。匯入的
+        條目跟手動新增的一樣要先審核。
       </p>
       <form
         ref={formRef}

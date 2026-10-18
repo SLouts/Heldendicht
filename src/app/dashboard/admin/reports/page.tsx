@@ -1,9 +1,12 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { requireUser } from "@/lib/dal";
 import { createClient } from "@/lib/supabase/server";
 import { resolveReport } from "@/lib/actions/reports";
 import { unwrapRelation } from "@/lib/unwrapRelation";
 import { REPORT_REASON_CATEGORY_LABEL, REPORT_STATUS_LABEL as STATUS_LABEL } from "@/lib/reportLabels";
+
+export const metadata: Metadata = { title: "全站檢舉總覽" };
 
 const STATUS_FILTERS = ["open", "resolved", "dismissed", "all"] as const;
 type StatusFilter = (typeof STATUS_FILTERS)[number];
@@ -101,7 +104,7 @@ export default async function AdminReportsPage({
             report.target_type === "node" ? nodeMap.get(report.target_id) : relMap.get(report.target_id);
           const targetLabel =
             report.target_type === "node"
-              ? (nodeMap.get(report.target_id)?.title ?? "(節點已刪除)")
+              ? (nodeMap.get(report.target_id)?.title ?? "(條目已刪除)")
               : (relMap.get(report.target_id)?.label ?? "(關係線已刪除)");
           const targetHref =
             report.target_type === "node" && nodeMap.get(report.target_id)?.world
@@ -114,7 +117,7 @@ export default async function AdminReportsPage({
             <li key={report.id} className="rounded-lg border border-border bg-surface p-4">
               <div className="flex flex-wrap items-center gap-2 text-sm">
                 <span className="text-xs text-muted-foreground">
-                  {report.target_type === "node" ? "節點" : "關係線"}
+                  {report.target_type === "node" ? "條目" : "關係線"}
                 </span>
                 {targetHref ? (
                   <Link href={targetHref} className="font-medium hover:underline">

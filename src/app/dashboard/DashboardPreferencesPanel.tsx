@@ -32,10 +32,10 @@ export function DashboardPreferencesPanel({
       </p>
       <p>
         📋 {pendingReviewCount} 項待審核
-        <span className="ml-1 text-muted-foreground">(節點審核+檢舉,請看頁首通知鈴鐺)</span>
+        <span className="ml-1 text-muted-foreground">(條目審核+檢舉,請看頁首通知鈴鐺)</span>
       </p>
       {stubNodesCount > 0 && (
-        <p className="text-muted-foreground">✏️ 另有 {stubNodesCount} 個 WikiLink 待撰寫節點</p>
+        <p className="text-muted-foreground">✏️ 另有 {stubNodesCount} 個 WikiLink 待撰寫條目</p>
       )}
       <p>
         ✉️ {unreadMessageCount} 則未讀私訊

@@ -215,7 +215,7 @@ export async function updateNodeContent(
     };
   }
   if (count === 0) {
-    return { error: "你沒有權限編輯這個節點" };
+    return { error: "你沒有權限編輯這個條目" };
   }
 
   revalidatePath(
@@ -267,8 +267,8 @@ export async function reviewNode(
     throw new Error(
       error?.message ??
         (decision === "approved"
-          ? "這是待撰寫的佔位節點,請先補完類型跟內文才能核准"
-          : "你沒有權限審核這個節點"),
+          ? "這是待撰寫的佔位條目,請先補完類型跟內文才能核准"
+          : "你沒有權限審核這個條目"),
     );
   }
 
@@ -333,7 +333,7 @@ export async function deleteNode(
     .eq("id", nodeId);
 
   if (error || count === 0) {
-    throw new Error(error?.message ?? "你沒有權限刪除這個節點");
+    throw new Error(error?.message ?? "你沒有權限刪除這個條目");
   }
 
   revalidatePath(`/dashboard/worlds/${worldSlug}`);

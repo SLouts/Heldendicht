@@ -29,7 +29,7 @@ export function ChapterParticipantsForm({
       <input type="hidden" name="worldSlug" value={worldSlug} />
       <p className="text-sm font-medium">參與角色(這個章節是哪些角色一起參與的「副本」)</p>
       {characterOptions.length === 0 ? (
-        <p className="text-sm text-muted-foreground">這個世界觀目前還沒有角色節點。</p>
+        <p className="text-sm text-muted-foreground">這個世界觀目前還沒有角色條目。</p>
       ) : (
         <div className="flex flex-col gap-1.5">
           {characterOptions.map((c) => (

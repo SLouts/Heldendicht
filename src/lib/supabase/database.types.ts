@@ -1016,6 +1016,35 @@ export type Database = {
           },
         ];
       };
+      node_slug_redirects: {
+        Row: {
+          id: string;
+          world_id: string;
+          old_slug: string;
+          node_id: string;
+          created_at: string;
+        };
+        Insert: Partial<
+          Database["public"]["Tables"]["node_slug_redirects"]["Row"]
+        > & { world_id: string; old_slug: string; node_id: string };
+        Update: Partial<Database["public"]["Tables"]["node_slug_redirects"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "node_slug_redirects_world_id_fkey";
+            columns: ["world_id"];
+            isOneToOne: false;
+            referencedRelation: "worlds";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "node_slug_redirects_node_id_fkey";
+            columns: ["node_id"];
+            isOneToOne: false;
+            referencedRelation: "nodes";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       wikilinks: {
         Row: {
           id: string;
@@ -1403,6 +1432,10 @@ export type Database = {
           p_owner_id?: string | null;
         };
         Returns: string;
+      };
+      rename_node_slug: {
+        Args: { p_node_id: string; p_new_slug: string };
+        Returns: undefined;
       };
       public_world_memberships: {
         Args: { p_user_id: string };

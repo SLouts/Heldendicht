@@ -1,8 +1,23 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/dal";
 import { createClient } from "@/lib/supabase/server";
 import { WorldMainTabs } from "@/components/WorldMainTabs";
 import { WorldAdminLinks } from "../WorldAdminLinks";
+
+export async function generateMetadata({
+  params,
+}: PageProps<"/dashboard/worlds/[slug]/admin">): Promise<Metadata> {
+  const { slug } = await params;
+  const supabase = await createClient();
+  const { data: world } = await supabase
+    .from("worlds")
+    .select("name")
+    .eq("slug", slug)
+    .maybeSingle();
+  if (!world) return {};
+  return { title: `${world.name} ｜ 設定` };
+}
 
 /**
  * 手機版的管理功能入口——電腦版是 NodeTabs 的「設定」分頁(跟其他分頁

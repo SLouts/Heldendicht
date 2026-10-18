@@ -1,8 +1,23 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/dal";
 import { createClient } from "@/lib/supabase/server";
 import { NewChapterForm } from "./NewChapterForm";
+
+export async function generateMetadata({
+  params,
+}: PageProps<"/dashboard/worlds/[slug]/story/chapters/new">): Promise<Metadata> {
+  const { slug } = await params;
+  const supabase = await createClient();
+  const { data: world } = await supabase
+    .from("worlds")
+    .select("name")
+    .eq("slug", slug)
+    .maybeSingle();
+  if (!world) return {};
+  return { title: `${world.name} ｜ 新增企劃章節` };
+}
 
 export default async function NewChapterPage({
   params,

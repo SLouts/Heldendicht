@@ -107,7 +107,7 @@ export function WorldDirectoryTab({
   if (isCompletelyEmpty) {
     return (
       <EmptyState
-        title="這個世界觀還沒有任何節點"
+        title="這個世界觀還沒有任何條目"
         description="新增第一個地點、角色或條目,開始建立這個世界觀的內容。"
         actionHref={`/dashboard/worlds/${worldSlug}/nodes/new`}
         actionLabel="+ 新增條目"
@@ -274,8 +274,8 @@ function NodeList({
 }) {
   const hasNodes = Boolean(nodes && nodes.length > 0);
   const emptyMessage = hasSubcategories
-    ? "本分類沒有直接收錄的節點,內容在下方子分類。"
-    : "目前還沒有節點。";
+    ? "本分類沒有直接收錄的條目,內容在下方子分類。"
+    : "目前還沒有條目。";
   if (!hasNodes && !copyTemplateText) {
     return <p className="mt-3 text-sm text-muted-foreground">{emptyMessage}</p>;
   }

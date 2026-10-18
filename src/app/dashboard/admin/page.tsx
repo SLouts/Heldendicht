@@ -1,6 +1,9 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { requireUser } from "@/lib/dal";
 import { createClient } from "@/lib/supabase/server";
+
+export const metadata: Metadata = { title: "站務" };
 
 /**
  * 站務功能集中入口——原本這 5 個連結散在 /dashboard 首頁最下面一段
@@ -69,6 +72,11 @@ export default async function SiteAdminPage() {
       href: "/dashboard/admin/audit-log",
       label: "操作紀錄",
       description: "查看站務的所有操作紀錄",
+    },
+    {
+      href: "/dashboard/admin/slug-migration",
+      label: "補發條目代稱",
+      description: "一次性工具:把中文標題條目的代稱改成拼音,舊網址自動轉址",
     },
   ];
 

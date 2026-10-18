@@ -124,7 +124,7 @@ export default async function PublicStoryMapPage({
       <WorldMainTabs basePath={`/worlds/${world.slug}`} />
 
       {graphNodes.length === 0 ? (
-        <p className="mt-6 text-sm text-muted-foreground">這個世界觀還沒有節點。</p>
+        <p className="mt-6 text-sm text-muted-foreground">這個世界觀還沒有條目。</p>
       ) : (
         <>
           <StoryMapGraph
@@ -144,7 +144,7 @@ export default async function PublicStoryMapPage({
             <span>── 實線:生效關係線</span>
             <span>┄┄ 虛線:已撤銷 / 未過審</span>
             <span>···· 細點線:WikiLink 提及</span>
-            <span>◌ 虛線圈:節點未過審</span>
+            <span>◌ 虛線圈:條目未過審</span>
           </div>
         </>
       )}

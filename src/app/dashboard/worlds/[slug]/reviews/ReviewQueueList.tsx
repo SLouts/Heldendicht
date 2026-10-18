@@ -10,6 +10,7 @@ export type ReviewQueueNode = {
   slug: string;
   nodeTypeLabel: string;
   preview: string;
+  content: string;
   creatorLabel: string;
   createdAt: string;
 };
@@ -38,8 +39,18 @@ export function ReviewQueueList({
   stubNodes: StubQueueNode[];
 }) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [pending, startTransition] = useTransition();
   const [pendingSingle, setPendingSingle] = useState<string | null>(null);
+
+  function toggleExpanded(id: string) {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
 
   function toggle(id: string) {
     setSelected((prev) => {
@@ -79,7 +90,7 @@ export function ReviewQueueList({
     <div className="mt-6 flex flex-col gap-8">
       <div>
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-lg font-semibold">待審核節點({nodes.length})</h2>
+          <h2 className="text-lg font-semibold">待審核條目({nodes.length})</h2>
           {nodes.length > 0 && (
             <div className="flex items-center gap-2">
               <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -132,8 +143,23 @@ export function ReviewQueueList({
                       {n.nodeTypeLabel}
                     </span>
                   </div>
-                  {n.preview && (
-                    <p className="mt-1 text-sm text-muted-foreground">{n.preview}</p>
+                  {expanded.has(n.id) ? (
+                    <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">
+                      {n.content || "(尚無內文)"}
+                    </p>
+                  ) : (
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {n.preview || "(尚無內文)"}
+                    </p>
+                  )}
+                  {n.preview.endsWith("…") && (
+                    <button
+                      type="button"
+                      onClick={() => toggleExpanded(n.id)}
+                      className="mt-1 text-xs text-primary hover:underline"
+                    >
+                      {expanded.has(n.id) ? "收合" : "展開全文"}
+                    </button>
                   )}
                   <p className="mt-1 text-xs text-muted-foreground">
                     {n.creatorLabel} 於 {new Date(n.createdAt).toLocaleString("zh-TW")} 建立
@@ -161,7 +187,7 @@ export function ReviewQueueList({
             </li>
           ))}
           {nodes.length === 0 && (
-            <li className="text-sm text-muted-foreground">目前沒有待審核的節點。</li>
+            <li className="text-sm text-muted-foreground">目前沒有待審核的條目。</li>
           )}
         </ul>
       </div>
@@ -169,7 +195,7 @@ export function ReviewQueueList({
       <div>
         <h2 className="text-lg font-semibold">待撰寫({stubNodes.length})</h2>
         <p className="mt-1 text-xs text-muted-foreground">
-          WikiLink 自動建立的佔位節點,還沒補上類型跟內文,不算進上面的待審核——等建立者補完才會真正進入審核。
+          WikiLink 自動建立的佔位條目,還沒補上類型跟內文,不算進上面的待審核——等建立者補完才會真正進入審核。
         </p>
         <ul className="mt-3 flex flex-col gap-2">
           {stubNodes.map((n) => (
@@ -192,7 +218,7 @@ export function ReviewQueueList({
             </li>
           ))}
           {stubNodes.length === 0 && (
-            <li className="text-sm text-muted-foreground">目前沒有待撰寫的節點。</li>
+            <li className="text-sm text-muted-foreground">目前沒有待撰寫的條目。</li>
           )}
         </ul>
       </div>

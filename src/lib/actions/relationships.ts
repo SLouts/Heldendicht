@@ -15,8 +15,8 @@ const CreateRelationshipSchema = z
   .object({
     worldId: z.uuid(),
     worldSlug: z.string().min(1),
-    nodeAId: z.uuid({ error: "請選擇 A 端節點" }),
-    nodeBId: z.uuid({ error: "請選擇 B 端節點" }),
+    nodeAId: z.uuid({ error: "請選擇 A 端條目" }),
+    nodeBId: z.uuid({ error: "請選擇 B 端條目" }),
     label: z.string(),
     labelReverse: z.string(),
     description: z.string(),
@@ -25,7 +25,7 @@ const CreateRelationshipSchema = z
     direction: z.union([z.literal("uni"), z.literal("bi")]),
   })
   .refine((data) => data.nodeAId !== data.nodeBId, {
-    error: "A、B 兩端不能是同一個節點",
+    error: "A、B 兩端不能是同一個條目",
     path: ["nodeBId"],
   });
 

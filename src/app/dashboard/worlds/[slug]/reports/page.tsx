@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/dal";
@@ -5,6 +6,20 @@ import { createClient } from "@/lib/supabase/server";
 import { resolveReport } from "@/lib/actions/reports";
 import { unwrapRelation } from "@/lib/unwrapRelation";
 import { REPORT_REASON_CATEGORY_LABEL, REPORT_STATUS_LABEL as STATUS_LABEL } from "@/lib/reportLabels";
+
+export async function generateMetadata({
+  params,
+}: PageProps<"/dashboard/worlds/[slug]/reports">): Promise<Metadata> {
+  const { slug } = await params;
+  const supabase = await createClient();
+  const { data: world } = await supabase
+    .from("worlds")
+    .select("name")
+    .eq("slug", slug)
+    .maybeSingle();
+  if (!world) return {};
+  return { title: `${world.name} ｜ 檢舉列表` };
+}
 
 type ReporterProfile = { display_name: string | null; username: string | null; email: string | null };
 
@@ -139,7 +154,7 @@ export default async function WorldReportsPage({
           ) as ReporterProfile | null;
           const targetLabel =
             report.target_type === "node"
-              ? (nodeMap.get(report.target_id)?.title ?? "(節點已刪除)")
+              ? (nodeMap.get(report.target_id)?.title ?? "(條目已刪除)")
               : (relMap.get(report.target_id) ?? "(關係線已刪除)");
           const targetHref =
             report.target_type === "node"
@@ -157,7 +172,7 @@ export default async function WorldReportsPage({
             >
               <div className="flex items-center gap-2 text-sm">
                 <span className="text-xs text-muted-foreground">
-                  {report.target_type === "node" ? "節點" : "關係線"}
+                  {report.target_type === "node" ? "條目" : "關係線"}
                 </span>
                 {targetHref ? (
                   <Link href={targetHref} className="font-medium hover:underline">

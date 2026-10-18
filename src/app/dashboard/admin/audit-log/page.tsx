@@ -1,7 +1,10 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { requireUser } from "@/lib/dal";
 import { createClient } from "@/lib/supabase/server";
 import { unwrapRelation } from "@/lib/unwrapRelation";
+
+export const metadata: Metadata = { title: "操作紀錄" };
 
 const ACTION_LABEL: Record<string, string> = {
   reset_password: "重設密碼",

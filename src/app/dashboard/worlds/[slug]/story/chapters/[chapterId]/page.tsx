@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/dal";
@@ -78,6 +79,27 @@ async function fetchChapterDetail(
   return none.data
     ? { ...none.data, year_start: null, year_end: null, ...NO_DATE_PARTS }
     : null;
+}
+
+export async function generateMetadata({
+  params,
+}: PageProps<"/dashboard/worlds/[slug]/story/chapters/[chapterId]">): Promise<Metadata> {
+  const { slug, chapterId } = await params;
+  const supabase = await createClient();
+  const { data: world } = await supabase
+    .from("worlds")
+    .select("id, name")
+    .eq("slug", slug)
+    .maybeSingle();
+  if (!world) return {};
+  const { data: chapter } = await supabase
+    .from("story_chapters")
+    .select("title")
+    .eq("id", chapterId)
+    .eq("world_id", world.id)
+    .maybeSingle();
+  if (!chapter) return {};
+  return { title: `${chapter.title} ｜ ${world.name}` };
 }
 
 export default async function ChapterDetailPage({

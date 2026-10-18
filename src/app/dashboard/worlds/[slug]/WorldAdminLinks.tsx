@@ -38,7 +38,7 @@ export function WorldAdminLinks({
     {
       href: `/dashboard/worlds/${worldSlug}/reviews`,
       label: "審核佇列",
-      description: "預覽未正式過審的節點,個別或批次核准/駁回",
+      description: "預覽未正式過審的條目,個別或批次核准/駁回",
     },
     ...(!isSolo
       ? [

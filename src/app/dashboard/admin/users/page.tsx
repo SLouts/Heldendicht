@@ -1,7 +1,12 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { requireUser } from "@/lib/dal";
 import { createClient } from "@/lib/supabase/server";
-import { suspendUser, unsuspendUser } from "@/lib/actions/adminUsers";
+import { unsuspendUser } from "@/lib/actions/adminUsers";
+import { SuspendUserForm } from "./SuspendUserForm";
+import type { SiteRole } from "@/lib/supabase/database.types";
+
+export const metadata: Metadata = { title: "使用者管理" };
 
 type ProfileRow = {
   id: string;
@@ -12,10 +17,11 @@ type ProfileRow = {
   is_suspended: boolean;
   suspended_at: string | null;
   suspended_reason: string | null;
+  site_role: SiteRole;
 };
 
 const SELECT =
-  "id, username, display_name, email, created_at, is_suspended, suspended_at, suspended_reason";
+  "id, username, display_name, email, created_at, is_suspended, suspended_at, suspended_reason, site_role";
 
 /**
  * 使用者搜尋——分開查 username/display_name/email 三個欄位再合併去重,
@@ -28,7 +34,7 @@ export default async function AdminUsersPage({
 }: PageProps<"/dashboard/admin/users">) {
   const sp = await searchParams;
   const q = typeof sp.q === "string" ? sp.q.trim() : "";
-  await requireUser();
+  const currentUser = await requireUser();
   const supabase = await createClient();
 
   const { data: isSiteAdmin } = await supabase.rpc("is_site_admin");
@@ -114,20 +120,14 @@ export default async function AdminUsersPage({
                     解除停權
                   </button>
                 </form>
+              ) : u.id === currentUser.id ? (
+                <p className="text-xs text-muted-foreground">不能把自己停權</p>
               ) : (
-                <form
-                  action={suspendUser.bind(null, u.id, "/dashboard/admin/users")}
-                  className="flex flex-wrap items-center gap-2"
-                >
-                  <input
-                    name="reason"
-                    placeholder="停權原因(選填)"
-                    className="w-56 rounded-lg border border-border bg-background px-2 py-1 text-xs"
-                  />
-                  <button className="rounded-lg bg-danger px-3 py-1.5 text-xs text-danger-foreground transition hover:bg-danger-hover">
-                    停權
-                  </button>
-                </form>
+                <SuspendUserForm
+                  userId={u.id}
+                  revalidatePathStr="/dashboard/admin/users"
+                  isTargetSiteAdmin={u.site_role === "site_admin"}
+                />
               )}
             </div>
           </li>

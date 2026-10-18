@@ -1,8 +1,23 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/dal";
 import { createClient } from "@/lib/supabase/server";
 import { CategoryFieldsEditor } from "./CategoryFieldsEditor";
+
+export async function generateMetadata({
+  params,
+}: PageProps<"/dashboard/worlds/[slug]/categories/[categoryId]/fields">): Promise<Metadata> {
+  const { categoryId } = await params;
+  const supabase = await createClient();
+  const { data: category } = await supabase
+    .from("world_content_categories")
+    .select("name")
+    .eq("id", categoryId)
+    .maybeSingle();
+  if (!category) return {};
+  return { title: `${category.name}的欄位` };
+}
 
 export default async function CategoryFieldsPage({
   params,
@@ -62,7 +77,7 @@ export default async function CategoryFieldsPage({
       <BackLink slug={slug} />
       <h1 className="mt-2 text-2xl font-semibold">「{category.name}」的欄位</h1>
       <p className="mt-1 text-sm text-muted-foreground">
-        建立/編輯這個分類底下的節點時(不分節點類型,角色節點也適用),
+        建立/編輯這個分類底下的條目時(不分條目類型,角色條目也適用),
         會出現下面的欄位讓玩家填答——標記必填的欄位不能留空才能送出,
         選填的可以留空。
       </p>

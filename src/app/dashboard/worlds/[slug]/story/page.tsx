@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -11,6 +12,20 @@ import {
   fetchWorldCharacterTimelineEvents,
   fetchWorldStoryTimelineRange,
 } from "@/lib/storyTimeline";
+
+export async function generateMetadata({
+  params,
+}: PageProps<"/dashboard/worlds/[slug]/story">): Promise<Metadata> {
+  const { slug } = await params;
+  const supabase = await createClient();
+  const { data: world } = await supabase
+    .from("worlds")
+    .select("name")
+    .eq("slug", slug)
+    .maybeSingle();
+  if (!world) return {};
+  return { title: `${world.name} ｜ 故事時間軸` };
+}
 
 /**
  * 「角色時間軸」(story_chapters, scope='character')已經收掉——角色自己

@@ -165,7 +165,7 @@ function CategoryItem({
             onClick={() => {
               if (
                 confirm(
-                  `確定要刪除「${category.name}」這個分類嗎?底下的節點不會被刪除,只是會變回未分類;如果這是別的分類的大分類,子分類也不會被刪除,只是變回沒有大分類;這個分類設定的預設欄位會一併刪除。`,
+                  `確定要刪除「${category.name}」這個分類嗎?底下的條目不會被刪除,只是會變回未分類;如果這是別的分類的大分類,子分類也不會被刪除,只是變回沒有大分類;這個分類設定的預設欄位會一併刪除。`,
                 )
               ) {
                 void deleteContentCategory(category.id, worldId, worldSlug);

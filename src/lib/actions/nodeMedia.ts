@@ -44,10 +44,10 @@ async function requireNodeEditAccess(nodeId: string, kind: NodeMediaKind) {
     supabase.from("nodes").select("node_type").eq("id", nodeId).maybeSingle(),
   ]);
   if (!canEdit) {
-    return { supabase, ok: false as const, error: "沒有編輯這個節點的權限" };
+    return { supabase, ok: false as const, error: "沒有編輯這個條目的權限" };
   }
   if (kind !== "image" && node?.node_type !== "character") {
-    return { supabase, ok: false as const, error: "只有角色節點可以設定頭貼/立繪" };
+    return { supabase, ok: false as const, error: "只有角色條目可以設定頭貼/立繪" };
   }
   return { supabase, ok: true as const };
 }
@@ -78,7 +78,7 @@ export async function createNodeMediaUploadTicket(
   }
 
   const { ok, error } = await requireNodeEditAccess(nodeId, kind);
-  if (!ok) return { error: error ?? `只有能編輯這個節點的人可以上傳${KIND_LABEL[kind]}` };
+  if (!ok) return { error: error ?? `只有能編輯這個條目的人可以上傳${KIND_LABEL[kind]}` };
 
   const admin = createAdminClient();
   const path = `${nodeId}/${kind}-${Date.now()}.${ext}`;
@@ -101,7 +101,7 @@ export async function finalizeNodeMediaUpload(
   path: string,
 ): Promise<NodeMediaFormState> {
   const { supabase, ok, error } = await requireNodeEditAccess(nodeId, kind);
-  if (!ok) return { error: error ?? `只有能編輯這個節點的人可以上傳${KIND_LABEL[kind]}` };
+  if (!ok) return { error: error ?? `只有能編輯這個條目的人可以上傳${KIND_LABEL[kind]}` };
 
   const oldPath =
     kind === "image"
@@ -162,7 +162,7 @@ export async function removeNodeMedia(
   nodeSlug: string,
 ): Promise<void> {
   const { supabase, ok, error } = await requireNodeEditAccess(nodeId, kind);
-  if (!ok) throw new Error(error ?? `只有能編輯這個節點的人可以移除${KIND_LABEL[kind]}`);
+  if (!ok) throw new Error(error ?? `只有能編輯這個條目的人可以移除${KIND_LABEL[kind]}`);
 
   const oldPath =
     kind === "image"

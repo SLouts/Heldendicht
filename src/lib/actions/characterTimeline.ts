@@ -112,7 +112,7 @@ export async function createTimelineEvent(
     .eq("id", nodeId)
     .maybeSingle();
   if (node?.node_type !== "character") {
-    return { error: "只有角色節點可以新增時間軸" };
+    return { error: "只有角色條目可以新增時間軸" };
   }
 
   const { data: last } = await supabase
@@ -153,7 +153,7 @@ export async function createTimelineEvent(
     ? (await supabase.from("character_timeline_events").insert(basePayload)).error
     : null;
   if (error) {
-    return { error: "新增失敗,請確認你有這個節點的編輯權限" };
+    return { error: "新增失敗,請確認你有這個條目的編輯權限" };
   }
 
   revalidatePath(`/dashboard/worlds/${worldSlug}/nodes/${nodeSlug}`);
@@ -230,7 +230,7 @@ export async function updateTimelineEvent(
         .eq("id", eventId)
     : withYearOnly;
   if (error || count === 0) {
-    return { error: "更新失敗,請確認你有這個節點的編輯權限" };
+    return { error: "更新失敗,請確認你有這個條目的編輯權限" };
   }
 
   revalidatePath(`/dashboard/worlds/${worldSlug}/nodes/${nodeSlug}`);
@@ -302,7 +302,7 @@ async function requireTimelineEventEditAccess(eventId: string) {
     p_node_id: event.node_id,
   });
   if (!canEdit) {
-    return { supabase, ok: false as const, error: "沒有編輯這個節點的權限" };
+    return { supabase, ok: false as const, error: "沒有編輯這個條目的權限" };
   }
   return {
     supabase,

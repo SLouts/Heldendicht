@@ -340,7 +340,7 @@ export async function setNodeMapPosition(input: {
     .eq("id", parsed.data.nodeId);
 
   if (error || count === 0) {
-    return { error: "你沒有權限調整這個節點在地圖上的位置" };
+    return { error: "你沒有權限調整這個條目在地圖上的位置" };
   }
 
   revalidatePath(`/dashboard/worlds/${parsed.data.worldSlug}/worldmap`);
@@ -364,7 +364,7 @@ export async function clearNodeMapPosition(
     .eq("id", nodeId);
 
   if (error || count === 0) {
-    return { error: "你沒有權限調整這個節點在地圖上的位置" };
+    return { error: "你沒有權限調整這個條目在地圖上的位置" };
   }
 
   revalidatePath(`/dashboard/worlds/${worldSlug}/worldmap`);

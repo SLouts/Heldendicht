@@ -35,7 +35,7 @@ export function NewRelationshipForm({
             className="rounded-lg border border-border bg-surface px-3 py-2"
           >
             <option value="" disabled>
-              選擇節點
+              選擇條目
             </option>
             {nodes.map((node) => (
               <option key={node.id} value={node.id}>
@@ -57,7 +57,7 @@ export function NewRelationshipForm({
             className="rounded-lg border border-border bg-surface px-3 py-2"
           >
             <option value="" disabled>
-              選擇節點
+              選擇條目
             </option>
             {nodes.map((node) => (
               <option key={node.id} value={node.id}>

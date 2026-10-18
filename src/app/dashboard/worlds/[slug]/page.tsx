@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/dal";
@@ -21,6 +22,20 @@ import { WorldAnnouncementsSection } from "@/app/(site)/worlds/[slug]/WorldAnnou
 import { unwrapRelation } from "@/lib/unwrapRelation";
 
 const RECENT_CHANGES_LIMIT = 8;
+
+export async function generateMetadata({
+  params,
+}: PageProps<"/dashboard/worlds/[slug]">): Promise<Metadata> {
+  const { slug } = await params;
+  const supabase = await createClient();
+  const { data: world } = await supabase
+    .from("worlds")
+    .select("name")
+    .eq("slug", slug)
+    .maybeSingle();
+  if (!world) return {};
+  return { title: world.name };
+}
 
 export default async function WorldDashboardPage({
   params,

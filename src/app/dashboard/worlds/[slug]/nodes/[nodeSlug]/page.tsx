@@ -1,7 +1,9 @@
+import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { requireUser } from "@/lib/dal";
 import { createClient } from "@/lib/supabase/server";
+import { findRedirectedNodeSlug } from "@/lib/nodeSlugRedirect";
 import { getAttachmentSignedUrl } from "@/lib/attachments";
 import { deleteNode } from "@/lib/actions/nodes";
 import { NodeReviewForm } from "./NodeReviewForm";
@@ -27,6 +29,27 @@ import {
 } from "@/lib/storyTimeline";
 import { CharacterSharedChapters } from "@/components/CharacterSharedChapters";
 
+export async function generateMetadata({
+  params,
+}: PageProps<"/dashboard/worlds/[slug]/nodes/[nodeSlug]">): Promise<Metadata> {
+  const { slug, nodeSlug } = await params;
+  const supabase = await createClient();
+  const { data: world } = await supabase
+    .from("worlds")
+    .select("id, name")
+    .eq("slug", slug)
+    .maybeSingle();
+  if (!world) return {};
+  const { data: node } = await supabase
+    .from("nodes")
+    .select("title")
+    .eq("world_id", world.id)
+    .eq("slug", nodeSlug)
+    .maybeSingle();
+  if (!node) return {};
+  return { title: `${node.title} ｜ ${world.name}` };
+}
+
 export default async function NodeDetailPage({
   params,
 }: PageProps<"/dashboard/worlds/[slug]/nodes/[nodeSlug]">) {
@@ -49,7 +72,11 @@ export default async function NodeDetailPage({
     .eq("world_id", world.id)
     .eq("slug", nodeSlug)
     .maybeSingle();
-  if (!node) notFound();
+  if (!node) {
+    const newSlug = await findRedirectedNodeSlug(supabase, world.id, nodeSlug);
+    if (newSlug) permanentRedirect(`/dashboard/worlds/${world.slug}/nodes/${newSlug}`);
+    notFound();
+  }
 
   const character = unwrapRelation(node.characters);
   const characterOwner = character?.owner_id
@@ -305,7 +332,7 @@ export default async function NodeDetailPage({
         )}
         {node.is_placeholder && (
           <span className="rounded-full bg-badge-neutral-bg px-2 py-0.5 text-xs text-badge-neutral-fg">
-            WikiLink 自動建立的待撰寫節點
+            WikiLink 自動建立的待撰寫條目
           </span>
         )}
       </>
@@ -527,7 +554,7 @@ export default async function NodeDetailPage({
           className="mt-6"
         >
           <button className="text-sm text-danger underline">
-            刪除這個節點
+            刪除這個條目
           </button>
         </form>
       )}

@@ -12,12 +12,24 @@ export type NodeSearchResult = {
   updatedAt: string;
 };
 
-const SNIPPET_RADIUS = 60;
+const SNIPPET_RADIUS = 40;
 const RESULT_LIMIT = 30;
 
-/** content 裡截一段包含關鍵字的片段,前後各留 60 字當上下文;沒對到 content(只對到標題)時,回退成 content 開頭的一段純預覽。 */
+// 搜尋摘要是純文字預覽,不是可互動的內文渲染——WikiLink([[名稱]])只留
+// 名稱本身,圖片嵌入({{image:uuid}})直接拿掉,不要讓使用者在搜尋結果
+// 看到原始語法。
+const WIKILINK_PATTERN = /\[\[([^[\]]+)\]\]/g;
+const IMAGE_EMBED_PATTERN = /\{\{image:[0-9a-fA-F-]+\}\}/g;
+
+function stripWikiSyntax(content: string): string {
+  return content
+    .replace(WIKILINK_PATTERN, (_match, name: string) => name.trim())
+    .replace(IMAGE_EMBED_PATTERN, "");
+}
+
+/** content 裡截一段包含關鍵字的片段,前後各留 40 字當上下文;沒對到 content(只對到標題)時,回退成 content 開頭的一段純預覽。 */
 function buildSnippet(content: string | null, query: string): string {
-  const text = content ?? "";
+  const text = stripWikiSyntax(content ?? "");
   if (!text) return "";
 
   const trimmedQuery = query.trim();

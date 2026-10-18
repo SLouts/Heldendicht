@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/dal";
@@ -10,6 +11,13 @@ import {
   fetchSiteFeatureCards,
   fetchFeaturedWorldCards,
 } from "@/lib/siteSettings";
+
+// 首頁的 <title> 不走 RootLayout 的 "%s ｜ Heldendicht" 樣板(那是給
+// 其他頁面用的,首頁本身就是品牌名稱+標語,不需要再疊一次站名),用
+// absolute 直接蓋掉樣板。
+export const metadata: Metadata = {
+  title: { absolute: "Heldendicht｜多世界觀企劃介紹與玩家共筆平台" },
+};
 
 /**
  * 首頁——平台概覽與動態樞紐,不重複維護 /worlds 那份完整的世界觀卡片

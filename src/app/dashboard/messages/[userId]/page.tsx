@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser, getCurrentProfile } from "@/lib/dal";
@@ -11,6 +12,21 @@ function formatSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+export async function generateMetadata({
+  params,
+}: PageProps<"/dashboard/messages/[userId]">): Promise<Metadata> {
+  const { userId } = await params;
+  const supabase = await createClient();
+  const { data: counterpart } = await supabase
+    .from("profiles")
+    .select("display_name, username, email")
+    .eq("id", userId)
+    .maybeSingle();
+  if (!counterpart) return {};
+  const name = counterpart.display_name || counterpart.username || counterpart.email || "使用者";
+  return { title: `${name} ｜ 私訊` };
 }
 
 export default async function MessageThreadPage({

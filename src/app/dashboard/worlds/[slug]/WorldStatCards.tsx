@@ -30,7 +30,7 @@ export function WorldStatCards({
 
       <div className="rounded-lg border border-border bg-surface p-4">
         <div className="flex items-center justify-between gap-2">
-          <p className="text-xs text-muted-foreground">開放共筆節點</p>
+          <p className="text-xs text-muted-foreground">開放共筆條目</p>
           <p className="text-lg font-semibold">
             {collaborativePercent === null ? "—" : `${collaborativePercent}%`}
           </p>
@@ -39,7 +39,7 @@ export function WorldStatCards({
           <ProgressBar percent={collaborativePercent ?? 0} />
         </div>
         {totalNodeCount > 0 && (
-          <p className="mt-1 text-xs text-muted-foreground">共 {totalNodeCount} 筆節點</p>
+          <p className="mt-1 text-xs text-muted-foreground">共 {totalNodeCount} 筆條目</p>
         )}
       </div>
 

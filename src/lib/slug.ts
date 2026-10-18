@@ -1,15 +1,21 @@
 import "server-only";
+import { pinyin } from "pinyin-pro";
 
 /**
  * 節點/角色的 slug 不再讓使用者自訂——標題常常是中文,硬要使用者自己
  * 想一個只能用小寫英數字與連字號的網址代號並不好用。這裡改成自動產生:
- * 能從標題擷取出英數字的部分就當前綴(方便偶爾是英文標題時網址還算好讀),
- * 擷取不到(例如純中文標題)就整個交給隨機字串,一律再加一段隨機尾碼
+ * 先把標題轉成拼音(中文字以外的部分原樣保留,例如「回春丹beta」轉成
+ * 「hui chun dan beta」),再擷取英數字部分當前綴,擷取不到(轉完還是空字串,
+ * 例如整段都是生僻字沒有拼音)就整個交給隨機字串,一律再加一段隨機尾碼
  * 降低跟其他節點撞號的機率。真的撞號時交給呼叫端重試(nodes 表的
  * unique(world_id, slug) 約束是最後一道防線)。
+ *
+ * 舊版沒有轉拼音,純中文標題擷取不到任何英數字,slug 會整個退化成隨機
+ * 字串,完全看不出對應哪個標題(也是「daodan-xxxx」這類舊資料的由來)。
  */
 export function generateNodeSlug(title: string): string {
-  const asciiPart = title
+  const romanized = pinyin(title, { toneType: "none", type: "string", nonZh: "consecutive" });
+  const asciiPart = romanized
     .toLowerCase()
     .normalize("NFKD")
     .replace(/[̀-ͯ]/g, "")

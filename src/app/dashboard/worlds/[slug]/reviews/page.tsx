@@ -1,9 +1,24 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/dal";
 import { createClient } from "@/lib/supabase/server";
 import { NODE_TYPE_LABEL } from "@/lib/nodeTypeLabels";
 import { ReviewQueueList, type ReviewQueueNode, type StubQueueNode } from "./ReviewQueueList";
+
+export async function generateMetadata({
+  params,
+}: PageProps<"/dashboard/worlds/[slug]/reviews">): Promise<Metadata> {
+  const { slug } = await params;
+  const supabase = await createClient();
+  const { data: world } = await supabase
+    .from("worlds")
+    .select("name")
+    .eq("slug", slug)
+    .maybeSingle();
+  if (!world) return {};
+  return { title: `${world.name} ｜ 審核佇列` };
+}
 
 function buildPreview(content: string): string {
   const flat = content.replace(/\s+/g, " ").trim();
@@ -90,6 +105,7 @@ export default async function WorldReviewsPage({
         slug: n.slug,
         nodeTypeLabel: NODE_TYPE_LABEL[n.node_type],
         preview: buildPreview(n.content),
+        content: n.content,
         creatorLabel: creatorLabel(n.creator_id),
         createdAt: n.created_at,
       });
@@ -106,7 +122,7 @@ export default async function WorldReviewsPage({
       </Link>
       <h1 className="mt-2 text-2xl font-semibold">審核佇列</h1>
       <p className="mt-1 text-sm text-muted-foreground">
-        列出所有未正式過審的節點,可以預覽內容並個別或批次核准/駁回。
+        列出所有未正式過審的條目,可以預覽內容並個別或批次核准/駁回。
       </p>
 
       <ReviewQueueList worldSlug={world.slug} nodes={reviewNodes} stubNodes={stubNodes} />

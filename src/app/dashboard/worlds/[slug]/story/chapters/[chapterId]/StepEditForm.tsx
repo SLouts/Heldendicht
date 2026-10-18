@@ -66,7 +66,7 @@ export function StepEditForm({
             className="rounded-lg border border-border bg-surface px-2 py-1 text-sm"
           />
           <p className="text-xs text-muted-foreground">
-            用 [[節點名稱]] 或 [顯示文字](網址) 就能連結到任何節點。
+            用 [[條目名稱]] 或 [顯示文字](網址) 就能連結到任何條目。
           </p>
         </div>
 

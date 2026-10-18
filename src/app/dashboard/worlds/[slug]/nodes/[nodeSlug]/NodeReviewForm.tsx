@@ -52,7 +52,7 @@ export function NodeReviewForm({
       />
       {isPlaceholder && status !== "approved" && (
         <p className="text-xs text-muted-foreground">
-          這是 WikiLink 自動建立的待撰寫節點,請先請建立者補上類型跟內文才能核准。
+          這是 WikiLink 自動建立的待撰寫條目,請先請建立者補上類型跟內文才能核准。
         </p>
       )}
       <div className="flex flex-wrap gap-2">

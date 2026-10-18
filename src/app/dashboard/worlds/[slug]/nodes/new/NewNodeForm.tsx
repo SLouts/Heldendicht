@@ -46,7 +46,7 @@ export function NewNodeForm({
   if (!isStaff && categories.length === 0) {
     return (
       <p className="mt-6 max-w-xl rounded-lg border border-border bg-surface p-4 text-sm text-muted-foreground">
-        目前沒有開放投稿的分類,暫時無法建立節點,請聯絡這個世界觀的主辦或編輯。
+        目前沒有開放投稿的分類,暫時無法建立條目,請聯絡這個世界觀的主辦或編輯。
       </p>
     );
   }
@@ -98,7 +98,7 @@ export function NewNodeForm({
           </select>
           {!isStaff && (
             <p className="text-xs text-muted-foreground">
-              一般成員建立節點一定要選一個開放投稿的分類。
+              一般成員建立條目一定要選一個開放投稿的分類。
             </p>
           )}
         </div>
@@ -194,7 +194,7 @@ export function NewNodeForm({
         disabled={pending}
         className="mt-2 w-fit rounded-lg bg-primary px-4 py-2 text-primary-foreground transition hover:bg-primary-hover disabled:opacity-50"
       >
-        {pending ? "建立中…" : "建立節點"}
+        {pending ? "建立中…" : "建立條目"}
       </button>
     </form>
 

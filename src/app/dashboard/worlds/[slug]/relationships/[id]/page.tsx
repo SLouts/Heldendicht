@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/dal";
@@ -7,6 +8,31 @@ import { EditRelationshipForm } from "./EditRelationshipForm";
 import { RelationshipDeletionForm } from "./RelationshipDeletionForm";
 import { ReportForm } from "@/components/ReportForm";
 import { unwrapRelation } from "@/lib/unwrapRelation";
+
+export async function generateMetadata({
+  params,
+}: PageProps<"/dashboard/worlds/[slug]/relationships/[id]">): Promise<Metadata> {
+  const { slug, id } = await params;
+  const supabase = await createClient();
+  const { data: world } = await supabase
+    .from("worlds")
+    .select("id, name")
+    .eq("slug", slug)
+    .maybeSingle();
+  if (!world) return {};
+  const { data: rel } = await supabase
+    .from("relationships")
+    .select(
+      "node_a:nodes!relationships_node_a_id_fkey(title), node_b:nodes!relationships_node_b_id_fkey(title)",
+    )
+    .eq("id", id)
+    .eq("world_id", world.id)
+    .maybeSingle();
+  if (!rel) return {};
+  const nodeA = unwrapRelation(rel.node_a);
+  const nodeB = unwrapRelation(rel.node_b);
+  return { title: `${nodeA?.title ?? "?"} ↔ ${nodeB?.title ?? "?"} ｜ ${world.name}` };
+}
 
 export default async function RelationshipDetailPage({
   params,

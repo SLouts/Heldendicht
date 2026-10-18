@@ -238,7 +238,7 @@ export default async function WorldPage({
           <WorldRecentChangesTab nodes={recentNodes} basePath={`/worlds/${slug}/nodes`} />
 
           <p className="text-xs text-muted-foreground">
-            對特定節點或關係線有疑慮嗎?到該節點/關係線自己的頁面可以個別檢舉,主辦會盡快處理。
+            對特定條目或關係線有疑慮嗎?到該條目/關係線自己的頁面可以個別檢舉,主辦會盡快處理。
           </p>
         </div>
       </div>
@@ -266,7 +266,7 @@ export default async function WorldPage({
                 </Link>
               </>
             }
-            footerNote="對特定節點或關係線有疑慮嗎?到該節點/關係線自己的頁面可以個別檢舉,主辦會盡快處理。"
+            footerNote="對特定條目或關係線有疑慮嗎?到該條目/關係線自己的頁面可以個別檢舉,主辦會盡快處理。"
           />
         </div>
 

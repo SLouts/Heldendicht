@@ -99,7 +99,7 @@ export function WorldDirectoryTab({
   }
 
   if (isCompletelyEmpty) {
-    return <EmptyState title="這個世界觀還沒有任何節點" description="主辦還沒有新增任何地點、角色或條目。" />;
+    return <EmptyState title="這個世界觀還沒有任何條目" description="主辦還沒有新增任何地點、角色或條目。" />;
   }
 
   // 分類沒設任何欄位的話不組範本(回傳 undefined),NodeList 就不會顯示
@@ -237,8 +237,8 @@ function NodeList({
 }) {
   const hasNodes = Boolean(nodes && nodes.length > 0);
   const emptyMessage = hasSubcategories
-    ? "本分類沒有直接收錄的節點,內容在下方子分類。"
-    : "目前還沒有節點。";
+    ? "本分類沒有直接收錄的條目,內容在下方子分類。"
+    : "目前還沒有條目。";
   if (!hasNodes && !copyTemplateText) {
     return <p className="mt-3 text-sm text-muted-foreground">{emptyMessage}</p>;
   }

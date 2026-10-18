@@ -264,7 +264,7 @@ export async function setCharacterFieldValues(
     .from("character_field_values")
     .upsert(rows, { onConflict: "node_id,field_id" });
   if (error) {
-    return { error: "儲存角色欄位失敗,請確認你有這個節點的編輯權限" };
+    return { error: "儲存角色欄位失敗,請確認你有這個條目的編輯權限" };
   }
 
   revalidatePath(`/dashboard/worlds/${worldSlug}`);

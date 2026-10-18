@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/dal";
 import { createClient } from "@/lib/supabase/server";
@@ -9,6 +10,20 @@ import {
   type DashboardTypeGroup,
 } from "../WorldDirectoryTab";
 import { FALLBACK_NODE_TYPE_ORDER } from "@/lib/nodeTypeLabels";
+
+export async function generateMetadata({
+  params,
+}: PageProps<"/dashboard/worlds/[slug]/directory">): Promise<Metadata> {
+  const { slug } = await params;
+  const supabase = await createClient();
+  const { data: world } = await supabase
+    .from("worlds")
+    .select("name")
+    .eq("slug", slug)
+    .maybeSingle();
+  if (!world) return {};
+  return { title: `${world.name}世界觀百科` };
+}
 
 export default async function WorldDirectoryPage({
   params,

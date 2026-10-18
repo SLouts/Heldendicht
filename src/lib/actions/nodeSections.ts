@@ -69,7 +69,7 @@ export async function createNodeSection(
     order_index: (last?.order_index ?? -1) + 1,
   });
   if (error) {
-    return { error: "新增失敗,請確認你有這個節點的編輯權限" };
+    return { error: "新增失敗,請確認你有這個條目的編輯權限" };
   }
 
   revalidatePath(`/dashboard/worlds/${worldSlug}/nodes/${nodeSlug}`);
@@ -115,7 +115,7 @@ export async function updateNodeSection(
     )
     .eq("id", sectionId);
   if (error || count === 0) {
-    return { error: "更新失敗,請確認你有這個節點的編輯權限" };
+    return { error: "更新失敗,請確認你有這個條目的編輯權限" };
   }
 
   revalidatePath(`/dashboard/worlds/${worldSlug}/nodes/${nodeSlug}`);

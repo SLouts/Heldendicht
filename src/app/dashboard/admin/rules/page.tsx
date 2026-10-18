@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { requireUser } from "@/lib/dal";
 import { createClient } from "@/lib/supabase/server";
@@ -8,6 +9,8 @@ import {
   moveSiteRuleField,
   updateSiteRuleField,
 } from "@/lib/actions/siteRuleFields";
+
+export const metadata: Metadata = { title: "全站規則" };
 
 export default async function SiteRulesPage() {
   await requireUser();

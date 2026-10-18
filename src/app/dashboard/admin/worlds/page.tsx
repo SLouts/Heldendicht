@@ -1,7 +1,10 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { requireUser } from "@/lib/dal";
 import { createClient } from "@/lib/supabase/server";
 import { unwrapRelation } from "@/lib/unwrapRelation";
+
+export const metadata: Metadata = { title: "全站世界觀列表" };
 
 /**
  * 全站世界觀列表——給站務一次看到所有世界觀(含非公開),跟 /worlds

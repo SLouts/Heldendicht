@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { requireUser } from "@/lib/dal";
 import { createClient } from "@/lib/supabase/server";
@@ -5,6 +6,8 @@ import { unwrapRelation } from "@/lib/unwrapRelation";
 import { UserSearchBox } from "@/components/UserSearchBox";
 import { Avatar } from "@/components/Avatar";
 import { getProfileMediaPublicUrl } from "@/lib/profileMedia";
+
+export const metadata: Metadata = { title: "私訊" };
 
 type ProfileSummary = {
   id: string;

@@ -208,7 +208,7 @@ function LayerItem({
               onClick={() => {
                 if (
                   confirm(
-                    `確定要刪除「${layer.name}」這張圖層嗎?標在這張圖層上的節點座標會一併清空(節點本身不受影響)。`,
+                    `確定要刪除「${layer.name}」這張圖層嗎?標在這張圖層上的條目座標會一併清空(條目本身不受影響)。`,
                   )
                 ) {
                   void deleteMapLayer(layer.id, worldId, worldSlug);

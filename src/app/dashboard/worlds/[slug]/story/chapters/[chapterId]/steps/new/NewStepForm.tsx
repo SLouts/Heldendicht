@@ -64,7 +64,7 @@ export function NewStepForm({
           className="rounded-lg border border-border bg-surface px-3 py-2"
         />
         <p className="text-xs text-muted-foreground">
-          用 [[節點名稱]] 或 [顯示文字](網址) 就能連結到任何節點,不用另外選。
+          用 [[條目名稱]] 或 [顯示文字](網址) 就能連結到任何條目,不用另外選。
         </p>
       </div>
 

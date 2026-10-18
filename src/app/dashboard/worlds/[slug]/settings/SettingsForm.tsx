@@ -135,7 +135,7 @@ export function SettingsForm({
               name="pcAutoApprove"
               defaultChecked={world.pc_auto_approve}
             />
-            PC 角色節點免審(開啟後,新建立的 PC 節點直接生效,不需要人工過審)
+            PC 角色條目免審(開啟後,新建立的 PC 條目直接生效,不需要人工過審)
           </label>
 
           <label className="flex items-center gap-2 text-sm">
@@ -144,7 +144,7 @@ export function SettingsForm({
               name="npcAutoApprove"
               defaultChecked={world.npc_auto_approve}
             />
-            NPC 角色節點免審(開啟後,新建立的 NPC 節點直接生效,不需要人工過審)
+            NPC 角色條目免審(開啟後,新建立的 NPC 條目直接生效,不需要人工過審)
           </label>
         </>
       )}

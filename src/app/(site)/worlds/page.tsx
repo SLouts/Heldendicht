@@ -11,6 +11,10 @@ export const metadata: Metadata = {
   openGraph: {
     title: "探索公開世界觀",
     description: "瀏覽站上所有公開的世界觀企劃,找一個喜歡的世界觀投稿角色。",
+    // 子頁面自己宣告 openGraph 會整個蓋掉 RootLayout 的預設值(不是逐欄
+    // 合併),沒有自己的代表圖時要在這裡重複帶一次預設圖,不然分享連結
+    // 會完全沒有預覽圖。
+    images: ["/og-default.png"],
   },
 };
 

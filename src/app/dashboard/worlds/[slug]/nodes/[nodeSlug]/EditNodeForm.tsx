@@ -119,7 +119,7 @@ export function EditNodeForm({
       {isPlaceholder && (
         <div className="rounded-lg border border-badge-pending-fg/30 bg-badge-pending-bg p-3 text-sm">
           <p className="text-badge-pending-fg">
-            這是 WikiLink 自動建立的待撰寫節點,請補上正確類型跟內容。
+            這是 WikiLink 自動建立的待撰寫條目,請補上正確類型跟內容。
           </p>
           <div className="mt-2 flex flex-col gap-1">
             <label htmlFor="node_type" className="text-sm font-medium">
@@ -170,7 +170,7 @@ export function EditNodeForm({
           </select>
           {categoryRequired && (
             <p className="text-xs text-muted-foreground">
-              一般節點一定要選一個開放投稿的分類,不能改回不掛分類。
+              一般條目一定要選一個開放投稿的分類,不能改回不掛分類。
             </p>
           )}
         </div>

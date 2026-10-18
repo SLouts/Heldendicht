@@ -1,8 +1,11 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { requireUser } from "@/lib/dal";
 import { createClient } from "@/lib/supabase/server";
 import { unwrapRelation } from "@/lib/unwrapRelation";
 import { ResolveWorldDeletionForm } from "./ResolveWorldDeletionForm";
+
+export const metadata: Metadata = { title: "世界觀刪除申請" };
 
 export default async function WorldDeletionRequestsPage() {
   await requireUser();
@@ -65,31 +68,33 @@ export default async function WorldDeletionRequestsPage() {
         )}
       </ul>
 
-      {resolved.length > 0 && (
-        <>
-          <h2 className="mt-8 text-lg font-semibold">已處理</h2>
-          <ul className="mt-2 flex flex-col gap-2">
-            {resolved.map((r) => (
-              <li
-                key={r.id}
-                className="flex flex-wrap items-center gap-3 rounded-lg border border-border bg-surface p-3 text-sm"
-              >
-                <span className="font-medium">{r.world_name}</span>
-                <span
-                  className={
-                    "rounded-full px-2 py-0.5 text-xs " +
-                    (r.status === "approved"
-                      ? "bg-badge-success-bg text-badge-success-fg"
-                      : "bg-badge-neutral-bg text-badge-neutral-fg")
-                  }
-                >
-                  {r.status === "approved" ? "已核准(已刪除)" : "已駁回"}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
+      <h2 className="mt-8 text-lg font-semibold">已處理</h2>
+      <ul className="mt-2 flex flex-col gap-2">
+        {resolved.map((r) => (
+          <li
+            key={r.id}
+            className="flex flex-wrap items-center gap-3 rounded-lg border border-border bg-surface p-3 text-sm"
+          >
+            <span className="font-medium">{r.world_name}</span>
+            <span
+              className={
+                "rounded-full px-2 py-0.5 text-xs " +
+                (r.status === "approved"
+                  ? "bg-badge-success-bg text-badge-success-fg"
+                  : "bg-badge-neutral-bg text-badge-neutral-fg")
+              }
+            >
+              {r.status === "approved" ? "已核准(已刪除)" : "已駁回"}
+            </span>
+            <span className="text-xs text-muted-foreground">
+              slug:{r.world_slug} · {new Date(r.created_at).toLocaleString("zh-TW")}
+            </span>
+          </li>
+        ))}
+        {resolved.length === 0 && (
+          <li className="text-sm text-muted-foreground">目前沒有已處理的申請。</li>
+        )}
+      </ul>
     </div>
   );
 }

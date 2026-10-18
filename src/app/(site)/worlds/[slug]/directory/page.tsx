@@ -1,9 +1,24 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { WorldMainTabs } from "@/components/WorldMainTabs";
 import { NodeSearchBox } from "@/components/NodeSearchBox";
 import { WorldDirectoryTab, type CategoryGroup, type TypeGroup } from "../WorldDirectoryTab";
 import { FALLBACK_NODE_TYPE_ORDER } from "@/lib/nodeTypeLabels";
+
+export async function generateMetadata({
+  params,
+}: PageProps<"/worlds/[slug]/directory">): Promise<Metadata> {
+  const { slug } = await params;
+  const supabase = await createClient();
+  const { data: world } = await supabase
+    .from("worlds")
+    .select("name")
+    .eq("slug", slug)
+    .maybeSingle();
+  if (!world) return {};
+  return { title: `${world.name}世界觀百科` };
+}
 
 export default async function PublicWorldDirectoryPage({
   params,

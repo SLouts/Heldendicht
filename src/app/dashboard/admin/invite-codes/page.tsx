@@ -1,9 +1,12 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { requireUser } from "@/lib/dal";
 import { createClient } from "@/lib/supabase/server";
 import { deleteInviteCode } from "@/lib/actions/inviteCodes";
 import { CreateInviteCodeForm } from "./CreateInviteCodeForm";
 import { unwrapRelation } from "@/lib/unwrapRelation";
+
+export const metadata: Metadata = { title: "邀請碼管理" };
 
 export default async function InviteCodesPage() {
   await requireUser();

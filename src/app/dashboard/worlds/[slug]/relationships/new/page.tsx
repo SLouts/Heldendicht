@@ -1,8 +1,23 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/dal";
 import { createClient } from "@/lib/supabase/server";
 import { NewRelationshipForm } from "./NewRelationshipForm";
+
+export async function generateMetadata({
+  params,
+}: PageProps<"/dashboard/worlds/[slug]/relationships/new">): Promise<Metadata> {
+  const { slug } = await params;
+  const supabase = await createClient();
+  const { data: world } = await supabase
+    .from("worlds")
+    .select("name")
+    .eq("slug", slug)
+    .maybeSingle();
+  if (!world) return {};
+  return { title: `${world.name} ｜ 建立人際關係線` };
+}
 
 export default async function NewRelationshipPage({
   params,
@@ -44,7 +59,7 @@ export default async function NewRelationshipPage({
         />
       ) : (
         <p className="mt-6 text-sm text-muted-foreground">
-          這個世界觀至少要有兩個節點(地點/物產/角色)才能建立關係線。
+          這個世界觀至少要有兩個條目(地點/物產/角色)才能建立關係線。
         </p>
       )}
     </div>

@@ -1,5 +1,8 @@
+import type { Metadata } from "next";
 import { requireUser } from "@/lib/dal";
 import { ChangePasswordForm } from "@/app/dashboard/profile/ChangePasswordForm";
+
+export const metadata: Metadata = { title: "請先修改密碼" };
 
 /**
  * 站務手動重設密碼時勾選「強制下次登入改密碼」,proxy.ts 會把帶著

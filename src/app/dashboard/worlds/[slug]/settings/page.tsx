@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/dal";
@@ -6,6 +7,20 @@ import { getWorldMediaSignedUrl } from "@/lib/worldMedia";
 import { SettingsForm } from "./SettingsForm";
 import { WorldMediaUpload } from "./WorldMediaUpload";
 import { WorldDeletionRequestForm } from "./WorldDeletionRequestForm";
+
+export async function generateMetadata({
+  params,
+}: PageProps<"/dashboard/worlds/[slug]/settings">): Promise<Metadata> {
+  const { slug } = await params;
+  const supabase = await createClient();
+  const { data: world } = await supabase
+    .from("worlds")
+    .select("name")
+    .eq("slug", slug)
+    .maybeSingle();
+  if (!world) return {};
+  return { title: `${world.name} ｜ 世界觀設定` };
+}
 
 export default async function WorldSettingsPage({
   params,

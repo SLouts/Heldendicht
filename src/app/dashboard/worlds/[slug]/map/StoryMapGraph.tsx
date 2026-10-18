@@ -261,6 +261,13 @@ export default function StoryMapGraph({
     setTransform(computeFitTransform(nodes, width, height));
   }
 
+  // 文字是畫在被 <g transform="... scale(k)"> 縮放的座標系裡,縮到很小
+  // (節點一多,computeFitTransform 算出的 k 可能遠小於 1)字就會糊成一團
+  // 看不清楚。這裡反向補償:k < 1 時把 fontSize 放大 1/k 倍,乘上外層的
+  // scale(k) 後畫面上的實際大小維持不變,等於幫標籤設一個不會再更小的
+  // 底線;k >= 1(放大檢視)时維持原本大小,不特別再放大。
+  const labelScale = 1 / Math.min(transform.k, 1);
+
   return (
     <div className="mt-6">
       <div className="mb-3">
@@ -300,7 +307,7 @@ export default function StoryMapGraph({
           className="w-full touch-none rounded-lg border border-border bg-surface"
           style={{ cursor: "grab" }}
           role="img"
-          aria-label="節點關係圖(可縮放、拖曳)"
+          aria-label="條目關係圖(可縮放、拖曳)"
           onWheel={handleWheel}
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
@@ -349,11 +356,11 @@ export default function StoryMapGraph({
                       x={(a.x + b.x) / 2}
                       y={(a.y + b.y) / 2}
                       textAnchor="middle"
-                      fontSize={11}
+                      fontSize={11 * labelScale}
                       fill="var(--muted-foreground)"
                       paintOrder="stroke"
                       stroke="var(--surface)"
-                      strokeWidth={4}
+                      strokeWidth={4 * labelScale}
                     >
                       {e.label}
                     </text>
@@ -381,12 +388,12 @@ export default function StoryMapGraph({
                   x={n.x}
                   y={n.y + 24}
                   textAnchor="middle"
-                  fontSize={12}
+                  fontSize={12 * labelScale}
                   fontStyle={n.isPlaceholder ? "italic" : undefined}
                   fill="var(--foreground)"
                   paintOrder="stroke"
                   stroke="var(--surface)"
-                  strokeWidth={4}
+                  strokeWidth={4 * labelScale}
                 >
                   {n.title}
                 </text>

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/dal";
 import { createClient } from "@/lib/supabase/server";
@@ -20,6 +21,20 @@ type GraphNodeData = {
 };
 
 const WIDTH = 900;
+
+export async function generateMetadata({
+  params,
+}: PageProps<"/dashboard/worlds/[slug]/map">): Promise<Metadata> {
+  const { slug } = await params;
+  const supabase = await createClient();
+  const { data: world } = await supabase
+    .from("worlds")
+    .select("name")
+    .eq("slug", slug)
+    .maybeSingle();
+  if (!world) return {};
+  return { title: `${world.name} ｜ 關係圖譜` };
+}
 
 export default async function StoryMapPage({
   params,
@@ -126,7 +141,7 @@ export default async function StoryMapPage({
       />
 
       {graphNodes.length === 0 ? (
-        <p className="mt-6 text-sm text-muted-foreground">這個世界觀還沒有節點。</p>
+        <p className="mt-6 text-sm text-muted-foreground">這個世界觀還沒有條目。</p>
       ) : (
         <>
           <StoryMapGraph
@@ -146,7 +161,7 @@ export default async function StoryMapPage({
             <span>── 實線:生效關係線</span>
             <span>┄┄ 虛線:已撤銷 / 未過審</span>
             <span>···· 細點線:WikiLink 提及</span>
-            <span>◌ 虛線圈:節點未過審</span>
+            <span>◌ 虛線圈:條目未過審</span>
           </div>
         </>
       )}

@@ -1,7 +1,10 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { requireUser } from "@/lib/dal";
 import { createClient } from "@/lib/supabase/server";
 import { ResetUserPasswordForm } from "./ResetUserPasswordForm";
+
+export const metadata: Metadata = { title: "手動重設密碼" };
 
 export default async function AdminResetPasswordPage() {
   await requireUser();

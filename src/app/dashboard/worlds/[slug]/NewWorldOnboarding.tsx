@@ -40,7 +40,7 @@ export function NewWorldOnboarding({
     {
       href: `/dashboard/worlds/${worldSlug}/categories`,
       title: "規劃內容分類",
-      description: "幫條目分組導覽,例如「宗門」「地誌」——不分類的話會照節點類型自動分組。",
+      description: "幫條目分組導覽,例如「宗門」「地誌」——不分類的話會照條目類型自動分組。",
     },
     ...(isSolo
       ? []

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { requireUser } from "@/lib/dal";
 import { createClient } from "@/lib/supabase/server";
@@ -6,6 +7,8 @@ import { ProfileDetailsForm } from "./ProfileDetailsForm";
 import { ChangePasswordForm } from "./ChangePasswordForm";
 import { ProfileImageForm } from "./ProfileImageForm";
 import { CreatePersonaForm } from "./CreatePersonaForm";
+
+export const metadata: Metadata = { title: "個人頁面" };
 import { PersonaCard, type PersonaLink } from "./PersonaCard";
 import { FeaturedWorldForm } from "./FeaturedWorldForm";
 import type { PersonaField } from "@/lib/actions/personas";
@@ -169,7 +172,7 @@ export default async function ProfilePage() {
       <section className="mt-10">
         <h2 className="text-lg font-semibold">你的跨世界觀角色(PC)</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          同一隻角色如果在好幾個世界觀都有正式的角色節點,可以在這裡把它們連結成同一個身分,公開頁面上會合併展示。要連結某個世界觀的角色節點,到那個節點的頁面操作。
+          同一隻角色如果在好幾個世界觀都有正式的角色條目,可以在這裡把它們連結成同一個身分,公開頁面上會合併展示。要連結某個世界觀的角色條目,到那個條目的頁面操作。
         </p>
         <CreatePersonaForm />
         <div className="mt-4 flex flex-col gap-3">

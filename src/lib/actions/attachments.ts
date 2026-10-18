@@ -51,7 +51,7 @@ export async function createNodeAttachmentUploadTicket(
     p_node_id: nodeId,
   });
   if (!canEdit) {
-    return { error: "你沒有權限編輯這個節點,無法上傳附件" };
+    return { error: "你沒有權限編輯這個條目,無法上傳附件" };
   }
 
   const { data: node } = await supabase
@@ -60,7 +60,7 @@ export async function createNodeAttachmentUploadTicket(
     .eq("id", nodeId)
     .maybeSingle();
   if (!node) {
-    return { error: "找不到這個節點" };
+    return { error: "找不到這個條目" };
   }
 
   const admin = createAdminClient();
@@ -109,7 +109,7 @@ export async function finalizeNodeAttachmentUpload(
   if (!canEdit || !node) {
     const admin = createAdminClient();
     await admin.storage.from(NODE_ATTACHMENTS_BUCKET).remove([path]);
-    return { error: "你沒有權限編輯這個節點,無法上傳附件" };
+    return { error: "你沒有權限編輯這個條目,無法上傳附件" };
   }
 
   const { data: attachment, error: insertError } = await supabase

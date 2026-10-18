@@ -30,7 +30,7 @@ function describe(n: NotificationItem): { text: string; href: string | null } {
       };
     case "followed_node":
       return {
-        text: `你追蹤的 ${n.actorLabel} 建立了新節點「${n.nodeTitle ?? ""}」`,
+        text: `你追蹤的 ${n.actorLabel} 建立了新條目「${n.nodeTitle ?? ""}」`,
         href: n.worldSlug && n.nodeSlug ? `/worlds/${n.worldSlug}/nodes/${n.nodeSlug}` : null,
       };
     case "followed_world_join":
@@ -138,7 +138,7 @@ export function NotificationBell({
                 </form>
               )}
             </div>
-            {reviewCount === 0 && notifications.length === 0 ? (
+            {reviewSummaries.length === 0 && notifications.length === 0 ? (
               <p className="mt-4 text-center text-sm text-muted-foreground">目前沒有通知。</p>
             ) : (
               <div className="mt-2 max-h-96 overflow-y-auto">
@@ -158,7 +158,19 @@ export function NotificationBell({
                           <td className="border-b border-border py-2 pr-2">審核</td>
                           <td className="border-b border-border py-2 pr-2">
                             <Link href={`/dashboard/worlds/${w.worldSlug}/reviews`} onClick={close}>
-                              {w.pendingNodesCount} 個節點待審核
+                              {w.pendingNodesCount} 個條目待審核
+                            </Link>
+                          </td>
+                          <td className="border-b border-border py-2 pr-2 font-bold whitespace-nowrap">{w.worldName}</td>
+                          <td className="border-b border-border py-2 text-primary">OPEN</td>
+                        </tr>
+                      ),
+                      w.stubNodesCount > 0 && (
+                        <tr key={`${w.worldSlug}-stubs`} className="cursor-pointer hover:bg-muted">
+                          <td className="border-b border-border py-2 pr-2">待撰寫</td>
+                          <td className="border-b border-border py-2 pr-2">
+                            <Link href={`/dashboard/worlds/${w.worldSlug}/reviews`} onClick={close}>
+                              {w.stubNodesCount} 個條目待補完
                             </Link>
                           </td>
                           <td className="border-b border-border py-2 pr-2 font-bold whitespace-nowrap">{w.worldName}</td>
@@ -217,7 +229,7 @@ export function NotificationBell({
                 </form>
               )}
             </div>
-            {reviewCount === 0 && notifications.length === 0 ? (
+            {reviewSummaries.length === 0 && notifications.length === 0 ? (
               <p className="mt-4 text-center text-sm text-muted-foreground">目前沒有通知。</p>
             ) : (
               <div className="mt-3 flex max-h-96 flex-col gap-3 overflow-y-auto">
@@ -227,7 +239,12 @@ export function NotificationBell({
                     <div className="bell-field-tag-v">{w.worldName}</div>
                     {w.pendingNodesCount > 0 && (
                       <Link href={`/dashboard/worlds/${w.worldSlug}/reviews`} onClick={close} className="mt-1 block text-sm hover:underline">
-                        {w.pendingNodesCount} 個節點待審核
+                        {w.pendingNodesCount} 個條目待審核
+                      </Link>
+                    )}
+                    {w.stubNodesCount > 0 && (
+                      <Link href={`/dashboard/worlds/${w.worldSlug}/reviews`} onClick={close} className="mt-1 block text-sm hover:underline">
+                        {w.stubNodesCount} 個條目待補完
                       </Link>
                     )}
                     {w.openReportsCount > 0 && (
@@ -278,7 +295,7 @@ export function NotificationBell({
                 </form>
               )}
             </div>
-            {reviewCount === 0 && notifications.length === 0 ? (
+            {reviewSummaries.length === 0 && notifications.length === 0 ? (
               <p className="px-2 py-4 text-center text-sm text-muted-foreground">目前沒有通知。</p>
             ) : (
               <div className="mt-1 flex max-h-96 flex-col gap-2 overflow-y-auto">
@@ -287,7 +304,12 @@ export function NotificationBell({
                     <span className="bell-wuxia-seal-badge">{w.worldName}</span>
                     {w.pendingNodesCount > 0 && (
                       <Link href={`/dashboard/worlds/${w.worldSlug}/reviews`} onClick={close} className="block text-sm hover:underline">
-                        {w.pendingNodesCount} 個節點待審核
+                        {w.pendingNodesCount} 個條目待審核
+                      </Link>
+                    )}
+                    {w.stubNodesCount > 0 && (
+                      <Link href={`/dashboard/worlds/${w.worldSlug}/reviews`} onClick={close} className="block text-sm hover:underline">
+                        {w.stubNodesCount} 個條目待補完
                       </Link>
                     )}
                     {w.openReportsCount > 0 && (
@@ -337,7 +359,7 @@ export function NotificationBell({
                 </form>
               )}
             </div>
-            {reviewCount === 0 && notifications.length === 0 ? (
+            {reviewSummaries.length === 0 && notifications.length === 0 ? (
               <p className="mt-4 text-center text-sm text-muted-foreground">目前沒有通知。</p>
             ) : (
               <div className="mt-2 flex max-h-96 flex-col divide-y divide-border overflow-y-auto">
@@ -346,7 +368,12 @@ export function NotificationBell({
                     <span className="text-xs font-semibold text-muted-foreground">{w.worldName}</span>
                     {w.pendingNodesCount > 0 && (
                       <Link href={`/dashboard/worlds/${w.worldSlug}/reviews`} onClick={close} className="hover:underline">
-                        {w.pendingNodesCount} 個節點待審核
+                        {w.pendingNodesCount} 個條目待審核
+                      </Link>
+                    )}
+                    {w.stubNodesCount > 0 && (
+                      <Link href={`/dashboard/worlds/${w.worldSlug}/reviews`} onClick={close} className="hover:underline">
+                        {w.stubNodesCount} 個條目待補完
                       </Link>
                     )}
                     {w.openReportsCount > 0 && (
@@ -399,7 +426,7 @@ export function NotificationBell({
                 </form>
               )}
             </div>
-            {reviewCount === 0 && notifications.length === 0 ? (
+            {reviewSummaries.length === 0 && notifications.length === 0 ? (
               <p className="mt-4 text-center text-sm text-muted-foreground">目前沒有通知。</p>
             ) : (
               <div className="mt-3 flex max-h-96 flex-col gap-2 overflow-y-auto">
@@ -413,7 +440,16 @@ export function NotificationBell({
                         onClick={close}
                         className="mt-1 block text-sm hover:underline"
                       >
-                        {w.pendingNodesCount} 個節點待審核
+                        {w.pendingNodesCount} 個條目待審核
+                      </Link>
+                    )}
+                    {w.stubNodesCount > 0 && (
+                      <Link
+                        href={`/dashboard/worlds/${w.worldSlug}/reviews`}
+                        onClick={close}
+                        className="mt-1 block text-sm hover:underline"
+                      >
+                        {w.stubNodesCount} 個條目待補完
                       </Link>
                     )}
                     {w.openReportsCount > 0 && (
@@ -464,7 +500,7 @@ export function NotificationBell({
                 </form>
               )}
             </div>
-            {reviewCount === 0 && notifications.length === 0 ? (
+            {reviewSummaries.length === 0 && notifications.length === 0 ? (
               <p className="px-2 py-4 text-center text-sm text-muted-foreground">目前沒有通知。</p>
             ) : (
               <div className="mt-1 flex max-h-96 flex-col gap-2 overflow-y-auto">
@@ -473,7 +509,12 @@ export function NotificationBell({
                     <span className="bell-almanac-badge">{w.worldName}</span>
                     {w.pendingNodesCount > 0 && (
                       <Link href={`/dashboard/worlds/${w.worldSlug}/reviews`} onClick={close} className="block text-sm hover:underline">
-                        {w.pendingNodesCount} 個節點待審核
+                        {w.pendingNodesCount} 個條目待審核
+                      </Link>
+                    )}
+                    {w.stubNodesCount > 0 && (
+                      <Link href={`/dashboard/worlds/${w.worldSlug}/reviews`} onClick={close} className="block text-sm hover:underline">
+                        {w.stubNodesCount} 個條目待補完
                       </Link>
                     )}
                     {w.openReportsCount > 0 && (

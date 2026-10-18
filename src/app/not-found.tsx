@@ -1,4 +1,9 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: "找不到頁面",
+};
 
 /**
  * 全站共用的 404 頁——取代 Next.js 預設的英文版(This page could not be

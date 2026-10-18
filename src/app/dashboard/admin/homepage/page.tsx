@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { requireUser } from "@/lib/dal";
 import { createClient } from "@/lib/supabase/server";
@@ -6,6 +7,8 @@ import {
   fetchSiteFeatureCards,
   fetchFeaturedWorldCards,
 } from "@/lib/siteSettings";
+
+export const metadata: Metadata = { title: "首頁內容" };
 import { OrderedContentEditor } from "@/components/OrderedContentEditor";
 import {
   createSiteFeatureCard,

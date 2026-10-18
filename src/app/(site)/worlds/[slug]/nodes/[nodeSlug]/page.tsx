@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/dal";
+import { findRedirectedNodeSlug } from "@/lib/nodeSlugRedirect";
 import { getAttachmentSignedUrl } from "@/lib/attachments";
 import { getNodeMediaSignedUrl, getNodeOgImageUrl } from "@/lib/nodeMedia";
 import { NodeHero } from "@/app/dashboard/worlds/[slug]/nodes/[nodeSlug]/NodeHero";
@@ -97,7 +98,11 @@ export default async function PublicNodeDetailPage({
     .eq("world_id", world.id)
     .eq("slug", nodeSlug)
     .maybeSingle();
-  if (!node) notFound();
+  if (!node) {
+    const newSlug = await findRedirectedNodeSlug(supabase, world.id, nodeSlug);
+    if (newSlug) permanentRedirect(`/worlds/${world.slug}/nodes/${newSlug}`);
+    notFound();
+  }
 
   const character = unwrapRelation(node.characters);
   const characterOwner = character?.owner_id

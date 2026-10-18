@@ -58,12 +58,13 @@ export function NewNodeForm({
       <input type="hidden" name="worldSlug" value={worldSlug} />
 
       <div className="flex flex-col gap-1">
-        <label htmlFor="nodeType" className="text-sm font-medium">
+        <label htmlFor="node_type" className="text-sm font-medium">
           類型
         </label>
+        {/* name 故意不叫 nodeType,見 EditNodeForm.tsx 同樣欄位旁的註解。 */}
         <select
-          id="nodeType"
-          name="nodeType"
+          id="node_type"
+          name="node_type"
           value={nodeType}
           onChange={(e) => setNodeType(e.target.value as NodeType)}
           className="w-40 rounded-lg border border-border bg-surface px-3 py-2"

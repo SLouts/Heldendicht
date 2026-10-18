@@ -45,7 +45,7 @@ export async function createNode(
   const parsed = CreateNodeSchema.safeParse({
     worldId: formData.get("worldId"),
     worldSlug: formData.get("worldSlug"),
-    nodeType: formData.get("nodeType"),
+    nodeType: formData.get("node_type"),
     title: formData.get("title"),
     content: formData.get("content") ?? "",
     editMode: formData.get("editMode"),
@@ -178,7 +178,7 @@ export async function updateNodeContent(
     nodeSlug: formData.get("nodeSlug"),
     title: formData.get("title"),
     content: formData.get("content") ?? "",
-    nodeType: formData.get("nodeType") || undefined,
+    nodeType: formData.get("node_type") || undefined,
     // 表單沒有帶這個欄位就代表「不改分類」;帶了空字串代表「移回未分類」。
     categoryId: formData.has("categoryId") ? formData.get("categoryId") ?? "" : undefined,
   });

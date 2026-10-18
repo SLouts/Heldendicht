@@ -122,12 +122,16 @@ export function EditNodeForm({
             這是 WikiLink 自動建立的待撰寫節點,請補上正確類型跟內容。
           </p>
           <div className="mt-2 flex flex-col gap-1">
-            <label htmlFor="nodeType" className="text-sm font-medium">
+            <label htmlFor="node_type" className="text-sm font-medium">
               類型
             </label>
+            {/* name 故意不叫 nodeType:瀏覽器對這個駝峰命名的欄位名稱有
+                我們抓不到規律的自動填值行為,hydrate 後會非同步改掉這個
+                select 的值,觸發 hydration mismatch,連帶洗掉 <html
+                data-art-theme>。改用底線命名就不會觸發,成因不明,只能繞開。 */}
             <select
-              id="nodeType"
-              name="nodeType"
+              id="node_type"
+              name="node_type"
               defaultValue={nodeType === "unspecified" ? "" : nodeType}
               required
               className="w-40 rounded-lg border border-border bg-surface px-3 py-2"

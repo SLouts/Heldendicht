@@ -162,7 +162,10 @@ export function ReviewQueueList({
                     </button>
                   )}
                   <p className="mt-1 text-xs text-muted-foreground">
-                    {n.creatorLabel} 於 {new Date(n.createdAt).toLocaleString("zh-TW")} 建立
+                    {/* client component,SSR/hydrate 都會跑格式化——不指定 timeZone
+                        會因為伺服器/瀏覽器時區不同觸發 hydration mismatch。 */}
+                    {n.creatorLabel} 於{" "}
+                    {new Date(n.createdAt).toLocaleString("zh-TW", { timeZone: "Asia/Taipei" })} 建立
                   </p>
                   <div className="mt-2 flex gap-2">
                     <button
@@ -206,7 +209,8 @@ export function ReviewQueueList({
               <span>
                 {n.title}
                 <span className="ml-2 text-xs text-muted-foreground">
-                  {n.creatorLabel} 於 {new Date(n.createdAt).toLocaleString("zh-TW")} 建立
+                  {n.creatorLabel} 於{" "}
+                  {new Date(n.createdAt).toLocaleString("zh-TW", { timeZone: "Asia/Taipei" })} 建立
                 </span>
               </span>
               <Link

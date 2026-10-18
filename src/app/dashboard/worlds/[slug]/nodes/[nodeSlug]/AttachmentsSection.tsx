@@ -200,7 +200,10 @@ export function AttachmentsSection({
                 </span>
                 <span className="text-xs text-muted-foreground">
                   {formatSize(a.fileSize)} · {a.uploaderLabel} ·{" "}
-                  {new Date(a.createdAt).toLocaleDateString("zh-TW")}
+                  {/* client component,SSR/hydrate 都會跑格式化——不指定 timeZone
+                      的話伺服器(通常 UTC)跟使用者瀏覽器算出來的文字會不一樣,
+                      觸發 hydration mismatch。 */}
+                  {new Date(a.createdAt).toLocaleDateString("zh-TW", { timeZone: "Asia/Taipei" })}
                 </span>
               </div>
 

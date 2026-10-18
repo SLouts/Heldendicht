@@ -393,7 +393,10 @@ export function NotificationBell({
                     <div className={"flex flex-col gap-0.5 py-2 text-sm" + (n.isRead ? " text-muted-foreground" : "")}>
                       <span>{text}</span>
                       <span className="flex items-center gap-2 text-xs text-muted-foreground">
-                        {new Date(n.createdAt).toLocaleString("zh-TW")}
+                        {/* 這是 client component,SSR 跟 hydrate 都會跑這段格式化——
+                            不指定 timeZone 的話,伺服器(通常是 UTC)跟使用者瀏覽器
+                            (例如 UTC+8)算出來的文字會不一樣,觸發 hydration mismatch。 */}
+                        {new Date(n.createdAt).toLocaleString("zh-TW", { timeZone: "Asia/Taipei" })}
                         {n.worldName && <span className="italic">· {n.worldName}</span>}
                       </span>
                     </div>

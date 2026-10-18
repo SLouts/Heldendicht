@@ -106,6 +106,7 @@ export default function StoryMapGraph({
   const pointersRef = useRef(new Map<number, { x: number; y: number }>());
   const gestureRef = useRef<Gesture>({ mode: null });
   const suppressClickRef = useRef(false);
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
 
   function toggleCategory(category: NodeCategory) {
     setVisibleCategories((prev) => {
@@ -263,10 +264,20 @@ export default function StoryMapGraph({
 
   // 文字是畫在被 <g transform="... scale(k)"> 縮放的座標系裡,縮到很小
   // (節點一多,computeFitTransform 算出的 k 可能遠小於 1)字就會糊成一團
-  // 看不清楚。這裡反向補償:k < 1 時把 fontSize 放大 1/k 倍,乘上外層的
-  // scale(k) 後畫面上的實際大小維持不變,等於幫標籤設一個不會再更小的
-  // 底線;k >= 1(放大檢視)时維持原本大小,不特別再放大。
+  // 看不清楚。這裡反向補償:k < 1 時把 fontSize(以及節點圓點半徑、
+  // 標籤跟圓點的間距)放大 1/k 倍,乘上外層的 scale(k) 後畫面上的實際
+  // 大小維持不變,等於幫這些東西設一個不會再更小的底線;k >= 1(放大
+  // 檢視)時維持原本大小,不特別再放大。
+  //
+  // 只放大字級、沒有同時放大「標籤跟圓點的間距」的話,間距會跟著 k
+  // 縮小趨近 0,字級不變的標籤就會整個蓋住自己的節點圓點——必須用
+  // 同一個 labelScale 一起補償位移量,圓點、文字才會维持原本的相對位置。
   const labelScale = 1 / Math.min(transform.k, 1);
+  // 縮得很小、節點又多時,維持全部標籤常駐反而會互相疊字看不清楚,
+  // 這時只顯示滑鼠停留節點的標籤,其餘先隱藏;放大回這個比例以上就
+  // 全部正常顯示,不用特地去 hover 才看得到。
+  const LABEL_VISIBLE_SCALE = 0.5;
+  const showAllLabels = transform.k >= LABEL_VISIBLE_SCALE;
 
   return (
     <div className="mt-6">
@@ -374,29 +385,33 @@ export default function StoryMapGraph({
                 key={n.id}
                 href={`${basePath}/${n.slug}`}
                 onClick={handleNodeClick}
+                onMouseEnter={() => setHoveredId(n.id)}
+                onMouseLeave={() => setHoveredId((h) => (h === n.id ? null : h))}
               >
                 <circle
                   cx={n.x}
                   cy={n.y}
-                  r={12}
+                  r={12 * labelScale}
                   style={{ fill: NODE_CATEGORY_COLOR_VARS[nodeCategory(n)] }}
                   strokeDasharray={n.status !== "approved" ? "3 2" : undefined}
                   stroke="var(--surface)"
-                  strokeWidth={2}
+                  strokeWidth={2 * labelScale}
                 />
-                <text
-                  x={n.x}
-                  y={n.y + 24}
-                  textAnchor="middle"
-                  fontSize={12 * labelScale}
-                  fontStyle={n.isPlaceholder ? "italic" : undefined}
-                  fill="var(--foreground)"
-                  paintOrder="stroke"
-                  stroke="var(--surface)"
-                  strokeWidth={4 * labelScale}
-                >
-                  {n.title}
-                </text>
+                {(showAllLabels || hoveredId === n.id) && (
+                  <text
+                    x={n.x}
+                    y={n.y + 24 * labelScale}
+                    textAnchor="middle"
+                    fontSize={12 * labelScale}
+                    fontStyle={n.isPlaceholder ? "italic" : undefined}
+                    fill="var(--foreground)"
+                    paintOrder="stroke"
+                    stroke="var(--surface)"
+                    strokeWidth={4 * labelScale}
+                  >
+                    {n.title}
+                  </text>
+                )}
               </a>
             ))}
           </g>

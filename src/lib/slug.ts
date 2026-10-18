@@ -13,8 +13,26 @@ import { pinyin } from "pinyin-pro";
  * 舊版沒有轉拼音,純中文標題擷取不到任何英數字,slug 會整個退化成隨機
  * 字串,完全看不出對應哪個標題(也是「daodan-xxxx」這類舊資料的由來)。
  */
+// 日文新字體跟中文簡/繁字長得一樣或很像,但中文拼音字典是照中文本身的
+// 讀音查,查到的常常是完全不相干的罕見中文字——例如「豊」是「豐」的
+// 日文新字體,中文拼音字典卻把它當成唸 lǐ 的古代禮器用字。只先處理
+// 實際回報過的案例,不是做一套完整的日文漢字正規化表。
+const JAPANESE_KANJI_SUBSTITUTIONS: Record<string, string> = {
+  "豊": "豐",
+};
+
+function normalizeJapaneseKanji(title: string): string {
+  return [...title]
+    .map((ch) => JAPANESE_KANJI_SUBSTITUTIONS[ch] ?? ch)
+    .join("");
+}
+
 export function generateNodeSlug(title: string): string {
-  const romanized = pinyin(title, { toneType: "none", type: "string", nonZh: "consecutive" });
+  const romanized = pinyin(normalizeJapaneseKanji(title), {
+    toneType: "none",
+    type: "string",
+    nonZh: "consecutive",
+  });
   const asciiPart = romanized
     .toLowerCase()
     .normalize("NFKD")

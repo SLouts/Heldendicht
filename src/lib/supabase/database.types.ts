@@ -50,6 +50,7 @@ export type StoryChapterSubmissionStatus =
   | "pending"
   | "approved"
   | "rejected";
+export type WorldEventEntryStatus = "pending" | "drawn" | "not_drawn" | "withdrawn";
 
 export type Database = {
   public: {
@@ -1045,6 +1046,120 @@ export type Database = {
           },
         ];
       };
+      world_events: {
+        Row: {
+          id: string;
+          world_id: string;
+          creator_id: string;
+          title: string;
+          description: string;
+          quota: number;
+          signup_opens_at: string;
+          signup_closes_at: string;
+          submission_deadline: string | null;
+          allow_multiple_entries_per_account: boolean;
+          drawn_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["world_events"]["Row"]> & {
+          world_id: string;
+          creator_id: string;
+          title: string;
+          quota: number;
+          signup_opens_at: string;
+          signup_closes_at: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["world_events"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "world_events_world_id_fkey";
+            columns: ["world_id"];
+            isOneToOne: false;
+            referencedRelation: "worlds";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "world_events_creator_id_fkey";
+            columns: ["creator_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      world_event_eligibility_rules: {
+        Row: {
+          id: string;
+          event_id: string;
+          field_id: string;
+          required_value: string;
+          created_at: string;
+        };
+        Insert: Partial<
+          Database["public"]["Tables"]["world_event_eligibility_rules"]["Row"]
+        > & { event_id: string; field_id: string; required_value: string };
+        Update: Partial<
+          Database["public"]["Tables"]["world_event_eligibility_rules"]["Row"]
+        >;
+        Relationships: [
+          {
+            foreignKeyName: "world_event_eligibility_rules_event_id_fkey";
+            columns: ["event_id"];
+            isOneToOne: false;
+            referencedRelation: "world_events";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "world_event_eligibility_rules_field_id_fkey";
+            columns: ["field_id"];
+            isOneToOne: false;
+            referencedRelation: "world_character_fields";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      world_event_entries: {
+        Row: {
+          id: string;
+          event_id: string;
+          character_node_id: string;
+          account_id: string;
+          status: WorldEventEntryStatus;
+          submission_content: string;
+          submitted_at: string | null;
+          created_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["world_event_entries"]["Row"]> & {
+          event_id: string;
+          character_node_id: string;
+          account_id: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["world_event_entries"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "world_event_entries_event_id_fkey";
+            columns: ["event_id"];
+            isOneToOne: false;
+            referencedRelation: "world_events";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "world_event_entries_character_node_id_fkey";
+            columns: ["character_node_id"];
+            isOneToOne: false;
+            referencedRelation: "nodes";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "world_event_entries_account_id_fkey";
+            columns: ["account_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       wikilinks: {
         Row: {
           id: string;
@@ -1437,6 +1552,10 @@ export type Database = {
         Args: { p_node_id: string; p_new_slug: string };
         Returns: undefined;
       };
+      draw_event_winners: {
+        Args: { p_event_id: string };
+        Returns: Database["public"]["Tables"]["world_event_entries"]["Row"][];
+      };
       public_world_memberships: {
         Args: { p_user_id: string };
         Returns: {
@@ -1477,6 +1596,7 @@ export type Database = {
       story_scope: StoryScope;
       story_chapter_submission_status: StoryChapterSubmissionStatus;
       notification_type: NotificationType;
+      world_event_entry_status: WorldEventEntryStatus;
     };
   };
 };

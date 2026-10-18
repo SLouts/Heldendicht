@@ -8,6 +8,7 @@ const TABS = [
   { suffix: "/worldmap", label: "世界地圖" },
   { suffix: "/map", label: "關係圖譜" },
   { suffix: "/story", label: "故事時間軸" },
+  { suffix: "/events", label: "活動報名" },
   { suffix: "/directory", label: "世界觀百科" },
 ] as const;
 

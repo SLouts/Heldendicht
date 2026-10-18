@@ -275,9 +275,14 @@ export default function StoryMapGraph({
   const labelScale = 1 / Math.min(transform.k, 1);
   // 縮得很小、節點又多時,維持全部標籤常駐反而會互相疊字看不清楚,
   // 這時只顯示滑鼠停留節點的標籤,其餘先隱藏;放大回這個比例以上就
-  // 全部正常顯示,不用特地去 hover 才看得到。
+  // 全部正常顯示。但 hover 在手機/平板根本用不到,而且世界觀節點數不多
+  // 時(computeFitTransform 算出來的 k 可能還是會小於這個門檻,因為
+  // PADDING 相對畫面比例固定)擠在一起的機率本來就低,不該強制只能
+  // 放大才看得到名字——節點數在這個門檻以下,不管縮多小都一律顯示。
   const LABEL_VISIBLE_SCALE = 0.5;
-  const showAllLabels = transform.k >= LABEL_VISIBLE_SCALE;
+  const LOW_NODE_COUNT_THRESHOLD = 30;
+  const showAllLabels =
+    transform.k >= LABEL_VISIBLE_SCALE || visibleNodes.length <= LOW_NODE_COUNT_THRESHOLD;
 
   return (
     <div className="mt-6">

@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { computeGraphLayout } from "@/lib/storymap-layout";
 import { WorldMainTabs } from "@/components/WorldMainTabs";
+import { CategoryLegend } from "@/components/CategoryLegend";
 import StoryMapGraph, {
   type RelEdge,
   type WikiEdge,
@@ -136,30 +137,17 @@ export default async function PublicStoryMapPage({
             basePath={`/worlds/${world.slug}/nodes`}
           />
 
-          <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-xs text-muted-foreground">
-            <LegendDot color="var(--success)" label="地點" />
-            <LegendDot color="var(--primary)" label="物產" />
-            <LegendDot color="var(--badge-info-fg)" label="PC" />
-            <LegendDot color="var(--muted-foreground)" label="NPC / 待撰寫" />
-            <span>── 實線:生效關係線</span>
-            <span>┄┄ 虛線:已撤銷 / 未過審</span>
-            <span>···· 細點線:WikiLink 提及</span>
-            <span>◌ 虛線圈:條目未過審</span>
+          <div className="mt-4 flex flex-col gap-2">
+            <CategoryLegend />
+            <div className="flex flex-wrap gap-x-6 gap-y-2 text-xs text-muted-foreground">
+              <span>── 實線:生效關係線</span>
+              <span>┄┄ 虛線:已撤銷 / 未過審</span>
+              <span>···· 細點線:WikiLink 提及</span>
+              <span>◌ 虛線圈:條目未過審</span>
+            </div>
           </div>
         </>
       )}
     </div>
-  );
-}
-
-function LegendDot({ color, label }: { color: string; label: string }) {
-  return (
-    <span className="inline-flex items-center gap-1.5">
-      <span
-        className="inline-block h-2.5 w-2.5 rounded-full"
-        style={{ backgroundColor: color }}
-      />
-      {label}
-    </span>
   );
 }

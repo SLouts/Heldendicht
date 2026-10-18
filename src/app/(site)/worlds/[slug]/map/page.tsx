@@ -107,7 +107,7 @@ export default async function PublicStoryMapPage({
 
   const height = Math.max(480, Math.min(900, 140 + graphNodes.length * 26));
   const positioned = computeGraphLayout(
-    graphNodes.map((n) => ({ id: n.id })),
+    graphNodes.map((n) => ({ id: n.id, title: n.title })),
     [...relEdges, ...wikiEdges].map((e) => ({ source: e.source, target: e.target })),
     WIDTH,
     height,

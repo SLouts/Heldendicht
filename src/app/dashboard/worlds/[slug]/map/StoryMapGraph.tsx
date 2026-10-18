@@ -9,6 +9,7 @@ import {
   NODE_CATEGORY_COLOR_VARS,
   type NodeCategory,
 } from "@/lib/nodeCategory";
+import { STORYMAP_MIN_LABEL_K } from "@/lib/storymapConstants";
 
 export type GraphNodeData = {
   id: string;
@@ -272,7 +273,14 @@ export default function StoryMapGraph({
   // 只放大字級、沒有同時放大「標籤跟圓點的間距」的話,間距會跟著 k
   // 縮小趨近 0,字級不變的標籤就會整個蓋住自己的節點圓點——必須用
   // 同一個 labelScale 一起補償位移量,圓點、文字才會维持原本的相對位置。
-  const labelScale = 1 / Math.min(transform.k, 1);
+  //
+  // 放大倍率不能無上限地跟著 k 一直放大:storymap-layout.ts 算節點間距時
+  // 是假設「縮到 STORYMAP_MIN_LABEL_K 這個比例之前,標籤都會維持等比例
+  // 放大撐開」去抓碰撞半徑的,超過這個比例後再繼續放大標籤,畫面上的
+  // 標籤就會比版面配置當初預留的間距還大,又會蓋住旁邊的節點。縮到比
+  // STORYMAP_MIN_LABEL_K 更小的時候就不再加碼放大,讓標籤跟著整體畫面
+  // 一起正常縮小——寧可字變小,也不要蓋住別的節點。
+  const labelScale = 1 / Math.min(Math.max(transform.k, STORYMAP_MIN_LABEL_K), 1);
   // 縮得很小、節點又多時,維持全部標籤常駐反而會互相疊字看不清楚,
   // 這時只顯示滑鼠停留節點的標籤,其餘先隱藏;放大回這個比例以上就
   // 全部正常顯示。但 hover 在手機/平板根本用不到,而且世界觀節點數不多

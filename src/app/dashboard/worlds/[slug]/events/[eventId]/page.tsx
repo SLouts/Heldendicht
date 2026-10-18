@@ -10,6 +10,7 @@ import {
   EVENT_PHASE_LABELS,
   EVENT_ENTRY_STATUS_LABELS,
   isPastDeadline,
+  groupEligibilityRules,
 } from "@/lib/worldEvents";
 import { deleteEvent, drawEventWinners, withdrawEventEntry } from "@/lib/actions/events";
 import { EditEventForm } from "./EditEventForm";
@@ -173,11 +174,13 @@ export default async function EventDetailPage({
         <div className="mt-3">
           <p className="text-sm font-medium">報名資格:</p>
           <ul className="mt-1 list-disc pl-5 text-sm text-muted-foreground">
-            {(rules ?? []).map((r) => {
-              const field = unwrapRelation(r.field);
+            {Array.from(groupEligibilityRules(rules ?? [])).map(([fieldId, values]) => {
+              const field = unwrapRelation(
+                (rules ?? []).find((r) => r.field_id === fieldId)?.field,
+              );
               return (
-                <li key={r.id}>
-                  {field?.label ?? "(欄位已刪除)"} = {r.required_value}
+                <li key={fieldId}>
+                  {field?.label ?? "(欄位已刪除)"} = {values.join("、")}
                 </li>
               );
             })}
@@ -198,9 +201,9 @@ export default async function EventDetailPage({
             submissionDeadline={event.submission_deadline}
             allowMultipleEntriesPerAccount={event.allow_multiple_entries_per_account}
             fields={fields}
-            initialRules={(rules ?? []).map((r) => ({
-              fieldId: r.field_id,
-              requiredValue: r.required_value,
+            initialRules={Array.from(groupEligibilityRules(rules ?? []), ([fieldId, requiredValues]) => ({
+              fieldId,
+              requiredValues,
             }))}
           />
           <form action={deleteEvent.bind(null, event.id, world.slug)} className="mt-4">

@@ -32,6 +32,22 @@ export function isPastDeadline(deadline: string | null): boolean {
   return deadline != null && Date.now() > new Date(deadline).getTime();
 }
 
+/** 把扁平的 (field_id, required_value) 列依 field_id 分組——同一個欄位
+ * 底下的多個值是「符合任一個即可」,用在編輯表單還原分組 UI,以及畫面
+ * 顯示報名資格時把同一欄位的值合併成一行。保留第一次出現該 field_id
+ * 的順序。 */
+export function groupEligibilityRules<T extends { field_id: string; required_value: string }>(
+  rows: T[],
+): Map<string, string[]> {
+  const map = new Map<string, string[]>();
+  for (const r of rows) {
+    const list = map.get(r.field_id) ?? [];
+    list.push(r.required_value);
+    map.set(r.field_id, list);
+  }
+  return map;
+}
+
 export type EventEntryStatus = "pending" | "drawn" | "not_drawn" | "withdrawn";
 
 export const EVENT_ENTRY_STATUS_LABELS: Record<EventEntryStatus, string> = {

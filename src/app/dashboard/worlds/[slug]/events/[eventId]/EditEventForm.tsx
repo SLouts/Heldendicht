@@ -5,7 +5,7 @@ import { updateEvent } from "@/lib/actions/events";
 import { toTaipeiDatetimeLocalValue } from "@/lib/taipeiTime";
 import {
   EventEligibilityRulesFields,
-  type EligibilityRule,
+  type FieldRuleGroup,
   type FieldOption,
 } from "../EventEligibilityRulesFields";
 
@@ -32,10 +32,10 @@ export function EditEventForm({
   submissionDeadline: string | null;
   allowMultipleEntriesPerAccount: boolean;
   fields: FieldOption[];
-  initialRules: EligibilityRule[];
+  initialRules: FieldRuleGroup[];
 }) {
   const [state, formAction, pending] = useActionState(updateEvent, undefined);
-  const [rules, setRules] = useState<EligibilityRule[]>(initialRules);
+  const [rules, setRules] = useState<FieldRuleGroup[]>(initialRules);
 
   return (
     <form action={formAction} className="flex flex-col gap-4">

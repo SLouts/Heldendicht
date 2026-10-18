@@ -4,7 +4,7 @@ import { useActionState, useState } from "react";
 import { createEvent } from "@/lib/actions/events";
 import {
   EventEligibilityRulesFields,
-  type EligibilityRule,
+  type FieldRuleGroup,
   type FieldOption,
 } from "../EventEligibilityRulesFields";
 
@@ -18,7 +18,7 @@ export function NewEventForm({
   fields: FieldOption[];
 }) {
   const [state, formAction, pending] = useActionState(createEvent, undefined);
-  const [rules, setRules] = useState<EligibilityRule[]>([]);
+  const [rules, setRules] = useState<FieldRuleGroup[]>([]);
 
   return (
     <form action={formAction} className="mt-4 flex max-w-xl flex-col gap-4">

@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { unwrapRelation } from "@/lib/unwrapRelation";
 import { WorldMainTabs } from "@/components/WorldMainTabs";
 import { formatTaipeiDateTime } from "@/lib/taipeiTime";
-import { eventPhase, EVENT_PHASE_LABELS } from "@/lib/worldEvents";
+import { eventPhase, EVENT_PHASE_LABELS, groupEligibilityRules } from "@/lib/worldEvents";
 
 export async function generateMetadata({
   params,
@@ -51,7 +51,7 @@ export default async function PublicEventDetailPage({
 
   const { data: rules } = await supabase
     .from("world_event_eligibility_rules")
-    .select("id, required_value, field:world_character_fields(label)")
+    .select("field_id, required_value, field:world_character_fields(label)")
     .eq("event_id", event.id);
 
   const phase = eventPhase(event);
@@ -103,11 +103,13 @@ export default async function PublicEventDetailPage({
         <div className="mt-3">
           <p className="text-sm font-medium">報名資格:</p>
           <ul className="mt-1 list-disc pl-5 text-sm text-muted-foreground">
-            {(rules ?? []).map((r) => {
-              const field = unwrapRelation(r.field);
+            {Array.from(groupEligibilityRules(rules ?? [])).map(([fieldId, values]) => {
+              const field = unwrapRelation(
+                (rules ?? []).find((r) => r.field_id === fieldId)?.field,
+              );
               return (
-                <li key={r.id}>
-                  {field?.label ?? "(欄位已刪除)"} = {r.required_value}
+                <li key={fieldId}>
+                  {field?.label ?? "(欄位已刪除)"} = {values.join("、")}
                 </li>
               );
             })}
